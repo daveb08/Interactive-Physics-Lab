@@ -1,9 +1,11 @@
 import { createRun, forceBalance } from '../../js/core/physics.js';
+import { INERTIA_EXPERIMENTS } from './inertia-experiments.js';
 import { FRICTION_EXPERIMENTS } from './friction-experiments.js';
 
 // Instructor-authored content is kept separate from the simulator and UI.
 export const EXPERIMENTS = {
   ...FRICTION_EXPERIMENTS,
+  ...INERTIA_EXPERIMENTS,
   C: {
     title: 'How does mass affect acceleration?',
     previewObjective: 'Investigate how changing mass affects acceleration while keeping net force constant.',

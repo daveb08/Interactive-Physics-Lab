@@ -7,7 +7,7 @@ const el = (name, attrs, content) => {
 };
 export class MotionGraph {
   constructor(svg, key, label, unit, color) { Object.assign(this, { svg, key, label, unit, color }); }
-  render(samples, endTime, { reference = null, references = reference ? [reference] : [], events = [] } = {}) {
+  render(samples, endTime, { reference = null, references = reference ? [reference] : [], events = [], seriesLabels = null } = {}) {
     const { svg, key, label, unit, color } = this;
     svg.replaceChildren();
     // Always include zero and pad both extrema so signed values remain legible.
@@ -35,7 +35,7 @@ export class MotionGraph {
     const dashes = ['', '6 4', '2 3'];
     references.forEach((data, i) => svg.append(curve(data, colors[i], dashes[i])));
     if (references.length) {
-      for (let i = 0; i <= references.length; i++) svg.append(el('text', {x:155 + i*77, y:17, class:'graph-tick', style:`fill:${colors[i]}`}, `${['—','┄','··'][i]} Run ${i+1}`));
+      for (let i = 0; i <= references.length; i++) svg.append(el('text', {x:155 + i*77, y:17, class:'graph-tick', style:`fill:${colors[i]}`}, `${['—','┄','··'][i]} ${seriesLabels?.[i] || `Run ${i+1}`}`));
     }
     const activeColor = colors[references.length];
     svg.append(curve(samples, activeColor, dashes[references.length]));
@@ -45,7 +45,7 @@ export class MotionGraph {
     }
     const last = samples.at(-1);
     svg.append(el('circle', { cx: x(last.t), cy: y(last[key]), r: 3, fill: activeColor }));
-    const referenceDescription = references.map((data,i) => `Run ${i+1}: ${data.at(-1)[key].toFixed(2)} ${unit} at ${data.at(-1).t.toFixed(2)} seconds. `).join('');
-    svg.setAttribute('aria-label', `${label} versus time. ${referenceDescription}${references.length ? `Run ${references.length+1}: ` : 'Latest: '}${last[key].toFixed(2)} ${unit} at ${last.t.toFixed(2)} seconds. ${events.map(e => `${e.label} at ${e.t.toFixed(3)} seconds.`).join(' ')}`);
+    const referenceDescription = references.map((data,i) => `${seriesLabels?.[i] || `Run ${i+1}`}: ${data.at(-1)[key].toFixed(2)} ${unit} at ${data.at(-1).t.toFixed(2)} seconds. `).join('');
+    svg.setAttribute('aria-label', `${label} versus time. ${referenceDescription}${references.length ? `${seriesLabels?.[references.length] || `Run ${references.length+1}`}: ` : 'Latest: '}${last[key].toFixed(2)} ${unit} at ${last.t.toFixed(2)} seconds. ${events.map(e => `${e.label} at ${e.t.toFixed(3)} seconds.`).join(' ')}`);
   }
 }

@@ -1,15 +1,17 @@
-import { createRun, stepRun, predictionTarget, comparePrediction, forceBalance, DURATION } from '../../js/core/physics.js';
+import { createRun, sampleAt, stepRun, predictionTarget, comparePrediction, forceBalance, DURATION } from '../../js/core/physics.js';
 import { SimulationClock } from '../../js/core/clock.js';
 import { CartView } from '../../js/components/cart.js';
 import { MotionGraph } from '../../js/components/graph.js';
 import { GuidedActivity } from './guided-activity.js';
 
 const $ = id => document.getElementById(id);
+const firstLaw = document.body.dataset.law === 'first';
 const format = (value, digits = 2) => (Math.abs(value) < 0.5 * 10 ** -digits ? 0 : value).toFixed(digits);
 const signed = value => `${value > 0 ? '+' : ''}${value}`;
 let mode = 'conceptual';
 let experience = 'free';
 let freeSettings = null;
+const pulseExploration = () => firstLaw && experience === 'free';
 let run, prediction = null, started = false;
 const guided = new GuidedActivity(() => reset(), choice => { prediction = choice ? { choice } : null; render(); }, nextRun => {
   clock.reset();
@@ -44,12 +46,20 @@ const clock = new SimulationClock(() => {
 
 function render() {
   const reveal = experience === 'free' || started;
-  cart.render(run, { reveal });
+  const balance = forceBalance(run);
+  cart.render({ ...run, force: balance.appliedForce }, { reveal });
+  if (run.removeForceAt != null && !pulseExploration()) {
+    $('force').value = balance.appliedForce;
+    $('force-value').value = `${signed(balance.appliedForce)} N`;
+  }
   $('time').value = format(run.state.t);
   $('position').value = format(run.state.x);
   $('speed').value = format(run.state.v);
-  const balance = forceBalance(run);
-  $('force-readouts').hidden = !run.frictionEnabled;
+  $('force-readouts').hidden = !run.frictionEnabled && !pulseExploration();
+  if (firstLaw) {
+    $('applied-now').value = format(balance.appliedForce);
+    $('pulse-phase').textContent = run.state.t < run.removeForceAt ? 'During pulse: net force determines how velocity changes.' : run.frictionEnabled ? 'Pulse ended: friction may still change velocity until rest.' : 'Pulse ended: zero acceleration; velocity stays constant.';
+  }
   $('force-legend').hidden = !run.frictionEnabled;
   for (const [id, value] of [['normal-force',balance.normal],['max-static',balance.maxStatic],['friction-force',balance.friction],['net-force',balance.netForce]]) $(id).value = reveal ? format(value) : '—';
   $('motion-state').textContent = reveal ? balance.motion : 'Observe after starting';
@@ -64,11 +74,15 @@ function render() {
     const comparison = experience === 'guided' && guided.session.runIndex > 0 && graph.key === 'v';
     graph.render(run.samples, run.endTime, { references: comparison ? guided.session.results.slice(0,guided.session.runIndex).map(r => r.samples) : [], events: reveal ? (run.events || []).filter(e => e.t <= run.state.t) : [] });
   });
-  $('start').disabled = !prediction || clock.running || run.done;
+  $('start').disabled = (!prediction && !pulseExploration()) || clock.running || run.done;
   $('pause').disabled = !clock.running;
 }
 
 function updateQuestion() {
+  if (pulseExploration()) {
+    $('question').textContent = 'Apply a timed force, then observe the motion after it ends. Compare your explanation with position, velocity, and acceleration graphs. Force changes velocity through acceleration; it does not determine velocity directly.';
+    return;
+  }
   const t = predictionTarget(run);
   $('target-time').textContent = format(t, 3);
   $('question').textContent = mode === 'conceptual'
@@ -80,9 +94,16 @@ function updateQuestion() {
 
 function reset() {
   clock.reset();
-  run = experience === 'guided' ? guided.reset() : createRun({ mass: +$('mass').value, force: +$('force').value, velocity: +$('velocity').value, frictionEnabled: $('friction-enabled').checked, muS: +$('mu-s').value, muK: +$('mu-k').value });
+  run = experience === 'guided' ? guided.reset() : createRun({ mass: +$('mass').value, force: +$('force').value, velocity: +$('velocity').value, frictionEnabled: $('friction-enabled').checked, muS: +$('mu-s').value, muK: +$('mu-k').value, removeForceAt: firstLaw ? +$('force-duration').value : null });
   prediction = null;
   started = false;
+  if (firstLaw) {
+    $('pulse-control').hidden = !pulseExploration();
+    $('force-duration-value').value = `${$('force-duration').value} s`;
+    document.querySelector('label[for="force"]').firstChild.textContent = pulseExploration() ? 'Applied force during pulse ' : 'Applied force ';
+    $('pulse-explanation').value = '';
+    $('pulse-explanation').disabled = false;
+  }
   $('settings').disabled = experience === 'guided';
   $('friction-settings').disabled = experience === 'guided';
   $('prediction-fields').disabled = false;
@@ -96,6 +117,9 @@ function reset() {
   $('next-run').hidden = true;
   const duration = experience === 'guided' ? guided.session.experiment.observationTime ?? DURATION : DURATION;
   $('track-description').textContent = `The track spans −50 to +50 m. Each run ends at ${duration} s or at the first outward boundary crossing. The final velocity is retained; no collision is modeled.`;
+  if (pulseExploration()) {
+    $('run-message').textContent = 'Predict in your own words if you wish, then start the experiment.';
+  }
   syncControls();
   updateQuestion();
   render();
@@ -116,7 +140,18 @@ function syncControls() {
 
 function feedback() {
   if (experience === 'guided') return;
-  if (!prediction || !started) return;
+  if (!started) return;
+  if (pulseExploration()) {
+    const box = $('feedback'); box.hidden = false;
+    if (run.state.t < run.removeForceAt) {
+      box.textContent = run.done ? 'The track boundary was reached before the pulse ended. No motion after force removal was observed.' : 'The pulse has not ended yet. Continue to observe what happens after removal.';
+      return;
+    }
+    const removal = sampleAt(run, run.removeForceAt);
+    box.textContent = `At force removal (${format(run.removeForceAt,3)} s), velocity was ${format(removal.v,3)} m/s. At the observed time ${format(run.state.t,3)} s, velocity is ${format(run.state.v,3)} m/s and acceleration is ${format(run.a,3)} m/s². ` + (run.frictionEnabled ? 'After removal, sliding friction opposes motion; if its magnitude is nonzero the cart slows until it stops. At rest with no applied force, friction and acceleration are zero. Zero kinetic friction instead preserves velocity.' : 'After removal, net force and acceleration are zero. Velocity stays at the value reached at removal, including zero if the cart was at rest. Removing force does not reset velocity.') + ' Compare your explanation with the graphs; it is not automatically graded.';
+    return;
+  }
+  if (!prediction) return;
   const target = predictionTarget(run);
   if (mode === 'quantitative' && run.state.t + 1e-9 < target) return;
   const box = $('feedback');
@@ -154,7 +189,8 @@ $('prediction-form').addEventListener('submit', event => {
 });
 
 $('start').addEventListener('click', () => {
-  if (!prediction || run.done) return;
+  if ((!prediction && !pulseExploration()) || run.done) return;
+  if (pulseExploration()) $('pulse-explanation').disabled = true;
   if (experience === 'guided' && !guided.start()) return;
   started = true;
   $('settings').disabled = true;
@@ -175,6 +211,7 @@ $('pause').addEventListener('click', () => {
   render();
 });
 $('reset').addEventListener('click', reset);
+if (firstLaw) $('force-duration').addEventListener('input', reset);
 for (const id of ['mass', 'force', 'velocity']) $(id).addEventListener('input', reset);
 $('friction-enabled').addEventListener('change', reset);
 for (const id of ['mu-s','mu-k']) $(id).addEventListener('input', () => {
@@ -195,18 +232,19 @@ for (const next of ['conceptual', 'quantitative']) $(`${next}-mode`).addEventLis
 });
 for (const [id, next] of [['free-exploration', 'free'], ['guided-experiments', 'guided']]) $(id).addEventListener('click', () => {
   if (experience === next) return;
-  if (next === 'guided') freeSettings = { mass: $('mass').value, force: $('force').value, velocity: $('velocity').value, 'mu-s': $('mu-s').value, 'mu-k': $('mu-k').value, frictionEnabled: $('friction-enabled').checked };
+  if (next === 'guided') freeSettings = { mass: $('mass').value, force: $('force').value, velocity: $('velocity').value, 'mu-s': $('mu-s').value, 'mu-k': $('mu-k').value, frictionEnabled: $('friction-enabled').checked, pulseDuration: firstLaw ? $('force-duration').value : null };
   else {
     for (const key of ['mass', 'force', 'velocity','mu-s','mu-k']) $(key).value = freeSettings[key];
     $('friction-enabled').checked = freeSettings.frictionEnabled;
+    if (firstLaw) $('force-duration').value = freeSettings.pulseDuration;
   }
   experience = next;
   $('free-exploration').setAttribute('aria-pressed', String(next === 'free'));
   $('guided-experiments').setAttribute('aria-pressed', String(next === 'guided'));
   $('guided-intro').hidden = next !== 'guided';
   $('free-activity').hidden = next !== 'free';
-  document.querySelector('[aria-label="Learning mode"]').hidden = next !== 'free';
-  $('settings-help').textContent = next === 'guided' ? 'Parameters are locked for this guided experiment. Return to Free Exploration to adjust them independently.' : 'Settings stay fixed during a run. Reset to change them.';
+  document.querySelector('[aria-label="Learning mode"]').hidden = firstLaw || next !== 'free';
+  $('settings-help').textContent = next === 'guided' ? (firstLaw ? 'Parameters are locked for this guided experiment. Friction is disabled.' : 'Parameters are locked for this guided experiment. Return to Free Exploration to adjust them independently.') : 'Settings stay fixed during a run. Reset to change them.';
   reset();
   if (next === 'free') for (const id of ['guided-results', 'guided-feedback', 'reflection-panel']) $(id).hidden = true;
 });
@@ -214,3 +252,8 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden && clock.running) $('pause').click();
 });
 reset();
+
+if (firstLaw) {
+  $('guided-experiments').click();
+  document.querySelector('[aria-label="Learning mode"]').hidden = true;
+}

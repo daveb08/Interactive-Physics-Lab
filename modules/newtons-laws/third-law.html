@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Newton’s Third Law · Interactive Physics Lab</title><link rel="stylesheet" href="../../css/styles.css"><link rel="stylesheet" href="third-law.css"><script type="module" src="third-law.js"></script></head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header"><a class="brand" href="../../index.html"><span class="brand-icon" aria-hidden="true">↗</span> Interactive Physics Lab</a><a class="back-link" href="../../index.html">← All modules</a></header>
+<main id="main" class="lab">
+<div class="lab-heading"><div><p class="eyebrow">MODULE 01 / CLASSICAL MECHANICS</p><h1>Newton’s Laws</h1><p>Discover how forces shape the way things move.</p></div><span class="lab-tag">Interactive experiment</span></div>
+<nav class="law-nav" aria-label="Newton’s Laws"><a href="first-law.html"><b>01</b> First Law · Inertia</a><a href="index.html"><b>02</b> Second Law · Force &amp; acceleration</a><a href="third-law.html" aria-current="page"><b>03</b> Third Law · Action &amp; reaction</a></nav>
+<div class="experiment-heading"><div><p class="eyebrow">THE THIRD LAW</p><h2>One interaction. Two forces.</h2><p>Equal and opposite forces act on different objects.</p></div></div>
+<div class="experience-selector mode-switch" role="group" aria-label="Experiment experience"><button id="guided-mode" aria-pressed="true">Guided Experiments</button><button id="free-mode" aria-pressed="false">Free Exploration</button></div>
+<section id="guided-panel" class="panel guided-intro">
+<label for="activity-select">Choose an experiment</label><select id="activity-select"><option value="T1">T1 — Equal masses</option><option value="T2">T2 — Unequal masses</option><option value="T3">T3 — Identify the force pair</option></select>
+<h2 id="activity-title"></h2><h3>Learning objective</h3><p id="objective"></p><h3>Initial conditions</h3><p id="conditions"></p>
+<form id="prediction-form"><fieldset id="prediction-fields"><legend id="question"></legend><div id="choices" class="choices"></div></fieldset><button id="save-prediction">Save prediction</button><p id="prediction-status" role="status">Save a prediction before starting.</p></form>
+</section>
+<div class="third-workspace">
+<aside class="panel controls"><div class="panel-heading"><h3>Experiment controls</h3><span>01</span></div>
+<fieldset id="settings"><legend class="sr-only">Spring and cart settings</legend>
+<div class="control"><label for="massA">Cart A mass <output id="massA-value">2 kg</output></label><input id="massA" type="range" min="1" max="10" step="1" value="2"><div class="range-ends"><span>1 kg</span><span>10 kg</span></div></div>
+<div class="control"><label for="massB">Cart B mass <output id="massB-value">2 kg</output></label><input id="massB" type="range" min="1" max="10" step="1" value="2"><div class="range-ends"><span>1 kg</span><span>10 kg</span></div></div>
+<div class="control"><label for="stiffness">Spring stiffness <output id="stiffness-value">2 N/m</output></label><input id="stiffness" type="range" min="1" max="20" step="1" value="2"><div class="range-ends"><span>1 N/m</span><span>20 N/m</span></div></div>
+<div class="control"><label for="compression">Initial compression <output id="compression-value">1 m</output></label><input id="compression" type="range" min="0.2" max="2" step="0.1" value="1"><div class="range-ends"><span>0.2 m</span><span>2 m</span></div></div>
+</fieldset><div class="third-control-note"><button id="defaults" hidden>Reset to Defaults</button><p id="settings-note" class="help">Guided conditions are locked.</p><div class="equation"><span>ONE INTERACTION</span><strong>F = kδ</strong><span>Compression δ ≥ 0. No tension after release.</span></div></div></aside>
+<section class="panel simulation" aria-labelledby="simulation-title"><div class="panel-heading"><h3 id="simulation-title">Spring release · two carts</h3><span id="status" role="status">Ready</span></div>
+<svg id="two-carts" viewBox="0 0 780 280" role="img" aria-label="Two carts and a compressed spring"></svg>
+<p id="view-note" class="help third-note"></p><div class="force-legend"><span class="cart-a-key">— Cart A · blue</span><span class="cart-b-key">┄ Cart B · orange</span><p>Horizontal force arrows share one scale. Equal lengths mean equal magnitudes.</p></div>
+<div class="third-readouts"><p>Time <strong id="time">0.00 s</strong> · <strong id="contact">Ready</strong></p><p id="force-equality"></p><div class="comparison-table-panel"><table><caption>Signed horizontal measurements · positive is right</caption><thead><tr><th>Measurement</th><th>Cart A</th><th>Cart B</th></tr></thead><tbody id="measurements"></tbody></table></div><p id="momentum"></p></div>
+<div class="transport"><button id="start" class="primary" disabled>▶ Start experiment</button><button id="pause" disabled>Pause</button><button id="reset">↺ Reset</button></div><p id="message" class="run-message" role="status">Save your prediction, then release the spring.</p>
+<div class="track-note"><strong>Observation boundaries</strong><p>Observe for 6 s or until either cart’s outer edge reaches −50 or +50 m. Both carts then freeze at that measurement; no collision is modeled.</p></div>
+</section></div>
+<section class="panel third-diagrams"><div class="panel-heading"><h3>Separate free-body diagrams</h3><span>DIFFERENT OBJECTS</span></div><div class="fbd-grid"><svg id="fbd-a" viewBox="0 0 400 240" role="img"></svg><svg id="fbd-b" viewBox="0 0 400 240" role="img"></svg></div><p class="help third-note">Each diagram includes only forces acting on that cart. Weight and normal force balance vertically; they are not an action–reaction pair. Horizontal arrows use the same scale across both diagrams; vertical arrows use a separate scale.</p></section>
+<section class="panel third-graphs"><div class="panel-heading"><h3>Synchronized interaction graphs</h3><span>LIVE</span></div><p id="graph-note" class="help third-note">Graphs appear when the experiment starts.</p><div class="third-graph-grid"><svg id="force-graph" viewBox="0 0 400 163" role="img" aria-label="Interaction forces versus time"></svg><svg id="accel-graph" viewBox="0 0 400 163" role="img" aria-label="Accelerations versus time"></svg></div></section>
+<section id="results" class="panel guided-feedback" hidden aria-live="polite"></section>
+<section id="reflection" class="panel reflection" hidden><h2>Reflect on the evidence</h2><form id="reflection-form"><label id="reflection-question" for="explanation"></label><textarea id="explanation" rows="3" required maxlength="5000"></textarea><button>Submit explanation</button></form><p id="model-answer" hidden></p><p class="help">Your explanation is not automatically graded or saved.</p></section>
+<p class="lab-footnote">Ideal massless spring coupling: the interaction is transmitted between the carts with no momentum stored in the spring. Labels “B on A” and “A on B” refer to this effective two-body interaction. A real spring with appreciable mass would require its own force and momentum accounting. Both carts start at rest; the track is frictionless.</p>
+</main><footer>Interactive Physics Lab<span>Newton’s Laws · Third Law</span></footer>
+</body></html>

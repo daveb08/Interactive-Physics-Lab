@@ -40,7 +40,7 @@ export function boundaryTime(state, a, track = TRACK) {
   return earliest;
 }
 
-export function createRun({ mass, force, velocity, frictionEnabled = false, muS = 0.4, muK = 0.3 }, { duration = DURATION } = {}) {
+export function createRun({ mass, force, velocity, frictionEnabled = false, muS = 0.4, muK = 0.3, removeForceAt = null }, { duration = DURATION } = {}) {
   const a = acceleration(force, mass);
   if (!Number.isFinite(velocity)) throw new RangeError('Use finite initial velocity.');
   if (!Number.isFinite(duration) || duration <= 0) throw new RangeError('Observation duration must be positive and finite.');
@@ -48,8 +48,10 @@ export function createRun({ mass, force, velocity, frictionEnabled = false, muS 
   if (![muS, muK].every(Number.isFinite) || muK < 0 || muS < muK || muS > 1) throw new RangeError('Coefficients must satisfy 0 ≤ μk ≤ μs ≤ 1.');
   const endTime = Math.min(duration, boundaryTime(initial, a));
   const run = { mass, force, a, initial, state: { ...initial }, endTime, reason: endTime < duration ? 'boundary' : 'duration', done: false, samples: [{ ...initial, a }], frictionEnabled, muS, muK };
-  if (frictionEnabled) {
-    planFriction(run, duration);
+  if (removeForceAt !== null && (!Number.isFinite(removeForceAt) || removeForceAt <= 0)) throw new RangeError('Force removal requires a positive finite time.');
+  run.removeForceAt = removeForceAt;
+  if (frictionEnabled || removeForceAt !== null) {
+    planSegments(run, duration);
     run.a = sampleAt(run, 0).a;
     run.initialA = run.a;
     run.samples = [sampleAt(run, 0)];
@@ -59,6 +61,7 @@ export function createRun({ mass, force, velocity, frictionEnabled = false, muS 
 
 /** Static friction is whatever balances F, up to μs N; kinetic friction opposes sliding. */
 export function forceBalance(run, state = run.state) {
+  if (run.removeForceAt != null && state.t >= run.removeForceAt) run = { ...run, force: 0 };
   const normal = run.mass * GRAVITY;
   const maxStatic = run.frictionEnabled ? run.muS * normal : 0;
   let friction = 0;
@@ -73,35 +76,38 @@ export function forceBalance(run, state = run.state) {
     }
   }
   const netForce = run.force + friction;
-  return { normal, maxStatic, friction: friction || 0, netForce, a: netForce / run.mass, regime,
+  return { appliedForce: run.force, normal, maxStatic, friction: friction || 0, netForce, a: netForce / run.mass, regime,
     motion: state.v > 0 ? 'Sliding Right' : state.v < 0 ? 'Sliding Left' : 'Stationary' };
 }
 
-function planFriction(run, duration) {
-  // With fixed F and coefficients, acceleration is constant between zero-velocity events.
-  // Solve each segment analytically, including its exact stop/boundary time.
+function planSegments(run, duration) {
+  // Acceleration is constant between pulse removal and zero-velocity events.
+  // One planner handles friction, timed pulses, exact stops, and track boundaries.
   run.segments = [];
   run.events = [];
   let initial = { ...run.initial };
   if (initial.v === 0 && forceBalance(run, initial).regime === 'kinetic') run.events.push({ t: 0, label: 'Breakaway' });
   while (initial.t < duration) {
     const balance = forceBalance(run, initial);
-    const stopping = initial.v * balance.a < 0 ? -initial.v / balance.a : Infinity;
+    const stopping = run.frictionEnabled && initial.v * balance.a < 0 ? -initial.v / balance.a : Infinity;
     const boundary = boundaryTime(initial, balance.a);
-    const dt = Math.min(duration - initial.t, stopping, boundary);
+    const pulse = run.removeForceAt != null && initial.t < run.removeForceAt ? run.removeForceAt - initial.t : Infinity;
+    const dt = Math.min(duration - initial.t, stopping, boundary, pulse);
     const state = advance(initial, balance.a, dt);
     const stop = stopping === dt;
+    const removed = pulse === dt;
+    if (removed) state.t = run.removeForceAt;
     if (stop) state.v = 0; // exact event, not a numerical clamp after an overshoot
     run.segments.push({ initial, end: state.t, ...balance });
+    if (stop || removed) {
+      const next = forceBalance(run, state);
+      run.events.push({ t: state.t, label: removed ? 'Force removed' : next.regime === 'static' ? 'Stop / stick' : 'Stop / reverse', before: { ...state, ...balance }, after: { ...state, ...next } });
+      // Retain the right-hand force state even if stopping coincides with observation end.
+      if (state.t === duration || boundary === dt) run.segments.push({ initial: state, end: duration, ...next });
+    }
     if (boundary === dt) {
       run.endTime = state.t; run.reason = 'boundary';
       return;
-    }
-    if (stop) {
-      const next = forceBalance(run, state);
-      run.events.push({ t: state.t, label: next.regime === 'static' ? 'Stop / stick' : 'Stop / reverse', before: { ...state, ...balance }, after: { ...state, ...next } });
-      // Retain the right-hand force state even if stopping coincides with observation end.
-      if (state.t === duration) run.segments.push({ initial: state, end: duration, ...next });
     }
     initial = state;
   }
@@ -113,11 +119,11 @@ function planFriction(run, duration) {
 export function sampleAt(run, time) {
   if (!Number.isFinite(time) || time < 0 || time > run.endTime + 1e-9) throw new RangeError('Time must be within the observed track interval.');
   const t = Math.min(time, run.endTime);
-  if (!run.frictionEnabled) return { ...advance(run.initial, run.a, t), a: run.a };
+  if (!run.segments) return { ...advance(run.initial, run.a, t), a: run.a };
   const segment = run.segments.findLast(s => s.initial.t <= t);
   const state = advance(segment.initial, segment.a, t - segment.initial.t);
   const event = run.events.find(e => e.t === t && e.after);
-  if (event) state.v = 0;
+  if (event) state.v = event.after.v;
   return { ...state, a: segment.a, friction: segment.friction, netForce: segment.netForce, regime: segment.regime };
 }
 
@@ -125,7 +131,7 @@ export function stepRun(run, dt = STEP) {
   if (!Number.isFinite(dt) || dt <= 0) throw new RangeError('Time step must be positive and finite.');
   if (run.done) return run.state;
   const t = Math.min(run.state.t + dt, run.endTime);
-  if (run.frictionEnabled) {
+  if (run.segments) {
     for (const event of run.events) {
       if (event.before && event.t > run.state.t && event.t <= t) {
         // Two samples at one instant draw the actual acceleration jump, not a ramp.
@@ -151,6 +157,6 @@ export function predictionTarget(run) { return Math.min(3, run.endTime); }
 export function comparePrediction(run, predictedA, predictedV) {
   const time = predictionTarget(run);
   const actual = sampleAt(run, time);
-  const a = run.frictionEnabled ? run.initialA : run.a;
+  const a = run.segments ? run.initialA : run.a;
   return { time, a, v: actual.v, correctA: Number.isFinite(predictedA) && Math.abs(predictedA - a) <= 0.05 + 1e-12, correctV: Number.isFinite(predictedV) && Math.abs(predictedV - actual.v) <= 0.1 + 1e-12 };
 }

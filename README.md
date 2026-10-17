@@ -1,6 +1,6 @@
 # Interactive Physics Lab
 
-A dependency-free HTML/CSS/JavaScript learning laboratory. The first working experiment explores Newton’s Second Law with a cart, signed forces and velocities, synchronized SVG graphs, and prediction activities. First and Third Law experiments and other modules are labeled **Coming soon**.
+A dependency-free HTML/CSS/JavaScript learning laboratory. The first working experiment explores Newton’s Second Law with a cart, signed forces and velocities, synchronized SVG graphs, and prediction activities. First, Second, and Third Law activities are available; other catalog modules remain **Coming soon**.
 
 ## Run locally
 
@@ -103,6 +103,125 @@ Or `npm test`. Uses Node’s built-in test runner; no testing dependency is need
 
 ## Limitations and next steps
 
-This phase includes only the Second Law module. There are no collisions, rolling resistance, air resistance, applied-force changes within a run, persistence, export, or assessment records. Free Exploration graphs rescale vertically; guided velocity overlays share axes within each comparison. Guided predictions use a fixed instructor-authored question bank. Reflections are not automatically graded or persisted. The development server is for local use, not production hosting.
+The models omit collisions, rolling resistance, air resistance, persistence, export, and assessment records. Second Law forces stay fixed; First Law supports timed pulses and Third Law supports spring release. Free Exploration graphs rescale vertically; guided velocity overlays share axes within each comparison. Guided predictions use a fixed instructor-authored question bank. Reflections are not automatically graded or persisted. The development server is for local use, not production hosting.
 
 Physical-tablet and classroom usability/accessibility checks remain necessary; viewport checks do not replace testing on the devices students will use.
+
+## Newton’s First Law — Inertia
+
+Select **First Law · Inertia** from the Newton’s Laws navigation, or open
+`/modules/newtons-laws/first-law.html`. I1–I3 use the existing guided prediction,
+cart, graph, feedback, and ungraded reflection components. These fixed conceptual
+activities require a saved prediction and lock their parameters. The original
+Conceptual/Quantitative Free Exploration modes remain available on the Second Law page.
+
+- **I1:** 2 kg, v₀ = 0, Fnet = 0, no friction. At 6 s: x = 0, v = 0, a = 0.
+- **I2:** 2 kg, v₀ = +3 m/s, Fnet = 0, no friction. At 6 s: x = 18 m, v = +3 m/s, a = 0.
+- **I3:** 2 kg, v₀ = 0, +4 N until exactly 2 s, then zero force. At removal:
+  x = 4 m, v = +4 m/s; acceleration changes from +2 to 0 m/s². At 6 s:
+  x = 20 m, v = +4 m/s, a = 0. All three graphs mark force removal.
+
+The engine evaluates each constant-acceleration segment analytically and records
+both acceleration values at the transition, preserving position and velocity.
+The force arrow and applied-force readout update at the same simulation instant.
+These observations stay inside the existing ±50 m track.
+
+Run `node --test`: **47 tests pass**, including all 43 prior tests and four new
+First Law tests covering presets, prediction gating, exact transition/continuity,
+graph values at multiple step sizes, short runs, and boundaries.
+
+For browser testing, save a prediction and run each I1–I3 experiment to completion;
+inspect its results and graphs, then submit a reflection to reveal the model answer.
+For I3, pause before/after 2 s to compare force, velocity, and acceleration. Reset
+and switching activities must clear results and require a new prediction. Use the
+Second Law navigation link to return to A–D, F1–F3, and Free Exploration.
+
+First Law now also offers Free Exploration with a timed force pulse and optional
+friction. Responses are not persisted or graded. Physical tablets and
+cross-browser/screen-reader validation have not been performed for this addition.
+
+Browser verification (17 October 2026): completed I1, I2, and I3 in the in-app
+browser; confirmed the final values above, locked settings and prediction gating,
+I3’s force readout and graph marker, misconception feedback for an incorrect I3
+prediction, and reflection/model-answer submission. Navigated back to Second Law
+and confirmed its quantitative control and A–D/F1–F3 selector entries remain
+available. No browser console errors were captured. Preview:
+`artifacts/first-law-preview.png`.
+
+## First Law Free Exploration
+
+From First Law, select **Free Exploration**. Defaults: 2 kg, +3 m/s, 0 N,
+a 2-second pulse, friction disabled. Adjust mass (1–10 kg), initial velocity
+(−5 to +5 m/s), applied force during pulse (−20 to +20 N), and duration
+(0.5–5 s). Optional friction uses the same coefficient controls as Second Law.
+The total observation interval is 6 seconds or the first outward track-boundary
+crossing, whichever comes first.
+
+A written prediction is optional and ungraded. Start directly or describe the
+expected motion first; after running, compare the explanation with measured
+velocity at removal and the observed final state. The app does not assign a
+universal correct answer to arbitrary settings. Boundary termination before
+removal is explicitly identified as having no observed post-pulse motion.
+
+Force removal, frictional stops, and boundaries use the same analytical event
+planner. Position and velocity remain continuous at removal. Acceleration and
+force readouts update at that exact time; graphs mark the event. Friction
+continues after the pulse, until rest if kinetic friction is nonzero. Without
+friction, velocity after removal stays constant, including the zero-velocity case.
+The selected pulse amplitude stays in the control; **Applied force now** shows
+the instantaneous force. Switching to Guided Experiments keeps I1–I3 fixed;
+returning to Free Exploration restores its parameter settings. Reset preserves
+parameters but clears the optional explanation and results.
+
+Verification: **55 tests passed, 0 failed**, including all 47 prior tests.
+New `tests/pulse.test.js` covers zero-force motion, signed velocities and pulses,
+varied masses/durations, exact timing, continuity, frictional stopping, static
+balance, simultaneous stopping/removal, reversal, boundaries, and an 81-case
+friction-pulse grid comparing small and large simulation steps.
+
+Limits: one pulse per run; no force editing while running; no saved student
+responses. Physical touch devices and cross-browser accessibility still require
+classroom validation. No GitHub push was made for these local changes.
+
+Free Exploration browser verification: checked default settings, optional-prediction
+start, +4 N frictionless coasting, friction continuing to rest, selected versus
+instantaneous force readouts, preserved I3 gating/conditions, restoration of free
+settings, and early boundary feedback before pulse removal. Inspected 768×1024
+and 1366×900 viewports; no page-wide overflow at tablet width. Physical devices
+were not tested. Preview: `artifacts/first-law-free-preview.png`.
+
+## Newton’s Third Law — Action & Reaction
+
+Open `/modules/newtons-laws/third-law.html`, or select **Third Law · Action & reaction**
+from either existing Newton’s Laws page. Guided T1 compares equal 2 kg masses;
+T2 compares 2 kg and 4 kg; T3 asks students to identify the force pair in separate
+free-body diagrams. Save a prediction, start, and pause during contact to compare
+forces and accelerations. Complete the run to reveal observation, explanation,
+and an optional ungraded reflection/model answer.
+
+Free Exploration adjusts masses (1–10 kg each), stiffness (1–20 N/m), and initial
+compression (0.2–2 m). Defaults: 2 kg each, 2 N/m, 1 m. Both carts always begin at
+rest, and force magnitudes cannot be set independently. **Reset** retains settings;
+**Reset to Defaults** restores the default experiment. Free settings survive a
+switch to guided mode and back.
+
+The spring is an ideal massless, compression-only coupling. With reduced mass
+μ = mA mB/(mA+mB), compression is δ(t) = δ₀ cos(√(k/μ)t) until the first zero at
+π/(2√(k/μ)). The engine uses this exact harmonic time propagator as its integrator,
+then constant-velocity propagation after separation. This avoids numerical
+stability restrictions and accumulated integration drift. Forces are −kδ and
++kδ, and accelerations follow F/m. Energy and momentum are conserved within
+floating-point tolerance. There is no attractive force after separation.
+
+Cart bodies are 1 m wide; the uncompressed spring length is 4 m. Initial spacing
+keeps carts from overlapping for the entire supported range. The view expands as
+the carts separate and labels its scale. Observation ends at 6 s or the first
+cart outer-edge crossing of ±50 m, retaining the incident velocities without
+simulating an impact. Separate diagrams show weight and normal force, which
+balance vertically but are not each other’s Third Law partners. The horizontal
+pair labels refer to the effective cart-to-cart interaction transmitted by the
+massless spring; a massive spring would need separate momentum accounting.
+
+Current suite: **63 passed, 0 failed** (`node --test`), including all 55 previous
+tests. See [THIRD_LAW_TEST_REPORT.md](THIRD_LAW_TEST_REPORT.md) for reference cases,
+browser verification, modified files, and limitations.

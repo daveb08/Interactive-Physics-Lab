@@ -14,3 +14,5 @@
 
 /* Keep law tabs contained at intermediate tablet widths. */
 .law-nav{overflow-x:auto;max-width:100%}
+
+.law-nav>a:not([aria-current="page"]){border-bottom:0;font-weight:400;color:var(--muted)}

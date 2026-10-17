@@ -17,8 +17,9 @@ export class GuidedActivity {
     this.onReset = onReset;
     this.onPrediction = onPrediction;
     const groups = {};
-    for (const name of ['Newton’s Second Law','Friction']) { const group = document.createElement('optgroup'); group.label = name; $('guided-select').append(group); groups[name] = group; }
+    for (const name of (document.body.dataset.law === 'first' ? ['Newton’s First Law'] : ['Newton’s Second Law','Friction'])) { const group = document.createElement('optgroup'); group.label = name; $('guided-select').append(group); groups[name] = group; }
     for (const [id, experiment] of Object.entries(EXPERIMENTS).sort(([a], [b]) => a.localeCompare(b))) {
+      if (!groups[experiment.group || 'Newton’s Second Law']) continue;
       const option = document.createElement('option');
       option.value = id;
       option.textContent = `${id} — ${experiment.title}`;
@@ -66,6 +67,7 @@ export class GuidedActivity {
     // Use an inquiry objective before the run so the objective itself does not give away the answer.
     $('guided-objective').textContent = e.previewObjective;
     $('guided-conditions').textContent = e.runs.map((r, i) => `${e.runs.length > 1 ? `Run ${i + 1}: ` : ''}mass ${r.mass} kg · ${r.frictionEnabled ? 'applied' : 'net'} force ${signed(r.force)} N · initial velocity ${signed(r.velocity)} m/s${r.frictionEnabled ? ` · μs ${r.muS.toFixed(2)} · μk ${r.muK.toFixed(2)}` : ''}`).join(' | ');
+    if (e.conditions) $('guided-conditions').textContent = e.conditions;
     $('guided-question').textContent = e.question;
     $('guided-choices').replaceChildren();
     e.options.forEach((text, i) => {
@@ -117,7 +119,7 @@ export class GuidedActivity {
     const r = this.session.run;
     $('guided-results').hidden = false;
     $('guided-result-text').textContent = `At t = ${r.state.t.toFixed(2)} s: position ${r.state.x.toFixed(2)} m; velocity ${signed(r.state.v.toFixed(2))} m/s; acceleration ${signed(r.a.toFixed(2))} m/s².`;
-    if (r.frictionEnabled) $('guided-result-text').textContent += ` ${r.events.map(e => `${e.label} at ${e.t.toFixed(3)} s.`).join(' ')}`;
+    if (r.events) $('guided-result-text').textContent += ` ${r.events.map(e => `${e.label} at ${e.t.toFixed(3)} s.`).join(' ')}`;
     const e = this.session.experiment;
     if (e.runs.length > 1) {
       $('guided-result-text').textContent = this.session.completed ? `All ${e.runs.length} runs observed at t = ${e.observationTime.toFixed(2)} s. Compare one changed variable while holding the others constant.` : `${this.session.results.length} of ${e.runs.length} runs observed at t = ${e.observationTime.toFixed(2)} s. Measurements are retained below.`;

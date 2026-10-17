@@ -1,0 +1,9 @@
+{
+  "name": "interactive-physics-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A browser-based Newton's Laws learning laboratory",
+  "scripts": { "dev": "node scripts/serve.js", "test": "node --test" },
+  "engines": { "node": ">=20" }
+}

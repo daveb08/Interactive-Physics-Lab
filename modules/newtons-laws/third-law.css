@@ -1,1 +1,27 @@
 .third-workspace{display:grid;grid-template-columns:245px minmax(0,1fr);gap:18px}.third-control-note{padding:0 20px 20px}.third-control-note button{margin-bottom:12px}.third-note{padding:14px 20px}.third-readouts{padding:0 20px}.third-readouts>p{margin:12px 0;font-size:13px}.third-readouts table{font-variant-numeric:tabular-nums}.third-diagrams,.third-graphs{margin-top:20px}.fbd-grid,.third-graph-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:12px 20px}.fbd-grid svg,.third-graph-grid svg,#two-carts{width:100%;display:block}.cart-a-key{color:#3c6cb2}.cart-b-key{color:#b65b25}.third-graphs .graph-unit{font-size:10px}.third-graphs .graph-tick{font-size:9px}#force-equality{font-weight:600;color:var(--teal)}@media(max-width:900px){.third-workspace{grid-template-columns:1fr}.third-workspace #settings{display:grid;grid-template-columns:1fr 1fr;gap:15px}.third-workspace .control{min-width:0}.third-workspace .controls>fieldset{padding:20px}.third-control-note .equation{margin-top:12px}.fbd-grid,.third-graph-grid{grid-template-columns:1fr}.third-readouts{padding:0 12px}}
+
+.fbd-learning{padding:20px}.fbd-learning p{margin:12px 0}.fbd-learning select{font:inherit;padding:10px;border:1px solid var(--line);border-radius:6px}.fbd-learning legend{margin:15px 0;font-weight:600}.fbd-learning input{min-width:20px;min-height:20px}.single-fbd{grid-template-columns:1fr;max-width:700px;margin:auto}.fbd-learning button:focus-visible,.fbd-learning select:focus-visible{outline:3px solid #ba622e;outline-offset:3px}#fbd-emphasis{font-weight:600;color:var(--teal)}
+
+/* Keep comparison beside the controls and directly under the animation. */
+.third-workspace>.controls{grid-row:1 / span 2}
+.third-workspace>.third-diagrams{grid-column:2;margin-top:0}
+.third-diagrams .fbd-grid{gap:8px;padding:0 12px}
+.third-diagrams .fbd-learning{padding:12px 20px}
+.third-diagrams .choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.third-diagrams .choices label{padding:10px;min-height:44px}
+.third-diagrams .transport{padding:8px 0}
+.third-diagrams .third-note{margin:0;padding:8px 20px}
+.fbd-grid svg{border:2px solid transparent;border-radius:8px}
+.fbd-grid svg.selected-cart{border-color:var(--teal)}
+.third-graphs>summary,.fbd-learning>summary{padding:16px;font-weight:600;cursor:pointer;min-height:44px}
+.third-diagrams button,.third-diagrams select{min-height:44px}
+.third-diagrams [hidden]{display:none!important}
+@media(max-width:900px){
+ .third-workspace>.controls{grid-row:auto}
+ .third-workspace>.third-diagrams{grid-column:1}
+ .third-diagrams .fbd-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:550px){
+ .third-diagrams .fbd-grid,.third-diagrams .choices{grid-template-columns:1fr}
+}
+.third-workspace>.controls{align-self:start}.third-diagrams button[type=submit]{background:var(--teal);color:white}.third-diagrams button:focus-visible,.third-graphs summary:focus-visible,.fbd-learning summary:focus-visible{outline:3px solid #ba622e;outline-offset:3px}

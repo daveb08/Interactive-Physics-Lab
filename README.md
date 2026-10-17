@@ -225,3 +225,40 @@ massless spring; a massive spring would need separate momentum accounting.
 Current suite: **63 passed, 0 failed** (`node --test`), including all 55 previous
 tests. See [THIRD_LAW_TEST_REPORT.md](THIRD_LAW_TEST_REPORT.md) for reference cases,
 browser verification, modified files, and limitations.
+
+## Interactive Third Law free-body diagrams
+
+Build the Free-Body Diagram is available in T1–T3 and Free Exploration.
+One Cart A/B selector chooses the proposal to edit; both verified diagrams
+appear directly below the animation (stacked on narrow screens). Select forces
+and press **Check diagram**. Checking pauses the simulation and evaluates the
+displayed time. Correct selections reveal the live diagram; incorrect selections
+offer **Try again** or **Reveal diagram** with targeted feedback.
+
+Weight and normal force balance on each cart. Spring force acts only during
+contact; friction is absent and the reaction force belongs on the other cart.
+Proposals are kept separately for each cart. Verified diagrams follow the live
+simulation, while feedback retains the checked time. Once both diagrams are
+revealed, expand the Third Law pair follow-up. Simulation Reset clears answers
+and restores initial contact.
+
+Essential force and acceleration comparisons stay visible. Expand **Explore
+the data** for detailed measurements and synchronized graphs. Horizontal arrows
+share a labeled scale; vertical arrows are schematic. Native controls support
+keyboard input and touch without dragging.
+
+Verification: **73 tests passed, 0 failed**. Tests cover force ownership,
+vertical balance, symmetry, separation, paused physics, reset, per-cart drafts,
+incorrect-answer disclosure, and the pair follow-up. Browser checks covered
+checking/revealing, pause, separation, reset, graphs, and a 768px tablet layout
+without horizontal overflow. No browser console errors were captured.
+
+Manual check: choose Free Exploration, select Weight, Normal force, and Spring
+interaction force for each cart, and check each diagram. Run to separation:
+horizontal arrows disappear. Retry with Weight and Normal only. Try friction
+or the other-cart reaction for feedback, then expand the pair question and
+Explore the data. Repeat in T1–T3.
+
+Limitations: responses are not persisted; physical iPads, Safari/Firefox, and
+screen readers have not been tested. The ideal massless-spring physics is
+unchanged. Updated preview: artifacts/fbd-simplified.jpg.

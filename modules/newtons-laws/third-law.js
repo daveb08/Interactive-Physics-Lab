@@ -1,3 +1,4 @@
+import { FbdActivity } from './fbd-activity.js';
 import { SimulationClock } from '../../js/core/clock.js';
 import { MotionGraph } from '../../js/components/graph.js';
 import { SpringView } from '../../js/components/spring-view.js';
@@ -12,12 +13,17 @@ const clock=new SimulationClock(()=>{
  stepSpringRun(session.run);
  if(session.run.done){clock.pause();$('status').textContent='Complete';$('message').textContent=session.run.reason==='boundary'?'Track limit reached: a cart’s outer edge is at ±50 m. Both carts stop being observed; their incident velocities are retained. No collision is simulated.':'6 seconds observed. The displayed state is the final measurement.';showResults();}
 },render);
+const fbd=new FbdActivity(()=>{if(clock.running)$('pause').click();});
+// Learning controls render independently even while the simulation is paused.
+for(const id of ['fbd-cart','force-choices','build-form','fbd-reveal','fbd-retry']) $(id).addEventListener(['build-form'].includes(id)?'submit':['fbd-cart','force-choices'].includes(id)?'change':'click',()=>render());
 function render(){
  const r=session.run,s=r.state,reveal=mode==='free'||session.started;
- $('view-note').textContent=`View: ±${view.render(r,reveal).toFixed(1)} m. Physical boundaries remain ±50 m; carts are drawn 1 m wide.`;
+ $('view-note').textContent=`View: ±${view.render(r,reveal,fbd.state.revealed).toFixed(1)} m. Physical boundaries remain ±50 m; carts are drawn 1 m wide.`;
+ fbd.render(r);
  $('time').textContent=`${s.t.toFixed(3)} s`;
  $('contact').textContent=s.interacting?'Interacting · spring compressed':'Separated · interaction ended';
  $('force-equality').textContent=reveal?`F on A = ${s.fA.toFixed(3)} N; F on B = ${s.fB.toFixed(3)} N. Sum = ${(s.fA+s.fB).toFixed(3)} N.`:'Observe the interaction force on each cart after starting.';
+ $('acceleration-comparison').textContent=reveal?`Acceleration: A ${s.aA.toFixed(3)} m/s² · B ${s.aB.toFixed(3)} m/s²`:'Acceleration comparisons appear after starting.';
  $('measurements').innerHTML=[['Position (m)','x'],['Velocity (m/s)','v'],['Force (N)','f'],['Acceleration (m/s²)','a']].map(([label,key])=>`<tr><th scope="row">${label}</th>${['A','B'].map(cart=>`<td>${reveal||['x','v'].includes(key)?s[key+cart].toFixed(3):'—'}</td>`).join('')}</tr>`).join('');
  $('momentum').textContent=reveal?`Total horizontal momentum: ${s.momentum.toFixed(6)} kg·m/s (initially zero).`:'Both carts start at rest. The system has no external horizontal force.';
  const events=r.events.filter(e=>e.t<=s.t);
@@ -28,8 +34,9 @@ function render(){
  $('pause').disabled=!clock.running;
 }
 function reset(){
- clock.reset();session=new ThirdLawSession(mode,$('activity-select').value,freeSettings);
+ clock.reset();fbd.reset();session=new ThirdLawSession(mode,$('activity-select').value,freeSettings);
  const e=session.experiment,r=session.run;
+ $('fbd-emphasis').hidden=mode!=='guided'||session.id!=='T3';
  for(const [key,unit] of Object.entries(units)){$(key).value=r[key];$(key+'-value').value=`${r[key]} ${unit}`;}
  $('settings').disabled=mode==='guided';$('defaults').hidden=mode!=='free';$('guided-panel').hidden=mode!=='guided';
  $('settings-note').textContent=mode==='guided'?'Guided conditions are locked. Switch to Free Exploration to adjust the spring and masses.':'Both carts start at rest. Reset to edit parameters; forces are always linked by the same spring.';

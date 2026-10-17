@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Forces That Change · Interactive Physics Lab</title><link rel="stylesheet" href="../../css/styles.css"><link rel="stylesheet" href="variable-forces.css"><script type="module" src="app.js"></script></head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header"><a class="brand" href="../../index.html"><span class="brand-icon" aria-hidden="true">↗</span> Interactive Physics Lab</a><a class="back-link" href="../../index.html">← All modules</a></header>
+<main id="main" class="lab">
+  <div class="lab-heading"><div><p class="eyebrow">MODULE 05 / CALCULUS &amp; ENGINEERING TIER</p><h1>Forces That Change</h1><p>When force depends on speed or position, motion is the solution of a differential equation.</p></div><span class="lab-tag"><span aria-hidden="true">●</span> Calculus-based</span></div>
+  <div class="experiment-heading">
+    <div class="mode-switch" role="group" aria-label="Scenario"><button id="scenario-drag" aria-pressed="true">Drag</button><button id="scenario-oscillator" aria-pressed="false">Spring and damper</button></div>
+    <div class="mode-switch" role="group" aria-label="Experiment experience"><button id="free-exploration" aria-pressed="true">Free Exploration</button><button id="guided-experiments" aria-pressed="false">Guided V1–V4</button></div>
+  </div>
+
+  <section id="guided-intro" class="panel guided-intro vf-guided" hidden aria-labelledby="guided-title">
+    <label for="guided-select">Choose an activity</label><select id="guided-select"></select>
+    <h2 id="guided-title"></h2><h3>Learning objective</h3><p id="guided-objective"></p>
+    <h3>Conditions · locked for this activity</h3><p id="guided-conditions"></p>
+    <form id="guided-prediction-form"><fieldset><legend id="guided-question"></legend><div id="guided-choices" class="choices"></div></fieldset><button type="submit">Save prediction</button><p id="guided-prediction-status" role="status">Save a prediction to unlock the experiment.</p></form>
+  </section>
+
+  <div class="workspace">
+    <aside class="panel controls"><div class="panel-heading"><h3>Experiment controls</h3><span>01</span></div>
+      <fieldset id="drag-settings"><legend class="sr-only">Drag settings</legend>
+        <div class="control"><label for="drag-law">Drag law</label><select id="drag-law" class="vf-select"><option value="linear">Linear: F_drag = −b v</option><option value="quadratic">Quadratic: F_drag = −c v²</option></select></div>
+        <div class="control"><label for="d-mass">Mass m <output id="d-mass-value">2 kg</output></label><input id="d-mass" type="range" min="1" max="10" step="0.5" value="2"></div>
+        <div class="control"><label for="d-force">Applied force F <output id="d-force-value">6 N</output></label><input id="d-force" type="range" min="0" max="20" step="0.5" value="6"></div>
+        <div class="control"><label for="d-v0">Initial velocity v₀ <output id="d-v0-value">0 m/s</output></label><input id="d-v0" type="range" min="0" max="10" step="0.5" value="0"></div>
+        <div class="control" id="d-b-control"><label for="d-b">Drag coefficient b <output id="d-b-value">2 kg/s</output></label><input id="d-b" type="range" min="0.1" max="5" step="0.1" value="2"></div>
+        <div class="control" id="d-c-control" hidden><label for="d-c">Drag coefficient c <output id="d-c-value">0.5 kg/m</output></label><input id="d-c" type="range" min="0.05" max="2" step="0.05" value="0.5"></div>
+        <p class="help">F ≥ 0 and v₀ ≥ 0, so the cart never reverses and both drag laws have exact solutions.</p>
+      </fieldset>
+      <fieldset id="osc-settings" hidden><legend class="sr-only">Spring and damper settings</legend>
+        <div class="control"><label for="o-mass">Mass m <output id="o-mass-value">1 kg</output></label><input id="o-mass" type="range" min="0.5" max="10" step="0.5" value="1"></div>
+        <div class="control"><label for="o-k">Spring constant k <output id="o-k-value">16 N/m</output></label><input id="o-k" type="range" min="1" max="50" step="1" value="16"></div>
+        <div class="control"><label for="o-b">Damping b <output id="o-b-value">1 kg/s</output></label><input id="o-b" type="range" min="0" max="20" step="0.1" value="1"></div>
+        <div class="control"><label for="o-x0">Initial displacement x₀ <output id="o-x0-value">0.5 m</output></label><input id="o-x0" type="range" min="-1" max="1" step="0.05" value="0.5"></div>
+        <div class="control"><label for="o-v0">Initial velocity v₀ <output id="o-v0-value">0 m/s</output></label><input id="o-v0" type="range" min="-3" max="3" step="0.1" value="0"></div>
+        <button type="button" id="set-critical" class="vf-small">Set critical damping</button>
+      </fieldset>
+      <div class="equation"><span id="ode-label">EQUATION OF MOTION</span><strong id="ode-short">m v′ = F − b v</strong><span id="ode-params"></span></div>
+      <p class="help" id="settings-help">Settings stay fixed during a run. Reset to change them.</p>
+    </aside>
+
+    <section class="panel simulation" aria-labelledby="simulation-title"><div class="panel-heading"><h3 id="simulation-title">The experiment</h3><span class="status" id="run-status" role="status">Ready</span></div>
+      <div class="scene"><svg id="scene" viewBox="0 0 780 275" role="img" aria-label="Experiment scene"></svg></div>
+      <div class="readouts"><div><span>Time</span><strong><output id="r-t">0.00</output> <small>s</small></strong></div><div><span>Position</span><strong><output id="r-x">0.00</output> <small>m</small></strong></div><div><span>Velocity</span><strong><output id="r-v">0.00</output> <small>m/s</small></strong></div><div><span>Acceleration</span><strong><output id="r-a">0.00</output> <small>m/s²</small></strong></div></div>
+      <dl class="vf-params" id="params"></dl>
+      <div id="energy" class="vf-energy" hidden><p class="vf-energy-title">Energy · total at release <output id="e0"></output> J</p><div class="vf-bar" role="img" id="energy-bar" aria-label="Energy split"><span class="ke"></span><span class="pe"></span><span class="lost"></span></div><p class="vf-energy-key"><span class="ke-key">■ Kinetic <output id="e-ke"></output> J</span><span class="pe-key">■ Spring <output id="e-pe"></output> J</span><span class="lost-key">■ Removed by damper <output id="e-lost"></output> J</span></p></div>
+      <div class="transport"><button id="start" class="primary">▶ Start</button><button id="pause" disabled>Pause</button><button id="reset">↺ Reset</button><button id="defaults">Defaults</button></div>
+      <p id="run-message" class="run-message" role="status"></p>
+      <div class="track-note"><strong>Model</strong><p id="model-note"></p></div>
+    </section>
+
+    <section class="panel graphs" aria-labelledby="graphs-title"><div class="panel-heading"><h3 id="graphs-title">Motion graphs</h3><span>LIVE</span></div><p class="graph-help">Axes are fixed to the exact solution for the whole run.</p>
+      <svg id="g-x" viewBox="0 0 400 165" role="img"></svg><svg id="g-v" viewBox="0 0 400 165" role="img"></svg><svg id="g-a" viewBox="0 0 400 165" role="img"></svg></section>
+  </div>
+
+  <div class="vf-tools">
+    <section class="panel vf-math" aria-labelledby="math-title"><div class="panel-heading"><h3 id="math-title">Show the math</h3><label class="vf-toggle"><input type="checkbox" id="math-on" checked> On</label></div>
+      <div id="math-body" class="vf-body">
+        <p class="vf-eq" id="math-ode"></p>
+        <p class="vf-eq" id="math-solution"></p>
+        <label for="scrub" class="vf-scrub-label">Inspect time t* <output id="scrub-value">0.00 s</output></label>
+        <input type="range" id="scrub" min="0" max="1" step="0.001" value="0" class="vf-scrub" aria-describedby="scrub-help">
+        <p class="help" id="scrub-help">Follows the run while it plays; drag to inspect any time already observed.</p>
+        <table class="vf-table"><tbody>
+          <tr><th scope="row">Slope of x(t) at t*</th><td><output id="m-slope-x"></output> m/s</td><td>= v(t*) <output id="m-v"></output> m/s</td></tr>
+          <tr><th scope="row">Slope of v(t) at t*</th><td><output id="m-slope-v"></output> m/s²</td><td>= a(t*) <output id="m-a"></output> m/s²</td></tr>
+          <tr><th scope="row">Area under v(t), 0 → t*</th><td><output id="m-area-v"></output> m</td><td>= Δx <output id="m-dx"></output> m</td></tr>
+          <tr><th scope="row">Area under a(t), 0 → t*</th><td><output id="m-area-a"></output> m/s</td><td>= Δv <output id="m-dv"></output> m/s</td></tr>
+        </tbody></table>
+        <p class="help">Slopes are measured from the curves by finite differences and areas by the trapezoid rule over the recorded samples; the right-hand column is the exact solution. Tangents appear on the x and v graphs; shaded areas on the v and a graphs.</p>
+      </div>
+    </section>
+
+    <section class="panel vf-numeric" aria-labelledby="num-title"><div class="panel-heading"><h3 id="num-title">Numerical methods</h3><span>vs EXACT</span></div>
+      <div class="vf-body">
+        <fieldset id="method-fields"><legend>Overlay on the x and v graphs</legend>
+          <label><input type="checkbox" name="method" value="euler"> <span class="m-euler">Euler</span></label>
+          <label><input type="checkbox" name="method" value="semiImplicit"> <span class="m-semi">Semi-implicit Euler</span></label>
+          <label><input type="checkbox" name="method" value="rk4"> <span class="m-rk4">RK4</span></label>
+        </fieldset>
+        <label for="step-size" class="vf-inline">Step size h <select id="step-size" class="vf-select"><option>0.5</option><option>0.2</option><option selected>0.1</option><option>0.05</option><option>0.01</option></select> s</label>
+        <svg id="g-err" viewBox="0 0 400 165" role="img" aria-label="Error versus time"></svg>
+        <svg id="g-energy" viewBox="0 0 400 165" role="img" aria-label="Total energy versus time" hidden></svg>
+        <p class="help" id="num-help">Error = |x_numerical − x_exact|. Halve h and watch how far each curve drops: about 2× for Euler, 16× for RK4.</p>
+        <button type="button" id="csv" class="vf-small">⬇ Download CSV</button>
+        <p class="help">Exact samples every 0.01 s for the whole run, plus the selected methods at their own steps. Open in MATLAB with <code>readtable</code> or in Python with <code>pandas.read_csv</code>.</p>
+      </div>
+    </section>
+  </div>
+
+  <section id="guided-results" class="panel vf-results" hidden aria-live="polite"><h2>Results</h2><p id="guided-verdict" class="feedback"></p><div id="guided-sections"></div></section>
+  <section id="reflection-panel" class="panel reflection vf-results" hidden aria-labelledby="reflection-title"><h2 id="reflection-title">Reflect on the evidence</h2><form id="reflection-form"><label id="reflection-question" for="reflection-answer"></label><textarea id="reflection-answer" rows="4" required maxlength="5000"></textarea><p class="help">Not graded or saved.</p><button type="submit">Submit explanation</button></form><section id="model-answer-panel" hidden><h3>Instructor-authored model answer</h3><p id="model-answer"></p></section></section>
+  <p class="lab-footnote">One-dimensional motion, SI units. Drag scenario: F ≥ 0 and v₀ ≥ 0; observation ends at 10 s or x = 50 m. Spring scenario: ideal massless spring and linear damper on a frictionless floor; observation 20 s. All curves are evaluated from exact solutions; numerical methods are shown only for comparison.</p>
+</main><footer>Interactive Physics Lab<span>Forces That Change · Module 05</span></footer>
+</body></html>

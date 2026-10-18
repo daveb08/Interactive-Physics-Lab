@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Create a Solve it problem · Interactive Physics Lab</title><link rel="stylesheet" href="../../css/styles.css"><link rel="stylesheet" href="../variable-forces/variable-forces.css"><link rel="stylesheet" href="author.css"><script type="module" src="author.js"></script></head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header"><a class="brand" href="../../index.html"><span class="brand-icon" aria-hidden="true">↗</span> Interactive Physics Lab</a><a class="back-link" href="solve.html">← Back to Solve it</a></header>
+<main id="main" class="lab author">
+  <div class="lab-heading"><div><p class="eyebrow">FOR INSTRUCTORS</p><h1>Create a Solve it problem</h1><p>Write the problem, the Step 1 cards and the solution blocks. Share it with students as a link or a file. No accounts, nothing uploaded: the problem lives in the link or file you share.</p></div></div>
+
+  <section class="panel author-section" aria-labelledby="start-title">
+    <h2 id="start-title">Start</h2>
+    <div class="author-row">
+      <label>Start from <select id="template" class="vf-select"><option value="">— choose —</option><option value="blank">Blank problem</option></select></label>
+      <label class="solve-file">📂 Open a problem file<input type="file" id="open-file" accept=".json,application/json"></label>
+      <button type="button" id="start-over">Start over</button>
+    </div>
+    <p class="help" id="draft-note">Your work is saved in this browser as you type.</p>
+  </section>
+
+  <section class="panel author-section" aria-labelledby="p-title"><h2 id="p-title">1 · Problem</h2><div id="sec-problem" class="author-grid"></div></section>
+  <section class="panel author-section" aria-labelledby="sim-title">
+    <h2 id="sim-title">2 · Simulation</h2>
+    <p class="help">Students see a cart (or the figure you choose) moving on a level track under a constant applied force, with optional friction. The simulation checks your numerical answers.</p>
+    <div id="sec-sim" class="author-grid"></div>
+    <p id="engine-readout" class="feedback author-readout" role="status"></p>
+    <details class="author-details"><summary>Scene options (figure, labels, zoom)</summary><div id="sec-scene" class="author-grid"></div></details>
+  </section>
+  <section class="panel author-section" aria-labelledby="q-title">
+    <h2 id="q-title">3 · Step 1 cards: knowns and unknowns</h2>
+    <p class="help">Each card belongs in Knowns, Unknowns or neither box. “Neither” cards are traps: write feedback saying why.</p>
+    <div id="sec-cards"></div><button type="button" id="add-card">+ Add card</button>
+  </section>
+  <section class="panel author-section" aria-labelledby="s-title">
+    <h2 id="s-title">4 · Step 2: solution steps and blocks</h2>
+    <p class="help">Each step has one correct block and any number of wrong blocks. Wrong blocks need misconception feedback. Optionally, give a wrong block the acceleration or v₀ it implies so the ghost shows that motion, and give blocks a numerical answer to plot on the graphs.</p>
+    <div id="sec-steps"></div><button type="button" id="add-step">+ Add step</button>
+  </section>
+  <section class="panel author-section" aria-labelledby="c-title">
+    <h2 id="c-title">5 · Check and share</h2>
+    <div id="check-list" role="status"></div>
+    <div id="engine-check"></div>
+    <div class="author-row author-share">
+      <button type="button" id="preview" class="primary">▶ Preview in Solve it</button>
+      <button type="button" id="copy-link">🔗 Copy student link</button>
+      <button type="button" id="download">⬇ Download .json</button>
+    </div>
+    <label class="author-link-label" for="share-link">Student link (paste into Canvas)</label>
+    <input id="share-link" class="author-link" readonly placeholder="Fix any problems above to create the link.">
+    <p class="help" id="share-status" role="status"></p>
+  </section>
+</main><footer>Interactive Physics Lab<span>Solve it · Problem editor</span></footer>
+</body></html>

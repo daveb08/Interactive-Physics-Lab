@@ -4,6 +4,7 @@ import { CartView } from '../../js/components/cart.js';
 import { CalcGraph } from '../../js/components/calc-graph.js';
 import { PROBLEMS, PROBLEM_IDS } from './solve-problems.js';
 import { figureMarkup } from './solve-figures.js';
+import { decodeProblem, parseProblemJson } from './problem-format.js';
 import { checkSolution, checkQuantities, studentModel, shuffled, correctOrder, correctPlacement, revealAfter } from './solve-check.js';
 
 const $ = id => document.getElementById(id);
@@ -58,7 +59,9 @@ const graphs = {
   v: new CalcGraph($('g-v'), 'v', 'Velocity v', 'm/s', '#236d62'),
   a: new CalcGraph($('g-a'), 'a', 'Acceleration a', 'm/s²', '#b65b25'),
 };
-const problem = () => PROBLEMS[state.id];
+// Built-in problems plus any shared problem opened from a link or file (id 'C').
+const REGISTRY = { ...PROBLEMS };
+const problem = () => REGISTRY[state.id];
 const block = id => problem().blocks.find(b => b.id === id);
 const quantity = id => problem().quantities.find(q => q.id === id);
 
@@ -84,12 +87,42 @@ function disarm(button) {
 /* ---------- problem ---------- */
 for (const id of PROBLEM_IDS) { const o = document.createElement('option'); o.value = id; o.textContent = `${id} — ${PROBLEMS[id].title}`; $('problem-select').append(o); }
 
+/** Add (or replace) the shared problem and switch to it. */
+function addShared(p, source) {
+  REGISTRY.C = p;
+  let o = $('problem-select').querySelector('option[value="C"]');
+  if (!o) { o = document.createElement('option'); o.value = 'C'; $('problem-select').prepend(o); }
+  o.textContent = `★ ${p.title} (${source})`;
+  $('problem-select').value = 'C';
+  showShareNote('', false);
+  loadProblem('C');
+}
+function showShareNote(text, isError) {
+  const n = $('share-note'); n.hidden = !text; n.textContent = text; n.classList.toggle('unsolved', !!isError);
+}
+async function loadFromHash() {
+  const m = location.hash.match(/[#&]p=([^&]+)/);
+  if (!m) return false;
+  const { problem: p, errors } = await decodeProblem(m[1]);
+  if (errors) { showShareNote(`Could not open the shared problem: ${errors[0]}`, true); return false; }
+  addShared(p, 'shared link'); return true;
+}
+$('load-file').addEventListener('change', async e => {
+  const file = e.target.files?.[0]; if (!file) return;
+  if (file.size > 200000) { showShareNote('That file is too large to be a Solve it problem.', true); return; }
+  const { problem: p, errors } = parseProblemJson(await file.text());
+  e.target.value = '';
+  if (errors) showShareNote(`Could not open “${file.name}”: ${errors.slice(0, 3).join(' ')}`, true);
+  else addShared(p, 'from file');
+});
+window.addEventListener('hashchange', () => { loadFromHash(); });
+
 function loadProblem(id) {
   Object.assign(state, { id, placement: {}, qOrder: [], qAttempts: 0, qCheck: null, unlocked: false, qRevealed: false, revealed: false, revealedBefore: false, solution: [], attempts: 0, check: null });
   const p = problem();
   state.qbank = shuffled(p.quantities.map(q => q.id), Date.now());
   state.bank = shuffled(p.blocks.map(b => b.id), Date.now() + 1);
-  $('problem-title').textContent = `${id} — ${p.title}`;
+  $('problem-title').textContent = id === 'C' ? p.title : `${id} — ${p.title}`;
   $('problem-statement').textContent = p.statement;
   applyFigure();
   $('check-summary').hidden = true; $('q-summary').hidden = true; $('compare').hidden = true;
@@ -410,3 +443,4 @@ function showCompare() {
 
 document.addEventListener('visibilitychange', () => { if (document.hidden) clock.pause(); });
 loadProblem(state.id);
+loadFromHash();

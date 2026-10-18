@@ -321,7 +321,9 @@ Spec: [docs/specs/solve-it.md](docs/specs/solve-it.md); original idea: [docs/ide
   shown with the attempt count. Any order that respects step dependencies is accepted.
 - **Figures:** problems can name a scene figure (`figure: 'sprinter' | 'pallet'` in the data, drawn by
   `solve-figures.js`); S3 shows a running sprinter on a track, S4 a worker pushing a brick pallet on concrete. The
-  ghost uses a dashed outline of the same figure. S1/S2 keep the cart.
+  ghost uses a dashed outline of the same figure. S1/S2 keep the cart. A problem may set `view: { min, max }` to zoom
+  the track display (S3: −2 to 14 m, S4: −2 to 8 m; physics unchanged); a ghost outside the view is pinned at the
+  edge with its position.
 - **Run:** the true motion runs on the track; if the student's blocks imply a different model (wrong
   acceleration or ignored v₀), a dashed ghost cart and dashed graph curves show that model. ✕ marks plot the
   student's numerical answers; a table compares them with the simulation.

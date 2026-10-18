@@ -12,15 +12,36 @@ export class CartView {
       <path d="M70 203H710" class="rail"/><path d="M70 207H710" class="axis"/>
       <g class="ticks">${ticks}</g><path d="M390 65V200" class="origin"/>
       <path d="M70 178v25M710 178v25" class="limit"/>
-      <text x="390" y="269" class="scene-note">Position x (m) · origin at center · positive to the right →</text>
+      <text x="390" y="269" class="scene-note axis-note">Position x (m) · origin at center · positive to the right →</text>
       <g id="cart"><rect x="-24" y="158" width="48" height="32" rx="6" class="cart-body"/><path d="M-16 166H16" class="cart-highlight"/><circle cx="-14" cy="195" r="7" class="wheel"/><circle cx="14" cy="195" r="7" class="wheel"/><text id="cart-mass" y="180" class="cart-mass"></text><path id="force-arrow" class="force-arrow" marker-end="url(#force-tip)"/><text id="force-label" y="120" class="force-label"></text><g id="extra-forces"><path id="friction-arrow" class="friction-arrow" marker-end="url(#friction-tip)"/><text id="friction-label" class="friction-label" y="105"></text><path id="net-arrow" class="net-arrow" marker-end="url(#net-tip)"/><text id="net-label" class="net-label" y="135"></text></g></g>`;
     this.cart = svg.querySelector('#cart');
     this.arrow = svg.querySelector('#force-arrow');
     this.label = svg.querySelector('#force-label');
     this.mass = svg.querySelector('#cart-mass');
+    this.view = TRACK;
+    this.defaultTicks = svg.querySelector('.ticks').innerHTML;
+  }
+  /** Map positions onto the scene. Default is the full ±50 m track; a narrower view zooms in (display only). */
+  toPx(x) { return 70 + (x - this.view.min) / (this.view.max - this.view.min) * 640; }
+  setView(view = TRACK) {
+    this.view = view;
+    const full = view.min === TRACK.min && view.max === TRACK.max, q = s => this.svg.querySelector(s);
+    if (full) q('.ticks').innerHTML = this.defaultTicks;
+    else {
+      const span = view.max - view.min, step = [0.5, 1, 2, 5, 10].find(s => span / s <= 12) ?? 10;
+      let html = '';
+      for (let v = Math.ceil(view.min / step) * step; v <= view.max + 1e-9; v += step) {
+        const x = this.toPx(v);
+        html += `<path d="M${x} 207v9"/><text x="${x}" y="239">${+v.toFixed(2)}</text>`;
+      }
+      q('.ticks').innerHTML = html;
+    }
+    q('.origin').setAttribute('d', `M${this.toPx(0)} 65V200`);
+    q('.limit').style.display = full ? '' : 'none';   // ±50 m ends are off-screen in a zoomed view
+    q('.axis-note').textContent = full ? 'Position x (m) · origin at center · positive to the right →' : `Position x (m) · zoomed view ${view.min} to ${view.max} m · positive to the right →`;
   }
   render(run, { reveal = true } = {}) {
-    const px = 70 + (run.state.x - TRACK.min) / (TRACK.max - TRACK.min) * 640;
+    const px = this.toPx(run.state.x);
     this.cart.setAttribute('transform', `translate(${px} 0)`);
     // Capped so large forces (e.g. 350 N in applied problems) stay on screen; ≤ 20 N is unchanged.
     const length = Math.sign(run.force) * Math.min(22 + Math.abs(run.force) * 2, 140);

@@ -98,7 +98,7 @@ export const PROBLEMS = Object.freeze({
   },
   S3: {
     title: 'Sprinter’s start (exercise science)',
-    figure: 'sprinter', surface: 'RUNNING TRACK · SPRINTER MODELED AS ONE OBJECT', label: '70 kg',
+    figure: 'sprinter', view: { min: -2, max: 14 }, surface: 'RUNNING TRACK · SPRINTER MODELED AS ONE OBJECT', label: '70 kg',
     statement: 'A 70 kg sprinter starts from rest in the blocks. For the first 1.5 s, the track pushes her forward with an average horizontal force of 350 N. Treat her as a single object moving in a straight line. Find her acceleration, her speed at 1.5 s and the distance she covers in that time.',
     setup: { mass: 70, force: 350, velocity: 0 },
     targetTime: 1.5,
@@ -136,7 +136,7 @@ export const PROBLEMS = Object.freeze({
   },
   S4: {
     title: 'Pushing a pallet (construction management)',
-    figure: 'pallet', surface: 'CONCRETE FLOOR · μs = 0.30, μk = 0.25', label: '120 kg',
+    figure: 'pallet', view: { min: -2, max: 8 }, surface: 'CONCRETE FLOOR · μs = 0.30, μk = 0.25', label: '120 kg',
     statement: 'A worker pushes a 120 kg pallet of bricks across a level concrete floor with a constant horizontal force of 400 N. For pallet on concrete, μs = 0.30 and μk = 0.25. The pallet starts from rest and slides. Find the normal force, the friction force while sliding, the net force, the acceleration and the pallet’s speed after 2.0 s. Use g = 9.81 m/s².',
     setup: { mass: 120, force: 400, velocity: 0, frictionEnabled: true, muS: 0.3, muK: 0.25 },
     targetTime: 2,

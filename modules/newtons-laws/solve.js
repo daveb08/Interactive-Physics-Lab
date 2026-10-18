@@ -39,6 +39,7 @@ const CART_PARTS = '.cart-body, .cart-highlight, .wheel, #cart-mass';
 let lastPhase = -1;
 function applyFigure() {
   const p = problem(), custom = !!p.figure;
+  cart.setView(p.view);
   for (const el of cartGroup.querySelectorAll(CART_PARTS)) el.style.display = custom ? 'none' : '';
   figure.innerHTML = custom ? figureMarkup(p.figure) : '';
   figureLabel.textContent = custom ? p.label : '';
@@ -366,7 +367,15 @@ function render() {
       if (phase !== lastPhase) { figure.innerHTML = figureMarkup('sprinter', { phase }); lastPhase = phase; }
     }
   }
-  if (ghostRun) { ghost.style.display = ''; ghost.setAttribute('transform', `translate(${70 + (ghostRun.state.x + 50) / 100 * 640} 0)`); }
+  if (ghostRun) {
+    ghost.style.display = '';
+    const gx = ghostRun.state.x, v = cart.view, off = gx > v.max ? 1 : gx < v.min ? -1 : 0;
+    // Off the zoomed view: pin the ghost at the edge and say where the student's model went.
+    const shown = off > 0 ? v.max : off < 0 ? v.min : gx;
+    ghost.setAttribute('transform', `translate(${cart.toPx(shown)} 0)`);
+    const lbl = ghost.querySelector('text');
+    if (lbl) { lbl.textContent = off ? `your model ${off > 0 ? '→' : '←'} ${gx.toFixed(1)} m` : 'your model'; lbl.setAttribute('text-anchor', off > 0 ? 'end' : off < 0 ? 'start' : 'middle'); }
+  }
   else ghost.style.display = 'none';
   $('r-t').textContent = s.t.toFixed(2); $('r-x').textContent = fmt(s.x); $('r-v').textContent = fmt(s.v); $('r-a').textContent = fmt(trueRun.a);
   const checked = !!state.check;

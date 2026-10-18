@@ -5,7 +5,7 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header"><a class="brand" href="../../index.html"><span class="brand-icon" aria-hidden="true">↗</span> Interactive Physics Lab</a><a class="back-link" href="solve.html">← Back to Solve it</a></header>
 <main id="main" class="lab author">
-  <div class="lab-heading"><div><p class="eyebrow">FOR INSTRUCTORS</p><h1>Create a Solve it problem</h1><p>Write the problem, the Step 1 cards and the solution blocks. Share it with students as a link or a file. No accounts, nothing uploaded: the problem lives in the link or file you share.</p></div></div>
+  <div class="lab-heading"><div><p class="eyebrow">FOR INSTRUCTORS</p><h1>Detailed problem editor</h1><p><a href="build.html">← Back to the picture builder</a>, the quicker way to make a problem. Here you can edit every word: write the problem, the Step 1 cards and the solution blocks. Share it with students as a link or a file. No accounts, nothing uploaded: the problem lives in the link or file you share.</p></div></div>
 
   <section class="panel author-section" aria-labelledby="start-title">
     <h2 id="start-title">Start</h2>
@@ -23,6 +23,10 @@
     <p class="help">Students see a cart (or the figure you choose) moving on a level track under a constant applied force, with optional friction. The simulation checks your numerical answers.</p>
     <div id="sec-sim" class="author-grid"></div>
     <p id="engine-readout" class="feedback author-readout" role="status"></p>
+    <details class="author-details" open><summary>Placeholders: keep text in sync with these settings</summary>
+      <p class="help">Type a placeholder such as <code>{v0}</code> or <code>{a}</code> in any statement, card, block or feedback. Students see the current value, so changing a setting updates the text everywhere. Use plain numbers where you want a fixed value (for example, the wrong number in a trap card). A plotted answer left blank also uses the simulation’s value.</p>
+      <table class="vf-table ph-table"><thead><tr><th>Placeholder</th><th>Meaning</th><th>Now</th></tr></thead><tbody id="ph-table"></tbody></table>
+    </details>
     <details class="author-details"><summary>Scene options (figure, labels, zoom)</summary><div id="sec-scene" class="author-grid"></div></details>
   </section>
   <section class="panel author-section" aria-labelledby="q-title">
@@ -42,7 +46,7 @@
     <div class="author-row author-share">
       <button type="button" id="preview" class="primary">▶ Preview in Solve it</button>
       <button type="button" id="copy-link">🔗 Copy student link</button>
-      <button type="button" id="download">⬇ Download .json</button>
+      <button type="button" id="download" title="The file keeps your placeholders so you can edit it later">⬇ Download .json</button>
     </div>
     <label class="author-link-label" for="share-link">Student link (paste into Canvas)</label>
     <input id="share-link" class="author-link" readonly placeholder="Fix any problems above to create the link.">

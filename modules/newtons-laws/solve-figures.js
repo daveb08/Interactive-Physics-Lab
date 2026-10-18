@@ -40,8 +40,15 @@ function pallet(ghost) {
   return worker + bricks + deck;
 }
 
+function crate(ghost) {
+  if (ghost) return `<rect x="-24" y="165" width="48" height="38" rx="2" fill="none" stroke="#ba622e" stroke-width="2.5" stroke-dasharray="5 3"/>`;
+  return `<rect x="-24" y="165" width="48" height="38" rx="2" fill="#c8a066" stroke="#8b6a3e" stroke-width="2"/>
+    <path d="M-24 177.5H24M-24 190.5H24" stroke="#8b6a3e" stroke-width="1.2"/><path d="M-22 167L22 201M22 167L-22 201" stroke="#8b6a3e" stroke-width="2"/>`;
+}
+
 export function figureMarkup(kind, { phase = 0, ghost = false } = {}) {
   if (kind === 'sprinter') return sprinter(phase, ghost);
   if (kind === 'pallet') return pallet(ghost);
+  if (kind === 'crate') return crate(ghost);
   return null; // default: the CartView cart
 }

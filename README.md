@@ -333,13 +333,33 @@ Spec: [docs/specs/solve-it.md](docs/specs/solve-it.md); original idea: [docs/ide
   answers vs the physics engine, valid/commuting orders, out-of-order and flawed-prerequisite feedback,
   distractors, missing/duplicate steps, ghost model, shuffle).
 
-Verification: `node --test` → 123 passed, 0 failed. Browser (Chromium): reveal flow for both steps, Step 1 wrong then correct sort, unlock, wrong then correct S1 attempts, keyboard
+Verification: `node --test` → 127 passed, 0 failed. Browser (Chromium): reveal flow for both steps, Step 1 wrong then correct sort, unlock, wrong then correct S1 attempts, keyboard
 entry, reordering, S2 with distractors, no console errors, no page-wide overflow at 390 px; existing Newton's
 Laws pages load with the new tab. Not yet tested on physical phones/tablets, Safari/Firefox or a screen reader.
 
-## Problem editor for instructors (Solve it)
+## Problem builder for instructors (Solve it)
 
-Open `/modules/newtons-laws/author.html` (link: **✎ Create your own problem** on the Solve it page). Instructors
+Open `/modules/newtons-laws/build.html` (link: **✎ Create your own problem** on the Solve it page). The builder shows
+the situation as a picture: the object on the floor or track at t = 0 and later, its velocity and acceleration, and a
+free-body diagram (N, W, F, f and the net force). Click any label to type its value and choose **Given in the
+problem**, **Students find** or **Leave out**. Values that are results (a, v, x, F_net, N, f, stopping time and
+distance) can be typed too: the builder changes the setting that produces them (the push, the mass or μk), and keeps
+values the problem states fixed when another value changes.
+
+From the picture the builder writes the problem statement, the Step 1 cards (knowns, unknowns and trap cards) and
+the Step 2 solution: one step per quantity students must work out, in a valid order, each with its correct block
+and up to two common-mistake blocks with feedback, ghost settings and plotted answers. Every number comes from the
+same physics as the simulation. If students could not work something out from what is given, it says what to add.
+
+**Paste a written problem** reads numbers with units, μs/μk, "from rest", the object and what the question asks for
+into the picture; the instructor's wording is kept, and changing a value in the picture updates that number in it.
+**Fine-tune in the detailed editor** opens the result in the full editor below. Code: `problem-builder.js` (pure,
+tested in `tests/builder.test.js`, including randomized checks against the engine) and `build.html/js/css`.
+Level surfaces only for now; a ramp adds the angle to `physics()` and rules that use it.
+
+## Detailed problem editor for instructors (Solve it)
+
+Open `/modules/newtons-laws/author.html` (link: **Detailed editor →** in the builder). Instructors
 write a Solve it problem in a form, with no repo edits and no accounts:
 
 1. **Problem:** title and statement. Start blank, copy S1–S4 as a template, or open a saved `.json` file.
@@ -354,6 +374,13 @@ write a Solve it problem in a form, with no repo edits and no accounts:
    against the simulation (a, v, x, key times, and applied / normal / friction / net forces), and flag blocks the
    simulation cannot check; plotted answers are checked against the physics engine
    (✓ / ✗ with the simulated value). **Preview in Solve it**, **Copy student link**, **Download .json**.
+
+**Placeholders** keep text in sync with the settings: write `{m}`, `{F}`, `{v0}`, `{muS}`, `{muK}`, `{g}`, `{t}`, or
+simulation results `{a}`, `{v}`, `{x}` (at the target time), `{v@2}` (any time), `{N}`, `{W}`, `{f}`, `{Fnet}`, `{fmax}`,
+`{tstop}` in any statement, card, block or feedback. The editor shows a live "Students see:" preview and a table of
+current values. A plotted answer left blank takes the simulation's value. Downloaded `.json` keeps the placeholders
+(for later editing); student links carry the filled-in values. Friction in authored problems must satisfy
+0 ≤ μk < μs ≤ 1 (static strictly greater than kinetic), enforced with an inline message.
 
 The **student link** carries the whole problem in the URL fragment (deflate-compressed, base64url; about 2 KB for a
 typical problem), so it works from Canvas with nothing uploaded anywhere. Students can also use **📂 Load problem

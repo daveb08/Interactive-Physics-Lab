@@ -5,12 +5,21 @@
 import { createRun, sampleAt, GRAVITY } from '../../js/core/physics.js';
 import { correctOrder } from './solve-check.js';
 
-export const FIGURES = ['cart', 'sprinter', 'pallet'];
+export const FIGURES = ['cart', 'sprinter', 'pallet', 'crate'];
 export const ANSWER_KEYS = { a: 'acceleration (m/s²)', v: 'velocity (m/s)', x: 'position (m)' };
 const LIMITS = { title: 120, statement: 2000, text: 300, feedback: 600, step: 60, noun: 20, label: 20, surface: 80, steps: 10, blocks: 40, quantities: 30 };
 
 const isStr = (v, max, min = 1) => typeof v === 'string' && v.trim().length >= min && v.length <= max;
 const isNum = v => typeof v === 'number' && Number.isFinite(v);
+
+/** Friction rule for authored problems: 0 ≤ μk < μs ≤ 1 (static strictly greater than kinetic). Null when fine. */
+export function frictionError(muS, muK) {
+  if (!isNum(muS) || !isNum(muK)) return 'Enter both friction coefficients (numbers from 0 to 1).';
+  if (muS > 1 || muK > 1) return 'Friction coefficients must be at most 1.';
+  if (muS < 0 || muK < 0) return 'Friction coefficients cannot be negative.';
+  if (muS <= muK) return `The static coefficient μs (${muS}) must be greater than the kinetic coefficient μk (${muK}).`;
+  return null;
+}
 
 /** Returns a list of human-readable problems with the problem (empty = valid). */
 export function validateProblem(p) {
@@ -27,7 +36,8 @@ export function validateProblem(p) {
     if (!isNum(s.force) || Math.abs(s.force) > 100000) err('Applied force must be a number (newtons).');
     if (!isNum(s.velocity) || Math.abs(s.velocity) > 1000) err('Initial velocity must be a number (m/s).');
     if (s.frictionEnabled) {
-      if (!isNum(s.muK) || !isNum(s.muS) || s.muK < 0 || s.muS < s.muK || s.muS > 1) err('Friction coefficients must satisfy 0 ≤ μk ≤ μs ≤ 1.');
+      const fe = frictionError(s.muS, s.muK);
+      if (fe) err(fe);
     }
   }
   if (!isNum(p.runTime) || p.runTime <= 0 || p.runTime > 30) err('Simulation length must be between 0 and 30 s.');
@@ -74,7 +84,7 @@ export function validateProblem(p) {
     }
     if (b?.answer !== undefined) {
       const a = b.answer;
-      if (!a || !(a.key in ANSWER_KEYS) || !isNum(a.t) || a.t < 0 || !isNum(a.value)) err(`${n}: the plotted answer needs a quantity (a, v or x), a time ≥ 0 and a value.`);
+      if (!a || !(a.key in ANSWER_KEYS) || !isNum(a.t) || a.t < 0 || !isNum(a.value)) err(`${n}: the plotted answer needs a quantity (a, v or x), a time ≥ 0, and a value (leave the value blank to use the simulation’s).`);
     }
   });
   for (const k of stepKeys) {
@@ -145,16 +155,89 @@ export async function decodeProblem(code) {
     let bytes = unb64url(code.slice(1));
     if (code[0] === 'z') bytes = await pipe(bytes, new DecompressionStream('deflate-raw'));
     else if (code[0] !== 'j') return { errors: ['This link is not a Solve it problem.'] };
-    return parseProblemJson(new TextDecoder().decode(bytes));
+    const res = parseProblemJson(new TextDecoder().decode(bytes));
+    return res.errors ? { errors: res.errors } : res;
   } catch { return { errors: ['This problem link is damaged or incomplete. Ask your instructor for a new link.'] }; }
 }
 
 export function parseProblemJson(text) {
   let raw;
   try { raw = JSON.parse(text); } catch { return { errors: ['The file is not valid JSON.'] }; }
-  const problem = cleanProblem(raw);
-  const errors = validateProblem(problem);
-  return errors.length ? { errors } : { problem };
+  const res = prepareProblem(cleanProblem(raw));
+  return res.errors ? { errors: res.errors } : res;
+}
+
+/** Clean → fill placeholders → validate. Used by the editor, links and files alike. */
+export function prepareProblem(raw) {
+  const { problem, errors: phErrors } = resolveProblem(raw);
+  const errors = [...phErrors, ...validateProblem(problem)];
+  return errors.length ? { errors, problem } : { problem };
+}
+
+/* ---------- Placeholders: {v0}, {a}, {v@2} … filled from the settings and the simulation ---------- */
+export const PLACEHOLDERS = [
+  ['m', 'mass (kg)'], ['F', 'applied force (N)'], ['v0', 'initial velocity (m/s)'], ['muS', 'μs'], ['muK', 'μk'],
+  ['g', 'g = 9.81 m/s²'], ['t', 'target time (s)'],
+  ['a', 'acceleration at the target time'], ['v', 'velocity at the target time'], ['x', 'position at the target time'],
+  ['N', 'normal force'], ['W', 'weight'], ['f', 'friction force (signed)'], ['Fnet', 'net force (signed)'], ['fmax', 'max static friction μs N'],
+  ['tstop', 'time the object stops (if it does)'],
+  ['v@T', 'velocity at time T, e.g. {v@2}'], ['x@T', 'position at time T'], ['a@T', 'acceleration at time T'],
+];
+const TOKEN = /\{([A-Za-z]+[0-9]?)(?:@(\d+(?:\.\d+)?))?\}/g;
+export function formatValue(x) {
+  if (!Number.isFinite(x)) return '?';
+  const r = Math.abs(x) < 5e-4 ? 0 : Number(x.toPrecision(4));
+  return String(r).replace('-', '−');
+}
+
+/** Numbers for every placeholder, or null for those the simulation cannot provide yet. */
+export function placeholderValues(p) {
+  const s = p.setup || {}, vals = { m: s.mass, F: s.force, v0: s.velocity, muS: s.muS, muK: s.muK, g: GRAVITY, t: p.targetTime };
+  let run = null;
+  try { run = createRun(s, { duration: p.runTime }); } catch { return { vals, at: () => null }; }
+  const at = t => { if (!isNum(t) || t < 0) return null; const q = sampleAt(run, Math.min(t, run.endTime)); return { ...q, friction: q.friction ?? 0, netForce: q.netForce ?? s.force }; };
+  const q = at(p.targetTime);
+  if (q) Object.assign(vals, { a: q.a, v: q.v, x: q.x, f: q.friction, Fnet: q.netForce });
+  Object.assign(vals, { N: s.mass * GRAVITY, W: s.mass * GRAVITY, fmax: s.frictionEnabled ? s.muS * s.mass * GRAVITY : 0 });
+  const stop = (run.events || []).find(e => /Stop/.test(e.label));
+  vals.tstop = stop ? stop.t : null;
+  return { vals, at };
+}
+
+/** Replace placeholders in one string. Unknown or unavailable ones are reported. */
+export function resolveText(text, ctx, problems = []) {
+  if (typeof text !== 'string' || !text.includes('{')) return text;
+  return text.replace(TOKEN, (all, name, time) => {
+    if (time !== undefined) {
+      if (!['a', 'v', 'x'].includes(name)) { problems.push(`Unknown placeholder ${all}: only {a@T}, {v@T} and {x@T} take a time.`); return all; }
+      const q = ctx.at(Number(time));
+      if (!q) { problems.push(`Placeholder ${all} needs valid simulation settings.`); return all; }
+      return formatValue(q[name]);
+    }
+    if (!(name in ctx.vals)) { problems.push(`Unknown placeholder ${all}. See the placeholder list in section 2.`); return all; }
+    const v = ctx.vals[name];
+    if (v === null || v === undefined) { problems.push(name === 'tstop' ? `${all} is used, but the object never stops in this simulation.` : `Placeholder ${all} has no value yet (check the simulation settings${/mu/.test(name) ? ' and turn on friction' : ''}).`); return all; }
+    return formatValue(v);
+  });
+}
+
+/** A copy of the problem with every placeholder filled and blank plotted answers taken from the simulation. */
+export function resolveProblem(raw) {
+  const p = JSON.parse(JSON.stringify(raw)), ctx = placeholderValues(p), problems = [];
+  const r = t => resolveText(t, ctx, problems);
+  p.title = r(p.title); p.statement = r(p.statement);
+  for (const c of p.quantities || []) { c.text = r(c.text); if (c.feedback) c.feedback = r(c.feedback); }
+  for (const k of Object.keys(p.steps || {})) p.steps[k] = r(p.steps[k]);
+  for (const b of p.blocks || []) {
+    b.text = r(b.text); if (b.feedback) b.feedback = r(b.feedback);
+    if (b.answer && b.answer.key in ANSWER_KEYS && isNum(b.answer.t) && !isNum(b.answer.value)) {
+      const q = ctx.at(b.answer.t);
+      if (q) b.answer.value = Number(q[b.answer.key].toPrecision(6));
+    }
+  }
+  if (p.label) p.label = r(p.label);
+  if (p.surface) p.surface = r(p.surface);
+  return { problem: p, errors: [...new Set(problems)] };
 }
 
 /* ---------- Warnings: consistency checks that do not block sharing ---------- */

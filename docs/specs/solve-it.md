@@ -27,7 +27,7 @@ lists Given/Find, so Step 1 is not given away. Score display: "Step 1 8/8 (2 tri
 
 Students try first; if they get stuck they can reveal the answer. **Show correct sort** (Step 1) and **Reveal
 solution** (Step 2) unlock after 2 tries at that step (`REVEAL_AFTER`, overridable per problem with
-`revealAfter`). Revealing asks for confirmation, fills in a correct answer (Step 2 then runs the simulation), and
+`revealAfter`). Revealing asks for an in-page confirmation (click again within 5 s; browser pop-ups are avoided because Canvas embeds can block them), fills in a correct answer (Step 2 then runs the simulation), and
 the score says so: "Step 1 revealed (after 2 tries)". After a Step 2 reveal, **Try again** clears the blocks for a
 rebuild; the score keeps "solution was revealed earlier" so reported scores stay honest.
 

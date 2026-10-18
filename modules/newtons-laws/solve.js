@@ -34,6 +34,25 @@ const problem = () => PROBLEMS[state.id];
 const block = id => problem().blocks.find(b => b.id === id);
 const quantity = id => problem().quantities.find(q => q.id === id);
 
+
+/** In-page two-click confirmation (browser pop-ups can be blocked inside a Canvas embed). */
+function confirmByClick(button, prompt) {
+  if (Number(button.dataset.armedUntil || 0) > Date.now()) { disarm(button); return true; }
+  button.dataset.label = button.dataset.label || button.textContent;
+  button.dataset.armedUntil = String(Date.now() + 5000);
+  button.textContent = prompt;
+  button.classList.add('armed');
+  clearTimeout(button._disarm);
+  button._disarm = setTimeout(() => disarm(button), 5000);
+  return false;
+}
+function disarm(button) {
+  clearTimeout(button._disarm);
+  delete button.dataset.armedUntil;
+  if (button.dataset.label) { button.textContent = button.dataset.label; delete button.dataset.label; }
+  button.classList.remove('armed');
+}
+
 /* ---------- problem ---------- */
 for (const id of PROBLEM_IDS) { const o = document.createElement('option'); o.value = id; o.textContent = `${id} — ${PROBLEMS[id].title}`; $('problem-select').append(o); }
 
@@ -142,7 +161,7 @@ $('check-q').addEventListener('click', () => {
 
 $('reveal-q').addEventListener('click', () => {
   if (state.unlocked || state.qAttempts < revealAfter(problem())) return;
-  if (!window.confirm('Show the correct knowns and unknowns? Your Step 1 score will be marked as revealed.')) return;
+  if (!confirmByClick($('reveal-q'), 'Click again to show it (Step 1 will be marked “revealed”)')) return;
   state.placement = correctPlacement(problem());
   state.qOrder = Object.keys(state.placement);
   state.qRevealed = true; state.unlocked = true;
@@ -246,7 +265,7 @@ $('check').addEventListener('click', () => {
 });
 $('reveal').addEventListener('click', () => {
   if (!state.unlocked || state.attempts < revealAfter(problem())) return;
-  if (!window.confirm('Reveal a correct solution? Your Step 2 score will be marked as revealed.')) return;
+  if (!confirmByClick($('reveal'), 'Click again to reveal (Step 2 will be marked “revealed”)')) return;
   state.solution = correctOrder(problem());
   state.revealed = true;
   state.check = checkSolution(problem(), state.solution);
@@ -256,8 +275,10 @@ $('reveal').addEventListener('click', () => {
   box.textContent = 'Here is one correct solution. Steps that do not depend on each other (like the last two) can come in either order. Compare it with your attempt, then press “Try again” to rebuild it yourself.';
   startRun();
 });
-$('clear').addEventListener('click', () => { if (confirmReset()) loadProblem(state.id); });
-const confirmReset = () => state.qAttempts === 0 && state.attempts === 0 ? true : window.confirm('Start this problem over? Your sorted quantities, blocks and attempt counts will be cleared.');
+$('clear').addEventListener('click', () => {
+  const fresh = state.qAttempts === 0 && state.attempts === 0;
+  if (fresh || confirmByClick($('clear'), 'Click again to start over (clears tries)')) { disarm($('clear')); loadProblem(state.id); }
+});
 $('reshuffle').addEventListener('click', () => {
   if (state.revealed) {   // Try again: keep Step 1, clear Step 2 so the student rebuilds it.
     Object.assign(state, { solution: [], check: null, revealed: false, revealedBefore: true });

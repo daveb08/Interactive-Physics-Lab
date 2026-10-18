@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Solve it · Newton’s Laws · Interactive Physics Lab</title><link rel="stylesheet" href="../../css/styles.css"><link rel="stylesheet" href="../variable-forces/variable-forces.css"><link rel="stylesheet" href="solve.css"><script type="module" src="solve.js"></script></head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header"><a class="brand" href="../../index.html"><span class="brand-icon" aria-hidden="true">↗</span> Interactive Physics Lab</a><a class="back-link" href="../../index.html">← All modules</a></header>
+<main id="main" class="lab">
+  <div class="lab-heading"><div><p class="eyebrow">MODULE 01 / CLASSICAL MECHANICS</p><h1>Newton’s Laws</h1><p>Discover how forces shape the way things move.</p></div><span class="lab-tag"><span aria-hidden="true">●</span> Problem solving</span></div>
+  <nav class="law-nav" aria-label="Newton’s Laws"><a href="first-law.html"><b>01</b> First Law · Inertia</a><a href="index.html"><b>02</b> Second Law · Force &amp; acceleration</a><a href="third-law.html"><b>03</b> Third Law · Action &amp; reaction</a><a href="solve.html" aria-current="page"><b>04</b> Solve it · Build the solution</a></nav>
+  <div class="experiment-heading"><div><p class="eyebrow">SOLVE IT</p><h2>Build the solution, then run it.</h2><p>First sort the knowns and unknowns. Then choose and order the solution blocks. Some cards and blocks contain a common mistake.</p></div>
+    <label class="solve-pick">Problem <select id="problem-select" class="vf-select"></select></label></div>
+
+  <section class="panel solve-problem" aria-labelledby="problem-title">
+    <h2 id="problem-title"></h2><p id="problem-statement"></p>
+  </section>
+
+  <div class="solve-board">
+    <section class="panel" aria-labelledby="bank-title"><div class="panel-heading"><h3 id="bank-title">Block bank</h3><span id="bank-count"></span></div>
+      <h4 class="solve-group">Quantities <span>for Step 1</span></h4>
+      <p class="help solve-help">Use <b>+ Known</b> or <b>+ Unknown</b>, or drag a card into a box. Some cards belong in neither box.</p>
+      <ul id="qbank" class="solve-list solve-chips" aria-label="Quantity cards"></ul>
+      <h4 class="solve-group">Solution blocks <span>for Step 2</span></h4>
+      <p id="bank-locked" class="solve-empty">🔒 Sort the knowns and unknowns correctly to unlock the solution blocks.</p>
+      <p id="bank-help" class="help solve-help" hidden>Tap or press Enter on a block to add it to your solution. On a computer you can also drag it.</p>
+      <ul id="bank" class="solve-list" aria-label="Available solution blocks"></ul></section>
+    <section class="panel" aria-labelledby="solution-title"><div class="panel-heading"><h3 id="solution-title">Your solution</h3><span id="score" class="status" role="status"></span></div>
+      <h4 class="solve-group">Step 1 · Knowns and unknowns</h4>
+      <div class="solve-zones">
+        <div class="solve-zone" id="zone-known" data-zone="known"><h5>Knowns</h5><ul class="solve-list solve-chips" id="knowns" aria-label="Knowns"></ul></div>
+        <div class="solve-zone" id="zone-unknown" data-zone="unknown"><h5>Unknowns</h5><ul class="solve-list solve-chips" id="unknowns" aria-label="Unknowns"></ul></div>
+      </div>
+      <div class="transport solve-actions"><button id="check-q" class="primary">✓ Check knowns &amp; unknowns</button><button id="reveal-q" class="reveal-btn">👁 Show correct sort</button></div>
+      <p class="help solve-reveal-note" id="reveal-q-note"></p>
+      <div id="q-summary" class="feedback solve-summary" role="status" hidden></div>
+      <h4 class="solve-group" id="step2-title">Step 2 · Solution steps</h4>
+      <p class="help solve-help">Put one block per step in a valid order. Use ↑ ↓ to reorder and ✕ to return a block to the bank.</p>
+      <ol id="solution" class="solve-list solve-solution" aria-labelledby="step2-title"></ol>
+      <p id="solution-empty" class="solve-empty">No blocks yet.</p>
+      <div class="transport solve-actions"><button id="check" class="primary">✓ Check &amp; run</button><button id="clear">↺ Reset</button><button id="reshuffle">New shuffle</button><button id="reveal" class="reveal-btn">👁 Reveal solution</button></div>
+      <p class="help solve-reveal-note" id="reveal-note"></p>
+      <div id="check-summary" class="feedback solve-summary" role="status" hidden></div>
+    </section>
+  </div>
+
+  <div class="workspace solve-workspace">
+    <section class="panel simulation" aria-labelledby="sim-title"><div class="panel-heading"><h3 id="sim-title">Run it</h3><span class="status" id="run-status">Waiting for a check</span></div>
+      <div class="scene"><svg id="cart-scene" viewBox="0 0 780 290" role="img" aria-label="Cart on a horizontal track"></svg></div>
+      <p class="help solve-legend"><span class="key-true">■ Simulation (true physics)</span> <span class="key-ghost">▢ Ghost cart: the motion your blocks imply</span></p>
+      <div class="readouts"><div><span>Time</span><strong><output id="r-t">0.00</output> <small>s</small></strong></div><div><span>Position</span><strong><output id="r-x">0.00</output> <small>m</small></strong></div><div><span>Velocity</span><strong><output id="r-v">0.00</output> <small>m/s</small></strong></div><div><span>Acceleration</span><strong><output id="r-a">0.00</output> <small>m/s²</small></strong></div></div>
+      <div class="solve-compare" id="compare" hidden><table class="vf-table"><caption>Your answers vs the simulation</caption><thead><tr><th scope="col">Quantity</th><th scope="col">Your block</th><th scope="col">Simulation</th></tr></thead><tbody id="compare-body"></tbody></table></div>
+    </section>
+    <section class="panel graphs" aria-labelledby="graphs-title"><div class="panel-heading"><h3 id="graphs-title">Motion graphs</h3><span>RUN</span></div><p class="graph-help">Solid: simulation. Dashed: your model (only if it differs). ✕ marks your numerical answers.</p>
+      <svg id="g-x" viewBox="0 0 400 165" role="img"></svg><svg id="g-v" viewBox="0 0 400 165" role="img"></svg><svg id="g-a" viewBox="0 0 400 165" role="img"></svg></section>
+  </div>
+  <p class="lab-footnote">Step 1 score = quantities in the right box ÷ quantities needed; Step 2 score = correct blocks in a valid position ÷ required steps. Tries count each check. Nothing is saved or sent; report your score to your instructor if asked.</p>
+</main><footer>Interactive Physics Lab<span>Newton’s Laws · Solve it</span></footer>
+</body></html>

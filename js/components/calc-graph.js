@@ -35,7 +35,7 @@ export class CalcGraph {
   path(data, key = this.key) {
     return data.map((s, i) => `${i ? 'L' : 'M'}${this.x(s.t).toFixed(2)} ${this.y(s[key]).toFixed(2)}`).join(' ');
   }
-  render({ samples, overlays = [], tangent = null, area = null, markers = [], hlines = [], note = '' }) {
+  render({ samples, overlays = [], tangent = null, area = null, markers = [], hlines = [], note = '', points = [] }) {
     const { svg, key, label, unit, color } = this;
     svg.replaceChildren();
     const clip = el('clipPath', { id: `${this.id}-clip` });
@@ -74,6 +74,12 @@ export class CalcGraph {
       const span = this.endTime * 0.12, { t, value, slope } = tangent;
       plot.append(el('path', { d: `M${this.x(t - span)} ${this.y(value - slope * span)}L${this.x(t + span)} ${this.y(value + slope * span)}`, class: 'calc-tangent' }));
       plot.append(el('circle', { cx: this.x(t), cy: this.y(value), r: 4, class: 'calc-point' }));
+    }
+    for (const pt of points) {
+      const inRange = pt.value >= this.min && pt.value <= this.max && pt.t >= 0 && pt.t <= this.endTime;
+      const cx = this.x(Math.min(Math.max(pt.t, 0), this.endTime)), cy = this.y(Math.min(Math.max(pt.value, this.min), this.max));
+      svg.append(el('path', { d: `M${cx - 6} ${cy - 6}L${cx + 6} ${cy + 6}M${cx - 6} ${cy + 6}L${cx + 6} ${cy - 6}`, stroke: pt.color || '#ba622e', 'stroke-width': 2.5, class: 'calc-answer' }));
+      svg.append(el('text', { x: Math.min(cx + 8, R - 4), y: cy - 8, 'text-anchor': cx + 8 > R - 60 ? 'end' : 'start', class: 'graph-tick', style: `fill:${pt.color || '#ba622e'}` }, `${pt.label}${inRange ? '' : ' (off scale)'}`));
     }
     const last = samples.at(-1);
     svg.append(el('circle', { cx: this.x(last.t), cy: this.y(last[key]), r: 3, fill: color }));

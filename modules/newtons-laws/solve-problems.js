@@ -75,7 +75,7 @@ export const PROBLEMS = Object.freeze({
       { id: 'q-d', text: 'd = ?', role: 'unknown' },
       { id: 'q-mus', text: 'μs = 0.20', role: 'none', feedback: 'The block is sliding, so kinetic friction applies: the 0.20 given is μk. μs is not needed.' },
       { id: 'q-push', text: 'F_applied = +5.9 N keeps it moving', role: 'none', feedback: 'No force is applied. Friction alone acts horizontally, which is why the block slows down.' },
-      { id: 'q-t3', text: 't = 3.0 s (given)', role: 'none', feedback: 'No time is given. The stopping time is something you must find.' },
+      { id: 'q-t3', text: 't = 3.0 s', role: 'none', feedback: 'No time is given. The stopping time is something you must find.' },
     ],
     steps: { normal: 'Normal force', friction: 'Friction force', law: 'Acceleration', time: 'Stopping time', distance: 'Stopping distance' },
     blocks: [

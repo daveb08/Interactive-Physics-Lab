@@ -40,6 +40,9 @@ let lastPhase = -1;
 function applyFigure() {
   const p = problem(), custom = !!p.figure;
   cart.setView(p.view);
+  const noun = p.noun || 'cart';
+  $('key-true').textContent = `■ Simulation: the real ${noun} (true physics)`;
+  $('key-ghost').textContent = `▢ Ghost ${noun} (dashed): the motion your blocks imply`;
   for (const el of cartGroup.querySelectorAll(CART_PARTS)) el.style.display = custom ? 'none' : '';
   figure.innerHTML = custom ? figureMarkup(p.figure) : '';
   figureLabel.textContent = custom ? p.label : '';

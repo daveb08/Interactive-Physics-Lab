@@ -333,7 +333,7 @@ Spec: [docs/specs/solve-it.md](docs/specs/solve-it.md); original idea: [docs/ide
   answers vs the physics engine, valid/commuting orders, out-of-order and flawed-prerequisite feedback,
   distractors, missing/duplicate steps, ghost model, shuffle).
 
-Verification: `node --test` → 123 passed, 0 failed. Browser (Chromium): reveal flow for both steps, Step 1 wrong then correct sort, unlock, wrong then correct S1 attempts, keyboard
+Verification: `node --test` → 127 passed, 0 failed. Browser (Chromium): reveal flow for both steps, Step 1 wrong then correct sort, unlock, wrong then correct S1 attempts, keyboard
 entry, reordering, S2 with distractors, no console errors, no page-wide overflow at 390 px; existing Newton's
 Laws pages load with the new tab. Not yet tested on physical phones/tablets, Safari/Firefox or a screen reader.
 
@@ -354,6 +354,13 @@ write a Solve it problem in a form, with no repo edits and no accounts:
    against the simulation (a, v, x, key times, and applied / normal / friction / net forces), and flag blocks the
    simulation cannot check; plotted answers are checked against the physics engine
    (✓ / ✗ with the simulated value). **Preview in Solve it**, **Copy student link**, **Download .json**.
+
+**Placeholders** keep text in sync with the settings: write `{m}`, `{F}`, `{v0}`, `{muS}`, `{muK}`, `{g}`, `{t}`, or
+simulation results `{a}`, `{v}`, `{x}` (at the target time), `{v@2}` (any time), `{N}`, `{W}`, `{f}`, `{Fnet}`, `{fmax}`,
+`{tstop}` in any statement, card, block or feedback. The editor shows a live "Students see:" preview and a table of
+current values. A plotted answer left blank takes the simulation's value. Downloaded `.json` keeps the placeholders
+(for later editing); student links carry the filled-in values. Friction in authored problems must satisfy
+0 ≤ μk < μs ≤ 1 (static strictly greater than kinetic), enforced with an inline message.
 
 The **student link** carries the whole problem in the URL fragment (deflate-compressed, base64url; about 2 KB for a
 typical problem), so it works from Canvas with nothing uploaded anywhere. Students can also use **📂 Load problem

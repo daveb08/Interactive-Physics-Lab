@@ -1,5 +1,5 @@
 import { PROBLEMS, PROBLEM_IDS } from './solve-problems.js';
-import { validateProblem, lintProblem, cleanProblem, engineCheck, engineAt, encodeProblem, parseProblemJson, FIGURES, ANSWER_KEYS } from './problem-format.js';
+import { validateProblem, lintProblem, cleanProblem, engineCheck, engineAt, encodeProblem, parseProblemJson, prepareProblem, frictionError, placeholderValues, resolveText, formatValue, PLACEHOLDERS, FIGURES, ANSWER_KEYS } from './problem-format.js';
 
 const $ = id => document.getElementById(id);
 const DRAFT_KEY = 'ipl-solve-author-draft';
@@ -17,7 +17,9 @@ const BLANK = () => ({
 });
 
 let doc;
-let saveTimer, shareTimer;
+let saveTimer, shareTimer, ctxCache = null;
+const previews = [];
+const phContext = () => (ctxCache ??= placeholderValues(cleanProblem(doc)));
 
 /* ---------- small DOM helpers (all text via textContent / value) ---------- */
 function el(tag, props = {}, ...kids) {
@@ -30,18 +32,23 @@ function el(tag, props = {}, ...kids) {
   return n;
 }
 /** A labelled input bound to get/set. kind: text | num | area | select | check */
-function field(label, get, set, { kind = 'text', options = [], hint, wide, placeholder, step = 'any' } = {}) {
+function field(label, get, set, { kind = 'text', options = [], hint, wide, placeholder, step = 'any', min, max } = {}) {
   let input;
   if (kind === 'area') input = el('textarea', { rows: 2, value: get() ?? '', placeholder });
   else if (kind === 'select') { input = el('select'); for (const [v, t] of options) input.append(el('option', { value: v, text: t })); input.value = get() ?? ''; }
   else if (kind === 'check') input = el('input', { type: 'checkbox', checked: !!get() });
-  else input = el('input', { type: kind === 'num' ? 'number' : 'text', step: kind === 'num' ? step : undefined, value: get() ?? '', placeholder });
+  else input = el('input', { type: kind === 'num' ? 'number' : 'text', step: kind === 'num' ? step : undefined, value: get() ?? '', placeholder, min, max });
+  const preview = kind === 'text' || kind === 'area' ? el('small', { class: 'ph-preview' }) : null;
+  const showPreview = () => { if (!preview) return; const t = input.value; preview.hidden = !t.includes('{'); if (!preview.hidden) preview.textContent = `Students see: ${resolveText(t, phContext())}`; };
   input.addEventListener(kind === 'select' || kind === 'check' ? 'change' : 'input', () => {
     const v = kind === 'check' ? input.checked : kind === 'num' ? (input.value === '' ? undefined : Number(input.value)) : input.value;
     set(v);
+    showPreview();
     if (kind === 'check' || kind === 'select') render(); else refresh();
   });
-  return el('label', { class: `af${wide ? ' wide' : ''}${kind === 'check' ? ' check' : ''}` }, kind === 'check' ? input : el('span', { text: label }), kind === 'check' ? el('span', { text: label }) : input, hint ? el('small', { text: hint }) : null);
+  showPreview();
+  if (preview) previews.push(showPreview);
+  return el('label', { class: `af${wide ? ' wide' : ''}${kind === 'check' ? ' check' : ''}` }, kind === 'check' ? input : el('span', { text: label }), kind === 'check' ? el('span', { text: label }) : input, hint ? el('small', { text: hint }) : null, preview);
 }
 const nextId = (prefix, used) => { let i = 1; while (used.includes(`${prefix}${i}`)) i++; return `${prefix}${i}`; };
 
@@ -62,8 +69,9 @@ function renderSim() {
     field('Target time (s)', () => doc.targetTime, v => (doc.targetTime = v), { kind: 'num', hint: 'When the question asks for values' }),
     field('Simulation length (s)', () => doc.runTime, v => (doc.runTime = v), { kind: 'num' }),
     field('Friction', () => s.frictionEnabled, v => { s.frictionEnabled = v; if (v) { s.muS ??= 0.3; s.muK ??= 0.25; } }, { kind: 'check' }),
-    s.frictionEnabled ? field('μs (static)', () => s.muS, v => (s.muS = v), { kind: 'num' }) : null,
-    s.frictionEnabled ? field('μk (kinetic)', () => s.muK, v => (s.muK = v), { kind: 'num' }) : null,
+    s.frictionEnabled ? field('μs (static)', () => s.muS, v => (s.muS = v), { kind: 'num', step: 0.01, min: 0, max: 1, hint: '0 to 1, greater than μk' }) : null,
+    s.frictionEnabled ? field('μk (kinetic)', () => s.muK, v => (s.muK = v), { kind: 'num', step: 0.01, min: 0, max: 1, hint: '0 to 1, less than μs' }) : null,
+    s.frictionEnabled ? el('p', { id: 'mu-note', class: 'mu-note', role: 'alert' }) : null,
   ].filter(Boolean));
   $('sec-scene').replaceChildren(
     field('Figure', () => doc.figure || 'cart', v => { doc.figure = v === 'cart' ? undefined : v; }, { kind: 'select', options: FIGURES.map(f => [f, f]) }),
@@ -98,7 +106,7 @@ function answerFields(b) {
   return [
     field('Plot answer', () => a.key || '', v => set('key', v || undefined), { kind: 'select', options: [['', 'none'], ...Object.entries(ANSWER_KEYS)] }),
     a.key ? field('at time (s)', () => a.t, v => set('t', v), { kind: 'num' }) : null,
-    a.key ? field('value', () => a.value, v => set('value', v), { kind: 'num' }) : null,
+    a.key ? field('value', () => a.value, v => set('value', v), { kind: 'num', placeholder: 'blank = simulation', hint: 'Leave blank to use the simulation’s value' }) : null,
   ];
 }
 function blockEditor(b, stepKey) {
@@ -164,8 +172,14 @@ function removeStep(k) {
 
 /* ---------- validation, engine check, sharing ---------- */
 function refresh() {
-  const p = cleanProblem(doc);
-  const errors = validateProblem(p);
+  ctxCache = null;
+  for (const f of previews) f();
+  const raw = cleanProblem(doc);
+  const prepared = prepareProblem(raw), p = prepared.problem, errors = prepared.errors || [];
+  const mu = doc.setup.frictionEnabled ? frictionError(doc.setup.muS, doc.setup.muK) : null;
+  const note = document.getElementById('mu-note');
+  if (note) { note.textContent = mu || ''; note.hidden = !mu; }
+  renderPlaceholderTable();
   const list = $('check-list');
   if (errors.length) list.replaceChildren(el('p', { class: 'author-errors-title', text: `Fix ${errors.length} thing${errors.length > 1 ? 's' : ''} before sharing:` }), el('ul', { class: 'author-errors' }, ...errors.map(e => el('li', { text: e }))));
   else {
@@ -179,10 +193,10 @@ function refresh() {
   }
 
   // Engine readout and answer check (only when the simulation settings themselves are usable).
-  const simErrors = errors.filter(e => /Mass|force|velocity|Friction|Simulation length|Target time/.test(e));
+  const simErrors = errors.filter(e => /Mass|force|velocity|[Ff]riction|coefficient|Simulation length|Target time/.test(e));
   if (simErrors.length) { $('engine-readout').textContent = 'Enter valid simulation settings to see what the simulation gives.'; $('engine-check').replaceChildren(); }
   else {
-    const r = engineAt(p, p.targetTime);
+    let r; try { r = engineAt(p, p.targetTime); } catch { $('engine-readout').textContent = 'Enter valid simulation settings to see what the simulation gives.'; $('engine-check').replaceChildren(); return finishRefresh(errors, p); }
     $('engine-readout').textContent = `At the target time t = ${f3(r.t)} s the simulation gives a = ${f3(r.a)} m/s², v = ${f3(r.v)} m/s, x = ${f3(r.x)} m${p.setup.frictionEnabled ? `; friction ${f3(r.friction)} N, net force ${f3(r.netForce)} N` : ''}.${r.reason === 'boundary' ? ` Note: the object reaches the end of the ±50 m track at ${f3(r.endTime)} s.` : ''}`;
     let rows = [];
     try { rows = engineCheck({ ...p, blocks: p.blocks.filter(b => !b.answer || (Number.isFinite(b.answer.t) && Number.isFinite(b.answer.value))) }); } catch { rows = []; }
@@ -192,7 +206,11 @@ function refresh() {
         el('td', { text: `${r.step}: ${r.key}(${r.t} s)` }), el('td', { text: `you wrote ${r.stated}` }),
         el('td', { text: `simulation ${f3(r.sim)}`, class: r.ok ? 'ans-ok' : 'ans-bad' }), el('td', { text: r.ok ? '✓' : '✗ check this', class: r.ok ? 'ans-ok' : 'ans-bad' }))))) : el('span'));
   }
-  for (const id of ['preview', 'copy-link', 'download']) $(id).disabled = errors.length > 0;
+  finishRefresh(errors, p);
+}
+function finishRefresh(errors, p) {
+  for (const id of ['preview', 'copy-link']) $(id).disabled = errors.length > 0;
+  $('download').disabled = false;   // a draft file can be saved at any time
   clearTimeout(shareTimer);
   if (errors.length) $('share-link').value = '';
   else shareTimer = setTimeout(async () => { $('share-link').value = await studentLink(p); }, 150);
@@ -201,7 +219,19 @@ function refresh() {
 }
 async function studentLink(p) { return `${new URL('solve.html', location.href).href}#p=${await encodeProblem(p)}`; }
 
-function render() { renderProblem(); renderSim(); renderCards(); renderSteps(); refresh(); }
+function render() { previews.length = 0; ctxCache = null; renderProblem(); renderSim(); renderCards(); renderSteps(); refresh(); }
+
+/** Placeholder reference with current values. */
+function renderPlaceholderTable() {
+  const box = document.getElementById('ph-table'); if (!box) return;
+  const ctx = phContext();
+  box.replaceChildren(...PLACEHOLDERS.map(([name, desc]) => {
+    const timed = name.includes('@'), token = `{${name}}`;
+    const v = timed ? null : ctx.vals[name];
+    const val = timed ? '' : v === null || v === undefined ? '—' : formatValue(v);
+    return el('tr', {}, el('td', {}, el('code', { text: token })), el('td', { text: desc }), el('td', { text: val, class: 'ph-val' }));
+  }));
+}
 
 /* ---------- toolbar ---------- */
 for (const id of PROBLEM_IDS) $('template').append(el('option', { value: id, text: `Copy of ${id} — ${PROBLEMS[id].title}` }));
@@ -228,9 +258,9 @@ $('add-step').addEventListener('click', () => {
   doc.blocks.push({ id: nextId('b', doc.blocks.map(b => b.id)), step: k, correct: true, text: '' });
   render();
 });
-$('preview').addEventListener('click', async () => { window.open(await studentLink(cleanProblem(doc)), '_blank', 'noopener'); });
+$('preview').addEventListener('click', async () => { window.open(await studentLink(prepareProblem(cleanProblem(doc)).problem), '_blank', 'noopener'); });
 $('copy-link').addEventListener('click', async () => {
-  const link = await studentLink(cleanProblem(doc));
+  const link = await studentLink(prepareProblem(cleanProblem(doc)).problem);
   $('share-link').value = link;
   try { await navigator.clipboard.writeText(link); $('share-status').textContent = `Copied (${link.length} characters). Paste it into a Canvas page or assignment.`; }
   catch { $('share-link').select(); $('share-status').textContent = 'Your browser blocked automatic copying. The link is selected: press Ctrl+C (⌘C on a Mac).'; }

@@ -310,8 +310,9 @@ Open `/modules/newtons-laws/solve.html` or the **04 Solve it** tab on any Newton
 solution from blocks: correct steps plus distractors that each encode a misconception (Parsons-problem format).
 Spec: [docs/specs/solve-it.md](docs/specs/solve-it.md); original idea: [docs/ideas/block-problem-solver.md](docs/ideas/block-problem-solver.md).
 
-- **Problems:** S1 Pushed cart (F = ma, v = v₀ + at, x = v₀t + ½at²) and S2 Sliding to a stop (N, friction,
-  a, stopping time and distance). Problems are data in `modules/newtons-laws/solve-problems.js`.
+- **Problems:** S1 Pushed cart (F = ma, v = v₀ + at, x = v₀t + ½at²); S2 Sliding to a stop (N, friction,
+  a, stopping time and distance); S3 Sprinter’s start (exercise science: the track’s forward static friction is
+  the net force); S4 Pushing a pallet (construction management: μs vs μk, net force, dividing by mass not weight). Problems are data in `modules/newtons-laws/solve-problems.js`.
 - **Step 1, knowns and unknowns:** students first sort quantity cards into Knowns and Unknowns (drag or
   + Known / + Unknown); trap cards belong in neither box and carry feedback. Solving Step 1 unlocks the blocks.
 - **Building (Step 2):** tap or Enter adds a block; ↑ ↓ ✕ reorder or remove; mouse drag-and-drop on desktop. Works by touch.
@@ -327,6 +328,6 @@ Spec: [docs/specs/solve-it.md](docs/specs/solve-it.md); original idea: [docs/ide
   answers vs the physics engine, valid/commuting orders, out-of-order and flawed-prerequisite feedback,
   distractors, missing/duplicate steps, ghost model, shuffle).
 
-Verification: `node --test` → 112 passed, 0 failed. Browser (Chromium): reveal flow for both steps, Step 1 wrong then correct sort, unlock, wrong then correct S1 attempts, keyboard
+Verification: `node --test` → 113 passed, 0 failed. Browser (Chromium): reveal flow for both steps, Step 1 wrong then correct sort, unlock, wrong then correct S1 attempts, keyboard
 entry, reordering, S2 with distractors, no console errors, no page-wide overflow at 390 px; existing Newton's
 Laws pages load with the new tab. Not yet tested on physical phones/tablets, Safari/Firefox or a screen reader.

@@ -45,6 +45,11 @@ rebuild; the score keeps "solution was revealed earlier" so reported scores stay
 - **S1 — Pushed cart:** 4 kg cart, v₀ = +2 m/s, constant net force +10 N, frictionless. Find a, v and x at t = 3 s. (a = 2.5 m/s², v = 9.5 m/s, x = 17.25 m.)
 - **S2 — Sliding to a stop:** 3 kg block, v₀ = +6 m/s, μk = 0.2, no applied force. Find N, friction, a, stopping time and distance. (N = 29.43 N, f = −5.886 N, a = −1.962 m/s², t = 3.058 s, d = 9.174 m.)
 
+- **S3 — Sprinter’s start (exercise science):** 70 kg, from rest, 350 N forward push from the track for 1.5 s.
+  (a = 5.0 m/s², v = 7.5 m/s, d = 5.63 m.) Key idea: the forward push is static friction on her shoes.
+- **S4 — Pushing a pallet (construction management):** 120 kg pallet, 400 N push, μs = 0.30, μk = 0.25, from rest.
+  (N = 1177 N, f = −294.3 N, F_net = 105.7 N, a = 0.881 m/s², v(2 s) = 1.76 m/s.)
+
 ## Tests
 
 Checker: correct orders (including commuting steps), out-of-order detection, distractor flagging, missing steps, duplicate steps, score; problem data integrity (every dependency exists, each step has exactly one correct block, stated answers match the physics engine).

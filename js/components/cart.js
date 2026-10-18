@@ -22,7 +22,8 @@ export class CartView {
   render(run, { reveal = true } = {}) {
     const px = 70 + (run.state.x - TRACK.min) / (TRACK.max - TRACK.min) * 640;
     this.cart.setAttribute('transform', `translate(${px} 0)`);
-    const length = Math.sign(run.force) * (22 + Math.abs(run.force) * 2);
+    // Capped so large forces (e.g. 350 N in applied problems) stay on screen; ≤ 20 N is unchanged.
+    const length = Math.sign(run.force) * Math.min(22 + Math.abs(run.force) * 2, 140);
     this.arrow.setAttribute('d', `M0 137h${length}`);
     this.arrow.style.display = run.force === 0 ? 'none' : '';
     this.label.textContent = `${run.force > 0 ? '+' : ''}${run.force} N`;

@@ -17,6 +17,13 @@ export const METHOD_STYLES = Object.freeze({
   rk4: { color: '#b07d12', dash: '10 3 2 3', label: 'RK4' },
 });
 const L = 54, R = 384, T = 34, B = 124;
+/** Round time ticks (0.5, 1, 2, 2.5, 5 … s) that never exceed the end time. */
+export function timeTicks(endTime) {
+  const raw = endTime / 5, steps = [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50];
+  const step = steps.find(s => s >= raw) ?? raw;
+  return Array.from({ length: Math.floor(endTime / step + 1e-9) + 1 }, (_, i) => +(i * step).toFixed(6));
+}
+const tickText = (t, step) => t.toFixed(step < 1 && !Number.isInteger(t) ? (Number.isInteger(t * 2) ? 1 : 2) : t >= 10 ? 0 : 1);
 const fmt = v => { const a = Math.abs(v); return a >= 100 ? v.toFixed(0) : a >= 10 ? v.toFixed(1) : v.toFixed(2); };
 
 export class CalcGraph {
@@ -49,10 +56,8 @@ export class CalcGraph {
     }
     if (this.min < 0 && this.max > 0) svg.append(el('path', { d: `M${L} ${this.y(0)}H${R}`, class: 'graph-zero' }));
     svg.append(el('path', { d: `M${L} ${T}V${B}H${R}`, class: 'graph-grid' }));
-    for (let i = 0; i <= 4; i++) {
-      const t = this.endTime * i / 4;
-      svg.append(el('text', { x: this.x(t), y: B + 16, 'text-anchor': 'middle', class: 'graph-tick' }, t.toFixed(t < 10 ? 1 : 0)));
-    }
+    const ticks = timeTicks(this.endTime);
+    for (const t of ticks) svg.append(el('text', { x: this.x(t), y: B + 16, 'text-anchor': 'middle', class: 'graph-tick' }, tickText(t, ticks[1] - ticks[0])));
     svg.append(el('text', { x: (L + R) / 2, y: B + 32, 'text-anchor': 'middle', class: 'graph-tick' }, 'Time (s)'));
     const plot = el('g', { 'clip-path': `url(#${this.id}-clip)` });
     svg.append(plot);
@@ -107,7 +112,8 @@ export class LogGraph {
       svg.append(el('text', { x: L - 6, y: y(10 ** p) + 4, 'text-anchor': 'end', class: 'graph-tick' }, `1e${p}`));
     }
     svg.append(el('path', { d: `M${L} ${T}V${B}H${R}`, class: 'graph-grid' }));
-    for (let i = 0; i <= 4; i++) svg.append(el('text', { x: x(endTime * i / 4), y: B + 16, 'text-anchor': 'middle', class: 'graph-tick' }, (endTime * i / 4).toFixed(1)));
+    const ticks = timeTicks(endTime);
+    for (const t of ticks) svg.append(el('text', { x: x(t), y: B + 16, 'text-anchor': 'middle', class: 'graph-tick' }, tickText(t, ticks[1] - ticks[0])));
     svg.append(el('text', { x: (L + R) / 2, y: B + 32, 'text-anchor': 'middle', class: 'graph-tick' }, 'Time (s)'));
     series.forEach((s, i) => {
       const pts = s.data.filter(p => p.value > floor);

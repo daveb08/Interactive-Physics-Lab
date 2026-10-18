@@ -115,3 +115,14 @@ test('reveal: the revealed order and sort are fully correct for every problem', 
     assert.ok(revealAfter(p) >= 1);
   }
 });
+
+test('S3 sprinter and S4 pallet answers match the physics engine', () => {
+  const S3 = PROBLEMS.S3, S4 = PROBLEMS.S4;
+  const r3 = createRun(S3.setup, { duration: S3.runTime });
+  near(sampleAt(r3, 1.5).a, 5); near(sampleAt(r3, 1.5).v, 7.5); near(sampleAt(r3, 1.5).x, 5.625);
+  const r4 = createRun(S4.setup, { duration: S4.runTime });
+  const s = sampleAt(r4, 2);
+  near(s.friction, -294.3, 0.05); near(s.netForce, 105.7, 0.05); near(s.a, 0.881, 1e-3); near(s.v, 1.762, 2e-3);
+  near(S4.blocks.find(b => b.id === 'v-ok').answer.value, s.v, 2e-3);
+  near(0.3 * 120 * 9.81, 353.16, 0.01);   // static limit below the 400 N push, so it slides
+});

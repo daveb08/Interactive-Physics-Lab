@@ -31,3 +31,5 @@
 .author-share{margin-top:4px}
 #engine-check table{margin-top:6px}
 @media(max-width:760px){.card-row{grid-template-columns:1fr}.author-section{padding:18px}}
+.author-warnings{margin:0;padding-left:20px;color:#8a6210;font-size:13px;line-height:1.7}
+.author-warnings li::marker{content:'⚠ '}

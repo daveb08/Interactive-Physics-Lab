@@ -1,5 +1,5 @@
 import { PROBLEMS, PROBLEM_IDS } from './solve-problems.js';
-import { validateProblem, cleanProblem, engineCheck, engineAt, encodeProblem, parseProblemJson, FIGURES, ANSWER_KEYS } from './problem-format.js';
+import { validateProblem, lintProblem, cleanProblem, engineCheck, engineAt, encodeProblem, parseProblemJson, FIGURES, ANSWER_KEYS } from './problem-format.js';
 
 const $ = id => document.getElementById(id);
 const DRAFT_KEY = 'ipl-solve-author-draft';
@@ -168,7 +168,15 @@ function refresh() {
   const errors = validateProblem(p);
   const list = $('check-list');
   if (errors.length) list.replaceChildren(el('p', { class: 'author-errors-title', text: `Fix ${errors.length} thing${errors.length > 1 ? 's' : ''} before sharing:` }), el('ul', { class: 'author-errors' }, ...errors.map(e => el('li', { text: e }))));
-  else list.replaceChildren(el('p', { class: 'author-ok', text: '✓ Ready to share. Preview it to try it as a student.' }));
+  else {
+    let warnings = [];
+    try { warnings = lintProblem(p); } catch { warnings = []; }
+    list.replaceChildren(...[
+      el('p', { class: 'author-ok', text: warnings.length ? '✓ Ready to share, but please look at these warnings first:' : '✓ Ready to share. No warnings. Preview it to try it as a student.' }),
+      warnings.length ? el('ul', { class: 'author-warnings' }, ...warnings.map(w => el('li', { text: w }))) : null,
+      warnings.length ? el('p', { class: 'help', text: 'Warnings compare your text with the simulation settings and physics. They do not block sharing, because some wording cannot be checked automatically.' }) : null,
+    ].filter(Boolean));
+  }
 
   // Engine readout and answer check (only when the simulation settings themselves are usable).
   const simErrors = errors.filter(e => /Mass|force|velocity|Friction|Simulation length|Target time/.test(e));

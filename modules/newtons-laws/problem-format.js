@@ -2,7 +2,7 @@
  * Faculty-authored Solve it problems: validation, cleaning, engine check, and sharing (file / link).
  * Pure module (no DOM) so it is unit-tested. Problem text is only ever rendered with textContent.
  */
-import { createRun, sampleAt } from '../../js/core/physics.js';
+import { createRun, sampleAt, GRAVITY } from '../../js/core/physics.js';
 import { correctOrder } from './solve-check.js';
 
 export const FIGURES = ['cart', 'sprinter', 'pallet'];
@@ -156,3 +156,113 @@ export function parseProblemJson(text) {
   const errors = validateProblem(problem);
   return errors.length ? { errors } : { problem };
 }
+
+/* ---------- Warnings: consistency checks that do not block sharing ---------- */
+
+const NUM = String.raw`([+\-−]?\d+(?:\.\d+)?)`;
+// Longest units first so "m/s²" is never read as "m/s" or "m".
+const UNITS = [
+  ['a', String.raw`m\s*/\s*s(?:²|\^2|2)`], ['v', String.raw`m\s*/\s*s(?![²^2])`], ['mass', 'kg'], ['force', 'N'],
+  ['angle', '°|deg(?:rees)?'], ['x', 'm(?![/a-zA-Z])'], ['t', 's(?![a-zA-Z])'],
+];
+const num = s => Number(s.replace('−', '-'));
+const close = (a, b) => Math.abs(a - b) <= 0.01 * Math.abs(b) + 0.01;
+
+/** Every "number unit" in a text, e.g. "4.0 kg" → { value: 4, unit: 'mass' }. */
+export function quantitiesIn(text) {
+  const out = [];
+  for (const [unit, pattern] of UNITS) {
+    const re = new RegExp(`${NUM}\\s*(?:${pattern})`, 'g');
+    for (const m of String(text).matchAll(re)) out.push({ value: num(m[1]), unit, at: m.index });
+  }
+  // A number counted under a longer unit (m/s²) must not also count under a shorter one (m/s, m).
+  return out.filter((q, i) => !out.some((o, j) => j < i && o.at === q.at));
+}
+const bareNumbers = text => [...String(text).matchAll(/(?<![\w.])([+\-−]?\d*\.?\d+)(?!\w|\.\d)/g)].map(m => num(m[1]));
+
+/**
+ * Settings the statement should mention, as [label, statement unit, value, skip-if].
+ * For ramps, add e.g. ['ramp angle', 'angle', setup.angle].
+ */
+function statementSettings(p) {
+  const s = p.setup;
+  return [
+    ['mass', 'mass', s.mass],
+    ['applied force', 'force', s.force, s.force === 0],
+    ['initial velocity', 'v', s.velocity, s.velocity === 0],
+    ['target time', 't', p.targetTime],
+    ...(s.angle !== undefined ? [['ramp angle', 'angle', s.angle]] : []),
+  ];
+}
+
+/**
+ * The forces in the problem at time t, by name. On a level track N = mg. A future ramp model adds the angle here:
+ * N = mg cos θ and a gravity component mg sin θ along the ramp.
+ */
+export function forcesAt(p, t) {
+  const run = createRun(p.setup, { duration: p.runTime });
+  const s = sampleAt(run, Math.min(t, run.endTime));
+  const m = p.setup.mass, out = { applied: p.setup.force, weight: m * GRAVITY, normal: m * GRAVITY };
+  if (p.setup.frictionEnabled) Object.assign(out, { friction: s.friction, net: s.netForce, maxStatic: p.setup.muS * m * GRAVITY });
+  else out.net = p.setup.force;
+  return out;
+}
+
+/** Event times the simulation knows about (stop, force removal, boundary), plus the target time. */
+function keyTimes(p) {
+  const run = createRun(p.setup, { duration: p.runTime });
+  return [p.targetTime, run.endTime, ...(run.events || []).map(e => e.t)];
+}
+
+/** Returns a list of warnings (sharing is still allowed). Call only on a problem that validates. */
+export function lintProblem(p) {
+  const warnings = [], warn = m => warnings.push(m);
+  // 1. Statement numbers vs simulation settings.
+  const found = quantitiesIn(p.statement);
+  for (const [label, unit, value, skip] of statementSettings(p)) {
+    if (skip) continue;
+    const said = found.filter(q => q.unit === unit).map(q => q.value);
+    if (said.length && !said.some(v => close(Math.abs(v), Math.abs(value)))) warn(`The statement mentions ${said.map(v => `${v} ${unitLabel(unit)}`).join(', ')}, but the ${label} is set to ${value} ${unitLabel(unit)}.`);
+  }
+  if (p.setup.frictionEnabled) {
+    const nums = bareNumbers(p.statement);
+    if (!nums.some(v => close(v, p.setup.muK))) warn(`Friction is on with μk = ${p.setup.muK}, but the statement never mentions ${p.setup.muK}.`);
+  }
+
+  // 2. Arithmetic at the end of correct blocks vs the simulation.
+  for (const b of p.blocks.filter(b => b.correct)) {
+    const qs = quantitiesIn(b.text);
+    const last = qs.sort((a, c) => a.at - c.at).at(-1);
+    const t = b.answer?.t ?? p.targetTime;
+    const short = `“${b.text.length > 50 ? `${b.text.slice(0, 50)}…` : b.text}”`;
+    if (b.answer && last && last.unit === b.answer.key && !close(last.value, b.answer.value)) warn(`${short} ends in ${last.value} ${unitLabel(last.unit)}, but its plotted answer is ${b.answer.value}.`);
+    const verdict = last ? checkAgainstSimulation(p, last, t) : null;
+    if (verdict && !verdict.ok) warn(`${short} ends in ${last.value} ${unitLabel(last.unit)}, but the simulation gives ${verdict.expected}.`);
+    // 3. Coverage.
+    if (!b.answer && !verdict) warn(`The correct block ${short} has no plotted answer and no number the editor can check, so it is not checked against the simulation.`);
+  }
+  for (const b of p.blocks.filter(b => !b.correct)) {
+    if (!b.effect && !b.answer) warn(`The wrong block “${b.text.slice(0, 50)}” has no ghost setting and no plotted answer, so students who pick it see feedback but no difference in the simulation.`);
+  }
+  return warnings;
+}
+
+function checkAgainstSimulation(p, q, t) {
+  const f3 = v => (Math.abs(v) < 5e-4 ? 0 : v).toFixed(3);
+  if (q.unit === 'a' || q.unit === 'v' || q.unit === 'x') {
+    const s = engineAt(p, t), sim = s[q.unit];
+    if (q.unit === 'a' && Math.abs(q.value) === GRAVITY) return null;   // "g = 9.81 m/s²" is a given, not a result
+    return { ok: close(q.value, sim) || close(Math.abs(q.value), Math.abs(sim)), expected: `${q.unit} = ${f3(sim)} ${unitLabel(q.unit)} at t = ${f3(Math.min(t, s.endTime))} s` };
+  }
+  if (q.unit === 'force') {
+    const forces = forcesAt(p, t), names = Object.entries(forces);
+    const ok = names.some(([, v]) => close(Math.abs(q.value), Math.abs(v)));
+    return { ok, expected: `these forces: ${names.map(([n, v]) => `${n.replace('maxStatic', 'max static')} ${f3(v)} N`).join(', ')}` };
+  }
+  if (q.unit === 't') {
+    const times = keyTimes(p);
+    return { ok: times.some(v => close(q.value, v)), expected: `key times ${[...new Set(times.map(f3))].join(', ')} s` };
+  }
+  return null;
+}
+const unitLabel = u => ({ a: 'm/s²', v: 'm/s', x: 'm', t: 's', mass: 'kg', force: 'N', angle: '°' }[u] || '');

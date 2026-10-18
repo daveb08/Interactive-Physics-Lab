@@ -333,7 +333,7 @@ Spec: [docs/specs/solve-it.md](docs/specs/solve-it.md); original idea: [docs/ide
   answers vs the physics engine, valid/commuting orders, out-of-order and flawed-prerequisite feedback,
   distractors, missing/duplicate steps, ghost model, shuffle).
 
-Verification: `node --test` → 119 passed, 0 failed. Browser (Chromium): reveal flow for both steps, Step 1 wrong then correct sort, unlock, wrong then correct S1 attempts, keyboard
+Verification: `node --test` → 123 passed, 0 failed. Browser (Chromium): reveal flow for both steps, Step 1 wrong then correct sort, unlock, wrong then correct S1 attempts, keyboard
 entry, reordering, S2 with distractors, no console errors, no page-wide overflow at 390 px; existing Newton's
 Laws pages load with the new tab. Not yet tested on physical phones/tablets, Safari/Firefox or a screen reader.
 
@@ -349,7 +349,10 @@ write a Solve it problem in a form, with no repo edits and no accounts:
 3. **Step 1 cards:** text plus Knowns / Unknowns / Neither (trap, with feedback).
 4. **Step 2:** steps with names and "must come after" dependencies; one correct block per step; wrong blocks with
    misconception feedback; optional ghost acceleration / v₀; optional plotted answers (a, v or x at a time).
-5. **Check and share:** plain-language validation; plotted answers are checked against the physics engine
+5. **Check and share:** plain-language validation (blocks sharing until fixed); **warnings** (do not block) compare
+   the statement’s numbers (kg, N, m/s, s, μk) with the settings, check the "= number unit" ending of correct blocks
+   against the simulation (a, v, x, key times, and applied / normal / friction / net forces), and flag blocks the
+   simulation cannot check; plotted answers are checked against the physics engine
    (✓ / ✗ with the simulated value). **Preview in Solve it**, **Copy student link**, **Download .json**.
 
 The **student link** carries the whole problem in the URL fragment (deflate-compressed, base64url; about 2 KB for a

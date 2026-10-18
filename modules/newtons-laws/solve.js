@@ -3,7 +3,7 @@ import { createRun, stepRun, sampleAt } from '../../js/core/physics.js';
 import { CartView } from '../../js/components/cart.js';
 import { CalcGraph } from '../../js/components/calc-graph.js';
 import { PROBLEMS, PROBLEM_IDS } from './solve-problems.js';
-import { checkSolution, checkQuantities, studentModel, shuffled } from './solve-check.js';
+import { checkSolution, checkQuantities, studentModel, shuffled, correctOrder, correctPlacement, revealAfter } from './solve-check.js';
 
 const $ = id => document.getElementById(id);
 const UNITS = { a: 'm/s²', v: 'm/s', x: 'm', t: 's' };
@@ -14,7 +14,7 @@ const tries = n => `${n} ${n === 1 ? 'try' : 'tries'}`;
 
 const state = {
   id: PROBLEM_IDS[0],
-  qbank: [], placement: {}, qOrder: [], qAttempts: 0, qCheck: null, unlocked: false,
+  qbank: [], placement: {}, qOrder: [], qAttempts: 0, qCheck: null, unlocked: false, qRevealed: false, revealed: false, revealedBefore: false,
   bank: [], solution: [], attempts: 0, check: null,
 };
 let trueRun = null, ghostRun = null, trueFull = [], model = null;
@@ -38,7 +38,7 @@ const quantity = id => problem().quantities.find(q => q.id === id);
 for (const id of PROBLEM_IDS) { const o = document.createElement('option'); o.value = id; o.textContent = `${id} — ${PROBLEMS[id].title}`; $('problem-select').append(o); }
 
 function loadProblem(id) {
-  Object.assign(state, { id, placement: {}, qOrder: [], qAttempts: 0, qCheck: null, unlocked: false, solution: [], attempts: 0, check: null });
+  Object.assign(state, { id, placement: {}, qOrder: [], qAttempts: 0, qCheck: null, unlocked: false, qRevealed: false, revealed: false, revealedBefore: false, solution: [], attempts: 0, check: null });
   const p = problem();
   state.qbank = shuffled(p.quantities.map(q => q.id), Date.now());
   state.bank = shuffled(p.blocks.map(b => b.id), Date.now() + 1);
@@ -49,12 +49,26 @@ function loadProblem(id) {
   renderAll();
 }
 
-function renderAll() { renderQuantities(); renderLists(); renderScore(); }
+function renderAll() { renderQuantities(); renderLists(); renderScore(); renderReveal(); }
 
 function renderScore() {
-  const q = state.qCheck ? `Step 1 ${state.qCheck.score}/${state.qCheck.total} (${tries(state.qAttempts)})` : `Step 1 (${tries(state.qAttempts)})`;
-  const s = state.unlocked ? (state.check ? ` · Step 2 ${state.check.score}/${state.check.total} (${tries(state.attempts)})` : ` · Step 2 (${tries(state.attempts)})`) : '';
-  $('score').textContent = q + s;
+  const q = state.qRevealed ? `Step 1 revealed (after ${tries(state.qAttempts)})`
+    : state.qCheck ? `Step 1 ${state.qCheck.score}/${state.qCheck.total} (${tries(state.qAttempts)})` : `Step 1 (${tries(state.qAttempts)})`;
+  const s = !state.unlocked ? '' : state.revealed ? ` · Step 2 revealed (after ${tries(state.attempts)})`
+    : state.check ? ` · Step 2 ${state.check.score}/${state.check.total} (${tries(state.attempts)})` : ` · Step 2 (${tries(state.attempts)})`;
+  $('score').textContent = q + s + (state.revealedBefore && !state.revealed ? ' · solution was revealed earlier' : '');
+}
+
+function renderReveal() {
+  const need = revealAfter(problem());
+  const qDone = state.unlocked, sDone = state.revealed || !!state.check?.solved;
+  $('reveal-q').hidden = qDone;
+  $('reveal-q').disabled = state.qAttempts < need;
+  $('reveal-q-note').textContent = qDone ? '' : state.qAttempts < need ? `Stuck? “Show correct sort” becomes available after ${tries(need)}.` : 'Still stuck? You can show the correct sort.';
+  $('reveal').hidden = !state.unlocked || sDone;
+  $('reveal').disabled = state.attempts < need;
+  $('reveal-note').textContent = !state.unlocked || sDone ? '' : state.attempts < need ? `Stuck? “Reveal solution” becomes available after ${tries(need)}.` : 'Still stuck? You can reveal a correct solution.';
+  $('reshuffle').textContent = state.revealed ? '↻ Try again' : 'New shuffle';
 }
 
 /* ---------- Step 1: quantity cards ---------- */
@@ -67,6 +81,11 @@ function chip(id, zone) {
   if (!zone) {
     btn('+ Known', 'Add to knowns', () => place(id, 'known'));
     btn('+ Unknown', 'Add to unknowns', () => place(id, 'unknown'));
+    if (state.qRevealed && q.role === 'none') {
+      wrap.classList.add('st-trap');
+      const st = document.createElement('span'); st.className = 'chip-status'; st.textContent = `Neither box: ${q.feedback}`;
+      wrap.append(st);
+    }
   } else {
     btn('⇄', `Move to ${zone === 'known' ? 'unknowns' : 'knowns'}`, () => place(id, zone === 'known' ? 'unknown' : 'known'));
     btn('✕', 'Return to bank', () => unplace(id));
@@ -109,7 +128,7 @@ $('check-q').addEventListener('click', () => {
   state.qAttempts++;
   state.qCheck = checkQuantities(problem(), state.placement);
   const c = state.qCheck, box = $('q-summary');
-  box.hidden = false; box.classList.toggle('solved', c.solved); box.classList.toggle('unsolved', !c.solved);
+  box.hidden = false; box.className = 'feedback solve-summary'; box.classList.toggle('solved', c.solved); box.classList.toggle('unsolved', !c.solved);
   if (c.solved) {
     state.unlocked = true;
     box.textContent = `Step 1 complete: all ${c.total} knowns and unknowns sorted (${tries(state.qAttempts)}). The solution blocks are now unlocked.`;
@@ -119,6 +138,19 @@ $('check-q').addEventListener('click', () => {
   }
   renderAll();
   if (c.solved) $('bank').querySelector('.block')?.focus();
+});
+
+$('reveal-q').addEventListener('click', () => {
+  if (state.unlocked || state.qAttempts < revealAfter(problem())) return;
+  if (!window.confirm('Show the correct knowns and unknowns? Your Step 1 score will be marked as revealed.')) return;
+  state.placement = correctPlacement(problem());
+  state.qOrder = Object.keys(state.placement);
+  state.qRevealed = true; state.unlocked = true;
+  state.qCheck = checkQuantities(problem(), state.placement);
+  const box = $('q-summary');
+  box.hidden = false; box.className = 'feedback solve-summary revealed';
+  box.textContent = 'Here is the correct sort. Read why each card belongs where it does, and why the remaining cards in the bank belong in neither box. The solution blocks are now unlocked.';
+  renderAll();
 });
 
 /* ---------- Step 2: solution blocks ---------- */
@@ -169,7 +201,7 @@ function renderLists() {
   $('reshuffle').disabled = false;
 }
 
-function edited() { state.check = null; $('check-summary').hidden = true; renderLists(); renderScore(); }
+function edited() { state.check = null; $('check-summary').hidden = true; renderLists(); renderScore(); renderReveal(); }
 function addBlock(id) { if (!state.unlocked) return; state.solution.push(id); edited(); $('solution').children[state.solution.length - 1]?.querySelector('.block')?.focus(); }
 function removeBlock(i) { state.solution.splice(i, 1); edited(); }
 function move(i, d) {
@@ -201,9 +233,9 @@ $('check').addEventListener('click', () => {
   const p = problem();
   state.attempts++;
   state.check = checkSolution(p, state.solution);
-  renderLists(); renderScore();
+  renderLists(); renderScore(); renderReveal();
   const c = state.check, summary = $('check-summary');
-  summary.hidden = false;
+  summary.hidden = false; summary.className = 'feedback solve-summary';
   summary.classList.toggle('solved', c.solved); summary.classList.toggle('unsolved', !c.solved);
   if (c.solved) summary.textContent = `Solved! Step 1 in ${tries(state.qAttempts)}, Step 2 ${c.score}/${c.total} in ${tries(state.attempts)}. Watch the simulation confirm your answers.`;
   else {
@@ -212,9 +244,27 @@ $('check').addEventListener('click', () => {
   }
   startRun();
 });
+$('reveal').addEventListener('click', () => {
+  if (!state.unlocked || state.attempts < revealAfter(problem())) return;
+  if (!window.confirm('Reveal a correct solution? Your Step 2 score will be marked as revealed.')) return;
+  state.solution = correctOrder(problem());
+  state.revealed = true;
+  state.check = checkSolution(problem(), state.solution);
+  renderAll();
+  const box = $('check-summary');
+  box.hidden = false; box.className = 'feedback solve-summary revealed';
+  box.textContent = 'Here is one correct solution. Steps that do not depend on each other (like the last two) can come in either order. Compare it with your attempt, then press “Try again” to rebuild it yourself.';
+  startRun();
+});
 $('clear').addEventListener('click', () => { if (confirmReset()) loadProblem(state.id); });
 const confirmReset = () => state.qAttempts === 0 && state.attempts === 0 ? true : window.confirm('Start this problem over? Your sorted quantities, blocks and attempt counts will be cleared.');
-$('reshuffle').addEventListener('click', () => { state.bank = shuffled(state.bank, Date.now()); state.qbank = shuffled(state.qbank, Date.now() + 7); renderAll(); });
+$('reshuffle').addEventListener('click', () => {
+  if (state.revealed) {   // Try again: keep Step 1, clear Step 2 so the student rebuilds it.
+    Object.assign(state, { solution: [], check: null, revealed: false, revealedBefore: true });
+    $('check-summary').hidden = true; $('compare').hidden = true; resetSim();
+  }
+  state.bank = shuffled(state.bank, Date.now()); state.qbank = shuffled(state.qbank, Date.now() + 7); renderAll();
+});
 $('problem-select').addEventListener('change', () => loadProblem($('problem-select').value));
 
 /* ---------- simulation ---------- */

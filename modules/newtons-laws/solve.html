@@ -29,13 +29,15 @@
         <div class="solve-zone" id="zone-known" data-zone="known"><h5>Knowns</h5><ul class="solve-list solve-chips" id="knowns" aria-label="Knowns"></ul></div>
         <div class="solve-zone" id="zone-unknown" data-zone="unknown"><h5>Unknowns</h5><ul class="solve-list solve-chips" id="unknowns" aria-label="Unknowns"></ul></div>
       </div>
-      <div class="transport solve-actions"><button id="check-q" class="primary">✓ Check knowns &amp; unknowns</button></div>
+      <div class="transport solve-actions"><button id="check-q" class="primary">✓ Check knowns &amp; unknowns</button><button id="reveal-q" class="reveal-btn">👁 Show correct sort</button></div>
+      <p class="help solve-reveal-note" id="reveal-q-note"></p>
       <div id="q-summary" class="feedback solve-summary" role="status" hidden></div>
       <h4 class="solve-group" id="step2-title">Step 2 · Solution steps</h4>
       <p class="help solve-help">Put one block per step in a valid order. Use ↑ ↓ to reorder and ✕ to return a block to the bank.</p>
       <ol id="solution" class="solve-list solve-solution" aria-labelledby="step2-title"></ol>
       <p id="solution-empty" class="solve-empty">No blocks yet.</p>
-      <div class="transport solve-actions"><button id="check" class="primary">✓ Check &amp; run</button><button id="clear">↺ Reset</button><button id="reshuffle">New shuffle</button></div>
+      <div class="transport solve-actions"><button id="check" class="primary">✓ Check &amp; run</button><button id="clear">↺ Reset</button><button id="reshuffle">New shuffle</button><button id="reveal" class="reveal-btn">👁 Reveal solution</button></div>
+      <p class="help solve-reveal-note" id="reveal-note"></p>
       <div id="check-summary" class="feedback solve-summary" role="status" hidden></div>
     </section>
   </div>

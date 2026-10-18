@@ -321,10 +321,12 @@ Spec: [docs/specs/solve-it.md](docs/specs/solve-it.md); original idea: [docs/ide
 - **Run:** the true motion runs on the track; if the student's blocks imply a different model (wrong
   acceleration or ignored v₀), a dashed ghost cart and dashed graph curves show that model. ✕ marks plot the
   student's numerical answers; a table compares them with the simulation.
-- Nothing is stored or sent. Checker: `solve-check.js`; tests: `tests/solve.test.js` (12 tests: data integrity, Step 1 sorting,
+- **Reveal:** after 2 tries at a step, **Show correct sort** / **Reveal solution** unlock; the score is marked
+  "revealed", and **Try again** lets the student rebuild Step 2 (the score notes the earlier reveal).
+- Nothing is stored or sent. Checker: `solve-check.js`; tests: `tests/solve.test.js` (13 tests: data integrity, Step 1 sorting, reveal answers,
   answers vs the physics engine, valid/commuting orders, out-of-order and flawed-prerequisite feedback,
   distractors, missing/duplicate steps, ghost model, shuffle).
 
-Verification: `node --test` → 111 passed, 0 failed. Browser (Chromium): Step 1 wrong then correct sort, unlock, wrong then correct S1 attempts, keyboard
+Verification: `node --test` → 112 passed, 0 failed. Browser (Chromium): reveal flow for both steps, Step 1 wrong then correct sort, unlock, wrong then correct S1 attempts, keyboard
 entry, reordering, S2 with distractors, no console errors, no page-wide overflow at 390 px; existing Newton's
 Laws pages load with the new tab. Not yet tested on physical phones/tablets, Safari/Firefox or a screen reader.

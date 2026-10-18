@@ -53,3 +53,6 @@
 @media(max-width:440px){.solve-zones{grid-template-columns:1fr}}
 .solve-group+.solve-empty,.solve-group+.solve-help{margin-top:8px}
 #bank-locked{margin:8px 18px 16px}
+.reveal-btn{border-style:dashed}
+.solve-reveal-note{text-align:center;margin:6px 18px 0}
+.solve-summary.revealed{border-left-color:#7851a9;background:#f3eff9}

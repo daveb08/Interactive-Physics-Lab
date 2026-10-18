@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PROBLEMS, PROBLEM_IDS } from '../modules/newtons-laws/solve-problems.js';
-import { checkSolution, checkQuantities, requiredSteps, studentModel, shuffled } from '../modules/newtons-laws/solve-check.js';
+import { checkSolution, checkQuantities, requiredSteps, studentModel, shuffled, correctOrder, correctPlacement, revealAfter } from '../modules/newtons-laws/solve-check.js';
 import { createRun, stepRun, sampleAt } from '../js/core/physics.js';
 
 const near = (a, e, eps = 1e-3, msg = '') => assert.ok(Math.abs(a - e) <= eps, `${msg} ${a} ≠ ${e}`);
@@ -105,4 +105,13 @@ test('Step 1 checker: correct sort, wrong zone, traps and missing cards', () => 
   const part = checkQuantities(S1, { 'q-m': 'known' });
   assert.equal(part.missing.length, 7);
   assert.throws(() => checkQuantities(S1, { nope: 'known' }), RangeError);
+});
+
+test('reveal: the revealed order and sort are fully correct for every problem', () => {
+  for (const id of PROBLEM_IDS) {
+    const p = PROBLEMS[id];
+    assert.equal(checkSolution(p, correctOrder(p)).solved, true, `${id} order`);
+    assert.equal(checkQuantities(p, correctPlacement(p)).solved, true, `${id} sort`);
+    assert.ok(revealAfter(p) >= 1);
+  }
 });

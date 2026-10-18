@@ -96,3 +96,24 @@ export function checkQuantities(problem, placement) {
   const traps = items.filter(i => i.status === 'trap').length;
   return { score, total: needed.length, solved: score === needed.length && traps === 0, items, missing };
 }
+
+/** Tries before the reveal buttons unlock (a problem may override with `revealAfter`). */
+export const REVEAL_AFTER = 2;
+export const revealAfter = problem => problem.revealAfter ?? REVEAL_AFTER;
+
+/** A valid correct order: correct blocks sorted so every dependency comes first (stable w.r.t. data order). */
+export function correctOrder(problem) {
+  const pending = problem.blocks.filter(b => b.correct), done = new Set(), out = [];
+  while (pending.length) {
+    const i = pending.findIndex(b => (b.after || []).every(s => done.has(s)));
+    if (i < 0) throw new Error(`Circular step dependencies in ${problem.title}`);
+    const [b] = pending.splice(i, 1);
+    out.push(b.id); done.add(b.step);
+  }
+  return out;
+}
+
+/** The correct Step 1 placement: every needed card in its box, trap cards left out. */
+export function correctPlacement(problem) {
+  return Object.fromEntries(problem.quantities.filter(q => q.role !== 'none').map(q => [q.id, q.role]));
+}

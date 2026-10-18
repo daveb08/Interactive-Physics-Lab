@@ -23,6 +23,14 @@ each with feedback. **Check knowns & unknowns** marks each card ✓ / ⇄ wrong 
 correct and no traps are placed, Step 1 locks and the solution blocks unlock (Step 2). The problem card no longer
 lists Given/Find, so Step 1 is not given away. Score display: "Step 1 8/8 (2 tries) · Step 2 3/4 (1 try)".
 
+## Reveal (added 2026-10-18)
+
+Students try first; if they get stuck they can reveal the answer. **Show correct sort** (Step 1) and **Reveal
+solution** (Step 2) unlock after 2 tries at that step (`REVEAL_AFTER`, overridable per problem with
+`revealAfter`). Revealing asks for confirmation, fills in a correct answer (Step 2 then runs the simulation), and
+the score says so: "Step 1 revealed (after 2 tries)". After a Step 2 reveal, **Try again** clears the blocks for a
+rebuild; the score keeps "solution was revealed earlier" so reported scores stay honest.
+
 ## Behaviour (Step 2)
 
 1. Student picks a problem; the statement lists givens and what to find.

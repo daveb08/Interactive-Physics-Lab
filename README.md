@@ -262,3 +262,44 @@ Explore the data. Repeat in T1–T3.
 Limitations: responses are not persisted; physical iPads, Safari/Firefox, and
 screen readers have not been tested. The ideal massless-spring physics is
 unchanged. Updated preview: artifacts/fbd-simplified.jpg.
+
+## Forces That Change (Module 05, calculus / engineering tier)
+
+Open `/modules/variable-forces/index.html` or catalog card 05. The first calculus-tier module:
+forces depend on velocity or position, so motion is the solution of an ODE. Spec:
+[docs/specs/forces-that-change.md](docs/specs/forces-that-change.md).
+
+**Scenarios**
+- **Drag:** m v′ = F − b v (linear) or m v′ = F − c v² (quadratic), F ≥ 0 and v₀ ≥ 0 so velocity never
+  reverses. Exact solutions (exponential; tanh/coth; coasting 1/(1 + c v₀ t/m)). Terminal speed and τ are
+  marked on the v graph. Observation: 10 s or x = 50 m (bisection on the exact x(t)).
+- **Spring and damper:** m x″ + b x′ + k x = 0. Exact solutions for undamped, underdamped, critical
+  (|ζ − 1| < 1e-9) and overdamped motion; ω₀, ζ, regime and b for ζ = 1 are shown, with a
+  **Set critical damping** button. Energy bar: kinetic, spring, and energy removed by the damper
+  (E₀ − KE − PE, verified against ∫ b v² dt in tests). Observation: 20 s.
+
+**Calculus tools**
+- **Show the math:** the ODE and solution with current values; an inspect-time slider t*; tangent lines on
+  x(t) and v(t) whose slopes equal v and a; shaded areas under v(t) and a(t) equal to Δx and Δv, measured by
+  finite differences and the trapezoid rule and compared with the exact values.
+- **Numerical methods:** Euler, semi-implicit Euler and RK4 (`js/core/integrators.js`, generic f(t, y))
+  overlaid at h = 0.5 to 0.01 s; |x_num − x_exact| on a log scale; total energy per method for the spring.
+- **CSV export:** exact samples every 0.01 s with forces and energies, plus selected methods at their own
+  steps (blank between steps).
+
+**Guided activities** (prediction-gated, misconception feedback, ungraded reflection and model answer):
+V1 terminal velocity (v_T = F/b = 3 m/s); V2 doubling mass (same v_T, τ doubles); V3 critical damping
+(b = 2√(km) = 8 kg/s, the chosen b is run and all three are overlaid); V4 Euler energy growth
+(× 1 + (ωh)² = 1.16 per step). Answer-revealing readouts stay hidden until the run completes.
+
+**Files:** `js/core/drag-physics.js`, `oscillator-physics.js`, `integrators.js`, `variable-run.js`;
+`js/components/calc-graph.js`, `csv-export.js`; `modules/variable-forces/` (`index.html`, `app.js`,
+`scenes.js`, `activities.js`, `variable-forces.css`). Existing modules are unchanged.
+
+**Verification:** `node --test` → 99 passed, 0 failed (73 prior + 26 new: ODE residuals across parameter
+grids, exact vs RK4 at h = 1e-4, limits as drag → 0, regime continuity, energy bookkeeping, convergence order
+≈2× Euler / ≈16× RK4, Euler energy factor, boundary time, CSV, V1–V4 numbers). Browser checks (Chromium):
+both scenarios, math panel values equal exact values, numerical overlays, CSV download, V1–V4 end to end,
+no console errors, no page-wide overflow at 390, 768 and 1366 px. Not yet tested on physical iPads/iPhones,
+Safari or Firefox, or with a screen reader. On phones the scene drawing is small; graphs and readouts carry
+the detail.

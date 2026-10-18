@@ -91,3 +91,47 @@ test('unit parsing keeps m/s² distinct from m/s and m, and reads ramp angles', 
   assert.deepEqual(by('a'), [9.81]); assert.deepEqual(by('v'), [2]); assert.deepEqual(by('x'), [4]);
   assert.deepEqual(by('t'), [3]); assert.deepEqual(by('mass'), [4]); assert.deepEqual(by('force'), [-5.9]); assert.deepEqual(by('angle'), [30]);
 });
+
+import { resolveProblem, resolveText, placeholderValues, frictionError, prepareProblem } from '../modules/newtons-laws/problem-format.js';
+
+test('friction rule for authored problems: 0 ≤ μk < μs ≤ 1', () => {
+  assert.equal(frictionError(0.3, 0.25), null);
+  assert.match(frictionError(0.3, 0.3), /must be greater than/);
+  assert.match(frictionError(0.2, 0.25), /must be greater than/);
+  assert.match(frictionError(4.3, 2.25), /at most 1/);
+  assert.match(frictionError(0.3, -0.1), /negative/);
+  const p = cleanProblem(clone(PROBLEMS.S4)); p.setup.muS = 0.25;
+  assert.match(validateProblem(p).join(' '), /must be greater than the kinetic/);
+});
+
+test('placeholders fill settings, simulation results and timed values; unknown ones are reported', () => {
+  const p = cleanProblem(clone(PROBLEMS.S4));
+  const ctx = placeholderValues(p);
+  assert.equal(resolveText('{m} kg, {F} N, μk {muK}, a {a}, v {v}, N {N}, f {f}, Fnet {Fnet}, fmax {fmax}, x(3) {x@3}', ctx),
+    '120 kg, 400 N, μk 0.25, a 0.8808, v 1.762, N 1177, f −294.3, Fnet 105.7, fmax 353.2, x(3) 3.964');
+  const probs = []; resolveText('{zz} {tstop} {q@2}', ctx, probs);
+  assert.equal(probs.length, 3);
+  assert.equal(resolveText('stops at {tstop} s', placeholderValues(cleanProblem(clone(PROBLEMS.S2)))), 'stops at 3.058 s');
+});
+
+test('resolveProblem fills text everywhere and blank plotted answers from the simulation', () => {
+  const p = cleanProblem(clone(PROBLEMS.S1));
+  p.statement = 'A {m} kg cart at +{v0} m/s, push {F} N. Find v after {t} s.';
+  p.setup.velocity = 6;
+  const v = p.blocks.find(b => b.id === 'v-ok'); v.text = 'v = {v0} + {a} × {t} = {v} m/s'; delete v.answer.value;
+  const { problem, errors } = resolveProblem(p);
+  assert.deepEqual(errors, []);
+  assert.equal(problem.statement, 'A 4 kg cart at +6 m/s, push 10 N. Find v after 3 s.');
+  assert.equal(problem.blocks.find(b => b.id === 'v-ok').text, 'v = 6 + 2.5 × 3 = 13.5 m/s');
+  assert.equal(problem.blocks.find(b => b.id === 'v-ok').answer.value, 13.5);
+  assert.ok(!prepareProblem(p).errors);
+  assert.equal(p.statement.includes('{m}'), true, 'the source keeps its placeholders');
+});
+
+test('share links and files carry resolved values; raw files with placeholders load too', async () => {
+  const p = cleanProblem(clone(PROBLEMS.S1)); p.statement = 'A {m} kg cart. Find a after {t} s please.';
+  const { problem } = parseProblemJson(JSON.stringify(p));
+  assert.equal(problem.statement, 'A 4 kg cart. Find a after 3 s please.');
+  const { problem: fromLink } = await decodeProblem(await encodeProblem(problem));
+  assert.equal(fromLink.statement, problem.statement);
+});

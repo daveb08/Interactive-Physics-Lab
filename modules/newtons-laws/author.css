@@ -33,3 +33,7 @@
 @media(max-width:760px){.card-row{grid-template-columns:1fr}.author-section{padding:18px}}
 .author-warnings{margin:0;padding-left:20px;color:#8a6210;font-size:13px;line-height:1.7}
 .author-warnings li::marker{content:'⚠ '}
+.ph-preview{color:#236d62;font-size:11.5px;font-weight:500;background:#eef5ef;border-radius:5px;padding:4px 7px}
+.ph-table td code{font-size:12px;background:#f1f4ef;padding:1px 5px;border-radius:4px}.ph-val{font-variant-numeric:tabular-nums;font-weight:600}
+.ph-table{max-width:640px}
+.mu-note{grid-column:1/-1;color:#9a4a1b;font-size:12px;font-weight:600;margin:0}

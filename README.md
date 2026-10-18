@@ -319,6 +319,9 @@ Spec: [docs/specs/solve-it.md](docs/specs/solve-it.md); original idea: [docs/ide
 - **Check & run:** each block is marked ✓ correct, ✗ misconception (targeted feedback), or ↕ out of order /
   builds on a flawed step. Missing steps are listed. Score = correct blocks in a valid position ÷ required steps,
   shown with the attempt count. Any order that respects step dependencies is accepted.
+- **Figures:** problems can name a scene figure (`figure: 'sprinter' | 'pallet'` in the data, drawn by
+  `solve-figures.js`); S3 shows a running sprinter on a track, S4 a worker pushing a brick pallet on concrete. The
+  ghost uses a dashed outline of the same figure. S1/S2 keep the cart.
 - **Run:** the true motion runs on the track; if the student's blocks imply a different model (wrong
   acceleration or ignored v₀), a dashed ghost cart and dashed graph curves show that model. ✕ marks plot the
   student's numerical answers; a table compares them with the simulation.

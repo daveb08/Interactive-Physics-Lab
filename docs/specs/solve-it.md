@@ -50,6 +50,15 @@ rebuild; the score keeps "solution was revealed earlier" so reported scores stay
 - **S4 — Pushing a pallet (construction management):** 120 kg pallet, 400 N push, μs = 0.30, μk = 0.25, from rest.
   (N = 1177 N, f = −294.3 N, F_net = 105.7 N, a = 0.881 m/s², v(2 s) = 1.76 m/s.)
 
+## Picture builder (added 2026-10-18)
+Instructor feedback: writing every card and block by hand is tedious. The builder (`build.html`) starts from the
+picture instead. The instructor sets values on the object, the force arrows and the motion arrows and marks each
+quantity given / find / left out. `problem-builder.js` then forward-chains a rule table (target ← inputs; e.g.
+N ← m, f ← μk,N, F_net ← F,f, a ← F_net,m, v ← v₀,a,t, and inverse rules such as F ← F_net,f or a ← v,v₀,t),
+keeps only the steps that lead to what is asked, and writes each step's correct block and common-mistake blocks.
+Mistake values are propagated forward to give the ghost's acceleration. Starting from rest with μs given adds a
+"Does it slide?" step. Unreachable unknowns and times past a friction stop are reported instead of built.
+
 ## Tests
 
 Checker: correct orders (including commuting steps), out-of-order detection, distractor flagging, missing steps, duplicate steps, score; problem data integrity (every dependency exists, each step has exactly one correct block, stated answers match the physics engine).

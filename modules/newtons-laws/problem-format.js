@@ -5,7 +5,7 @@
 import { createRun, sampleAt, GRAVITY } from '../../js/core/physics.js';
 import { correctOrder } from './solve-check.js';
 
-export const FIGURES = ['cart', 'sprinter', 'pallet'];
+export const FIGURES = ['cart', 'sprinter', 'pallet', 'crate'];
 export const ANSWER_KEYS = { a: 'acceleration (m/s²)', v: 'velocity (m/s)', x: 'position (m)' };
 const LIMITS = { title: 120, statement: 2000, text: 300, feedback: 600, step: 60, noun: 20, label: 20, surface: 80, steps: 10, blocks: 40, quantities: 30 };
 

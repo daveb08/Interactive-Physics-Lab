@@ -1,0 +1,69 @@
+/**
+ * Instructor-authored block problems for "Solve it". Pure data.
+ * Each correct block fills one `step`; `after` lists steps that must come earlier.
+ * Distractors share a step with a correct block and carry misconception feedback.
+ * `effect` describes how a block changes the student's model of the motion (for the ghost cart):
+ *   a  — acceleration the student's solution implies (m/s²)
+ *   v0 — initial velocity the student's solution assumes (m/s)
+ * `answer` is the number a block states, plotted against the simulation: { key: 'a'|'v'|'x', t, value }.
+ */
+export const PROBLEMS = Object.freeze({
+  S1: {
+    title: 'Pushed cart',
+    statement: 'A 4.0 kg cart on a frictionless horizontal track is moving at +2.0 m/s when a constant net horizontal force of +10 N begins to act on it. Find its acceleration, velocity and position after 3.0 s. Take x = 0 at t = 0.',
+    given: ['m = 4.0 kg', 'v₀ = +2.0 m/s', 'F_net = +10 N', 'frictionless', 't = 3.0 s'],
+    find: ['a', 'v(3 s)', 'x(3 s)'],
+    setup: { mass: 4, force: 10, velocity: 2 },
+    targetTime: 3,
+    runTime: 4,
+    steps: { forces: 'Net force', law: 'Newton’s second law', velocity: 'Velocity at 3 s', position: 'Position at 3 s' },
+    blocks: [
+      { id: 'f-ok', step: 'forces', correct: true, text: 'Horizontal net force: F_net = +10 N (weight and normal force cancel vertically).' },
+      { id: 'f-weight', step: 'forces', text: 'Net force: F_net = 10 N + mg = 10 + 39.2 = 49.2 N.', effect: { a: 49.2 / 4 },
+        feedback: 'Weight acts vertically and is balanced by the normal force. Only horizontal forces change horizontal motion.' },
+      { id: 'f-zero', step: 'forces', text: 'The cart is already moving, so it needs no net force: F_net = 0.', effect: { a: 0 },
+        feedback: 'Motion does not require a net force, but a net force is acting here: +10 N. Newton’s first law says zero net force means constant velocity, not that a moving object has zero net force.' },
+      { id: 'a-ok', step: 'law', correct: true, after: ['forces'], text: 'a = F_net / m = 10 N / 4.0 kg = +2.5 m/s²', answer: { key: 'a', t: 3, value: 2.5 } },
+      { id: 'a-inverse', step: 'law', after: ['forces'], text: 'a = m / F_net = 4.0 / 10 = 0.4 m/s²', effect: { a: 0.4 }, answer: { key: 'a', t: 3, value: 0.4 },
+        feedback: 'Check the units: kg/N is s²/m, not m/s². Newton’s second law is F = m a, so a = F/m: a larger force gives a larger acceleration.' },
+      { id: 'a-product', step: 'law', after: ['forces'], text: 'a = F_net · m = 10 × 4.0 = 40 m/s²', effect: { a: 40 }, answer: { key: 'a', t: 3, value: 40 },
+        feedback: 'N·kg is not an acceleration. A heavier cart accelerates less for the same force, so mass divides: a = F/m.' },
+      { id: 'v-ok', step: 'velocity', correct: true, after: ['law'], text: 'v = v₀ + a t = 2.0 + 2.5 × 3.0 = +9.5 m/s', answer: { key: 'v', t: 3, value: 9.5 } },
+      { id: 'v-no-v0', step: 'velocity', after: ['law'], text: 'v = a t = 2.5 × 3.0 = 7.5 m/s', effect: { v0: 0 }, answer: { key: 'v', t: 3, value: 7.5 },
+        feedback: 'This treats the cart as starting from rest. The acceleration adds to the velocity it already had: v = v₀ + a t.' },
+      { id: 'x-ok', step: 'position', correct: true, after: ['law'], text: 'x = v₀ t + ½ a t² = 2.0 × 3.0 + ½ × 2.5 × 3.0² = 17.25 m', answer: { key: 'x', t: 3, value: 17.25 } },
+      { id: 'x-final-v', step: 'position', after: ['law'], text: 'x = v t = 9.5 × 3.0 = 28.5 m', answer: { key: 'x', t: 3, value: 28.5 },
+        feedback: 'x = v t only works when velocity is constant. Here v grows from 2.0 to 9.5 m/s, so using the final velocity overestimates the distance. Use x = v₀ t + ½ a t², or the average velocity (v₀ + v)/2 × t.' },
+      { id: 'x-no-v0', step: 'position', after: ['law'], text: 'x = ½ a t² = ½ × 2.5 × 3.0² = 11.25 m', effect: { v0: 0 }, answer: { key: 'x', t: 3, value: 11.25 },
+        feedback: '½ a t² is the distance from rest. The cart was already moving at 2.0 m/s, which adds v₀ t = 6.0 m.' },
+    ],
+  },
+  S2: {
+    title: 'Sliding to a stop',
+    statement: 'A 3.0 kg block slides on a level floor at +6.0 m/s with no applied force. The coefficient of kinetic friction is 0.20. Find the normal force, the friction force, the acceleration, the time to stop and the stopping distance. Use g = 9.81 m/s².',
+    given: ['m = 3.0 kg', 'v₀ = +6.0 m/s', 'μk = 0.20', 'no applied force', 'g = 9.81 m/s²'],
+    find: ['N', 'f', 'a', 't_stop', 'd'],
+    setup: { mass: 3, force: 0, velocity: 6, frictionEnabled: true, muS: 0.3, muK: 0.2 },
+    targetTime: 6 / (0.2 * 9.81),
+    runTime: 5,
+    steps: { normal: 'Normal force', friction: 'Friction force', law: 'Acceleration', time: 'Stopping time', distance: 'Stopping distance' },
+    blocks: [
+      { id: 'n-ok', step: 'normal', correct: true, text: 'Vertical balance: N = m g = 3.0 × 9.81 = 29.43 N' },
+      { id: 'fr-ok', step: 'friction', correct: true, after: ['normal'], text: 'f = −μk N = −0.20 × 29.43 = −5.886 N (opposes the motion)' },
+      { id: 'fr-forward', step: 'friction', after: ['normal'], text: 'f = +μk N = +5.886 N', effect: { a: 5.886 / 3 },
+        feedback: 'Kinetic friction opposes the sliding. The block moves in +x, so friction points in −x.' },
+      { id: 'fr-no-g', step: 'friction', after: ['normal'], text: 'f = −μk m = −0.20 × 3.0 = −0.60 N', effect: { a: -0.2 },
+        feedback: 'Friction is μk times the normal force, a force in newtons. μk m has units of kg; multiply by g to get N = m g first.' },
+      { id: 'acc-ok', step: 'law', correct: true, after: ['friction'], text: 'a = f / m = −5.886 / 3.0 = −1.962 m/s²', answer: { key: 'a', t: 1, value: -1.962 } },
+      { id: 'acc-mu', step: 'law', after: ['friction'], text: 'a = −μk = −0.20 m/s²', effect: { a: -0.2 }, answer: { key: 'a', t: 1, value: -0.2 },
+        feedback: 'μk is dimensionless, not an acceleration. Here a = f/m = −μk g, so the deceleration is 0.20 × 9.81 = 1.962 m/s².' },
+      { id: 't-ok', step: 'time', correct: true, after: ['law'], text: 'Stops when v = 0: t = (0 − v₀) / a = −6.0 / −1.962 = 3.058 s', answer: { key: 'v', t: 6 / 1.962, value: 0 } },
+      { id: 't-product', step: 'time', after: ['law'], text: 't = v₀ × |a| = 6.0 × 1.962 = 11.77 s', answer: { key: 'v', t: 6 * 1.962, value: 0 },
+        feedback: 'Check the units: (m/s)(m/s²) is not a time. Solve 0 = v₀ + a t for t: t = −v₀ / a.' },
+      { id: 'd-ok', step: 'distance', correct: true, after: ['law'], text: 'd = v₀² / (2|a|) = 6.0² / (2 × 1.962) = 9.174 m', answer: { key: 'x', t: 6 / 1.962, value: 36 / (2 * 1.962) } },
+      { id: 'd-const', step: 'distance', after: ['law'], text: 'd = v₀ t = 6.0 × 3.058 = 18.35 m', answer: { key: 'x', t: 6 / 1.962, value: 6 * 6 / 1.962 },
+        feedback: 'v₀ t assumes the block keeps its initial speed. It slows steadily to zero, so its average speed is v₀/2: d = (v₀/2) t = 9.174 m.' },
+    ],
+  },
+});
+export const PROBLEM_IDS = Object.keys(PROBLEMS);

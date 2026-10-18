@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PROBLEMS, PROBLEM_IDS } from '../modules/newtons-laws/solve-problems.js';
-import { checkSolution, requiredSteps, studentModel, shuffled } from '../modules/newtons-laws/solve-check.js';
+import { checkSolution, checkQuantities, requiredSteps, studentModel, shuffled } from '../modules/newtons-laws/solve-check.js';
 import { createRun, stepRun, sampleAt } from '../js/core/physics.js';
 
 const near = (a, e, eps = 1e-3, msg = '') => assert.ok(Math.abs(a - e) <= eps, `${msg} ${a} ≠ ${e}`);
@@ -83,4 +83,26 @@ test('shuffle is a deterministic permutation', () => {
   const a = shuffled(ids, 42), b = shuffled(ids, 42);
   assert.deepEqual(a, b); assert.deepEqual([...a].sort(), [...ids].sort());
   assert.notDeepEqual(a, ids);
+});
+
+test('Step 1 data: every problem has knowns, unknowns and trap cards with feedback', () => {
+  for (const id of PROBLEM_IDS) {
+    const q = PROBLEMS[id].quantities;
+    for (const role of ['known', 'unknown', 'none']) assert.ok(q.some(c => c.role === role), `${id} has ${role}`);
+    for (const c of q.filter(c => c.role === 'none')) assert.ok(c.feedback, `${id}/${c.id} feedback`);
+    assert.equal(new Set(q.map(c => c.id)).size, q.length);
+  }
+});
+
+test('Step 1 checker: correct sort, wrong zone, traps and missing cards', () => {
+  const all = Object.fromEntries(S1.quantities.filter(q => q.role !== 'none').map(q => [q.id, q.role]));
+  const ok = checkQuantities(S1, all);
+  assert.equal(ok.solved, true); assert.equal(ok.score, 8); assert.equal(ok.total, 8);
+  const bad = checkQuantities(S1, { ...all, 'q-a': 'known', 'q-rest': 'known' });
+  assert.equal(bad.solved, false); assert.equal(bad.score, 7);
+  assert.equal(bad.items.find(i => i.id === 'q-a').status, 'wrong-zone');
+  assert.match(bad.items.find(i => i.id === 'q-rest').message, /already moving/);
+  const part = checkQuantities(S1, { 'q-m': 'known' });
+  assert.equal(part.missing.length, 7);
+  assert.throws(() => checkQuantities(S1, { nope: 'known' }), RangeError);
 });

@@ -6,6 +6,8 @@
  *   a  — acceleration the student's solution implies (m/s²)
  *   v0 — initial velocity the student's solution assumes (m/s)
  * `answer` is the number a block states, plotted against the simulation: { key: 'a'|'v'|'x', t, value }.
+ * `quantities` are the Step 1 cards. `role` is where each belongs: 'known', 'unknown', or 'none' (a trap card
+ * that belongs in neither box; its `feedback` explains why).
  */
 export const PROBLEMS = Object.freeze({
   S1: {
@@ -16,6 +18,19 @@ export const PROBLEMS = Object.freeze({
     setup: { mass: 4, force: 10, velocity: 2 },
     targetTime: 3,
     runTime: 4,
+    quantities: [
+      { id: 'q-m', text: 'm = 4.0 kg', role: 'known' },
+      { id: 'q-v0', text: 'v₀ = +2.0 m/s', role: 'known' },
+      { id: 'q-F', text: 'F_net = +10 N', role: 'known' },
+      { id: 'q-t', text: 't = 3.0 s', role: 'known' },
+      { id: 'q-x0', text: 'x₀ = 0 m', role: 'known' },
+      { id: 'q-a', text: 'a = ?', role: 'unknown' },
+      { id: 'q-v', text: 'v(3 s) = ?', role: 'unknown' },
+      { id: 'q-x', text: 'x(3 s) = ?', role: 'unknown' },
+      { id: 'q-rest', text: 'v₀ = 0 (starts from rest)', role: 'none', feedback: 'The cart is already moving at +2.0 m/s when the force begins, so v₀ = +2.0 m/s, not 0.' },
+      { id: 'q-mu', text: 'μk = ?', role: 'none', feedback: 'The track is frictionless: there is no friction coefficient in this problem, known or unknown.' },
+      { id: 'q-g', text: 'F_net includes mg = 39.2 N', role: 'none', feedback: 'Weight is vertical and balanced by the normal force; it is not part of the horizontal net force.' },
+    ],
     steps: { forces: 'Net force', law: 'Newton’s second law', velocity: 'Velocity at 3 s', position: 'Position at 3 s' },
     blocks: [
       { id: 'f-ok', step: 'forces', correct: true, text: 'Horizontal net force: F_net = +10 N (weight and normal force cancel vertically).' },
@@ -46,6 +61,22 @@ export const PROBLEMS = Object.freeze({
     setup: { mass: 3, force: 0, velocity: 6, frictionEnabled: true, muS: 0.3, muK: 0.2 },
     targetTime: 6 / (0.2 * 9.81),
     runTime: 5,
+    quantities: [
+      { id: 'q-m', text: 'm = 3.0 kg', role: 'known' },
+      { id: 'q-v0', text: 'v₀ = +6.0 m/s', role: 'known' },
+      { id: 'q-muk', text: 'μk = 0.20', role: 'known' },
+      { id: 'q-g', text: 'g = 9.81 m/s²', role: 'known' },
+      { id: 'q-F', text: 'F_applied = 0', role: 'known' },
+      { id: 'q-vf', text: 'v_final = 0 (it stops)', role: 'known' },
+      { id: 'q-N', text: 'N = ?', role: 'unknown' },
+      { id: 'q-f', text: 'f = ?', role: 'unknown' },
+      { id: 'q-a', text: 'a = ?', role: 'unknown' },
+      { id: 'q-ts', text: 't_stop = ?', role: 'unknown' },
+      { id: 'q-d', text: 'd = ?', role: 'unknown' },
+      { id: 'q-mus', text: 'μs = 0.20', role: 'none', feedback: 'The block is sliding, so kinetic friction applies: the 0.20 given is μk. μs is not needed.' },
+      { id: 'q-push', text: 'F_applied = +5.9 N keeps it moving', role: 'none', feedback: 'No force is applied. Friction alone acts horizontally, which is why the block slows down.' },
+      { id: 'q-t3', text: 't = 3.0 s (given)', role: 'none', feedback: 'No time is given. The stopping time is something you must find.' },
+    ],
     steps: { normal: 'Normal force', friction: 'Friction force', law: 'Acceleration', time: 'Stopping time', distance: 'Stopping distance' },
     blocks: [
       { id: 'n-ok', step: 'normal', correct: true, text: 'Vertical balance: N = m g = 3.0 × 9.81 = 29.43 N' },

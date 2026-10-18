@@ -312,17 +312,19 @@ Spec: [docs/specs/solve-it.md](docs/specs/solve-it.md); original idea: [docs/ide
 
 - **Problems:** S1 Pushed cart (F = ma, v = v₀ + at, x = v₀t + ½at²) and S2 Sliding to a stop (N, friction,
   a, stopping time and distance). Problems are data in `modules/newtons-laws/solve-problems.js`.
-- **Building:** tap or Enter adds a block; ↑ ↓ ✕ reorder or remove; mouse drag-and-drop on desktop. Works by touch.
+- **Step 1, knowns and unknowns:** students first sort quantity cards into Knowns and Unknowns (drag or
+  + Known / + Unknown); trap cards belong in neither box and carry feedback. Solving Step 1 unlocks the blocks.
+- **Building (Step 2):** tap or Enter adds a block; ↑ ↓ ✕ reorder or remove; mouse drag-and-drop on desktop. Works by touch.
 - **Check & run:** each block is marked ✓ correct, ✗ misconception (targeted feedback), or ↕ out of order /
   builds on a flawed step. Missing steps are listed. Score = correct blocks in a valid position ÷ required steps,
   shown with the attempt count. Any order that respects step dependencies is accepted.
 - **Run:** the true motion runs on the track; if the student's blocks imply a different model (wrong
   acceleration or ignored v₀), a dashed ghost cart and dashed graph curves show that model. ✕ marks plot the
   student's numerical answers; a table compares them with the simulation.
-- Nothing is stored or sent. Checker: `solve-check.js`; tests: `tests/solve.test.js` (10 tests: data integrity,
+- Nothing is stored or sent. Checker: `solve-check.js`; tests: `tests/solve.test.js` (12 tests: data integrity, Step 1 sorting,
   answers vs the physics engine, valid/commuting orders, out-of-order and flawed-prerequisite feedback,
   distractors, missing/duplicate steps, ghost model, shuffle).
 
-Verification: `node --test` → 109 passed, 0 failed. Browser (Chromium): wrong then correct S1 attempts, keyboard
+Verification: `node --test` → 111 passed, 0 failed. Browser (Chromium): Step 1 wrong then correct sort, unlock, wrong then correct S1 attempts, keyboard
 entry, reordering, S2 with distractors, no console errors, no page-wide overflow at 390 px; existing Newton's
 Laws pages load with the new tab. Not yet tested on physical phones/tablets, Safari/Firefox or a screen reader.

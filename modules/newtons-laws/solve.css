@@ -34,3 +34,22 @@
 .ans-ok{color:#2f7d4f;font-weight:600}.ans-bad{color:#9a4a1b;font-weight:600}
 @media(max-width:1200px){.solve-workspace{grid-template-columns:1fr}}
 @media(max-width:760px){.solve-board{grid-template-columns:1fr}.solve-problem{padding:18px}.experiment-heading .solve-pick{width:100%}.solve-pick select{flex:1}}
+.solve-group{font-size:12px;font-weight:650;margin:16px 18px 0;padding-top:12px;border-top:1px solid #edf0ec}.solve-group:first-of-type{border-top:0;padding-top:0}
+.solve-group span{font-weight:400;color:var(--muted);margin-left:6px}
+.solve-chips{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start}
+.chip{display:inline-flex;align-items:center;gap:4px;border:1px solid #c7d6cc;border-radius:8px;background:#fbfdfa;padding:4px 4px 4px 10px;font-size:13px;font-variant-numeric:tabular-nums;cursor:grab;flex-wrap:wrap;max-width:100%}
+.chip>span{padding-right:4px}
+.chip button{font-size:11px;padding:4px 8px;border-radius:6px}
+.chip .chip-status{flex-basis:100%;font-size:11.5px;padding:2px 6px 4px 0;line-height:1.45}
+.chip.st-correct{border-color:#2f7d4f;background:#eef7ef}.chip.st-correct .chip-status{color:#2f7d4f}
+.chip.st-trap{border-color:#b65b25;background:#fbf1ea}.chip.st-trap .chip-status{color:#9a4a1b}
+.chip.st-wrong-zone{border-color:#b07d12;background:#fdf7e8}.chip.st-wrong-zone .chip-status{color:#8a6210}
+.solve-zones{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 18px 0}
+.solve-zone{border:1.5px dashed #b9c9bd;border-radius:8px;min-height:96px;background:#fafcf9}
+.solve-zone h5{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:8px 10px 0;font-weight:650}
+.solve-zone .solve-list{padding:8px 10px 10px;min-height:56px}
+.solve-zone.drop-target{border-color:#ba622e;background:#fff7f0}
+#qbank{padding-top:10px}
+@media(max-width:440px){.solve-zones{grid-template-columns:1fr}}
+.solve-group+.solve-empty,.solve-group+.solve-help{margin-top:8px}
+#bank-locked{margin:8px 18px 16px}

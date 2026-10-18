@@ -70,3 +70,29 @@ export function shuffled(items, seed = Date.now()) {
   }
   return out;
 }
+
+/**
+ * Step 1: knowns and unknowns.
+ * @param placement { [quantityId]: 'known' | 'unknown' } for the cards the student has placed
+ * @returns {{ score, total, solved, items: Array<{id, zone, status, message}>, missing: string[] }}
+ *   status: 'correct' | 'wrong-zone' | 'trap'
+ */
+export function checkQuantities(problem, placement) {
+  const byId = Object.fromEntries(problem.quantities.map(q => [q.id, q]));
+  const items = [];
+  let score = 0;
+  for (const [id, zone] of Object.entries(placement)) {
+    const q = byId[id];
+    if (!q) throw new RangeError(`Unknown quantity ${id}`);
+    if (zone !== 'known' && zone !== 'unknown') throw new RangeError(`Unknown zone ${zone}`);
+    if (q.role === 'none') items.push({ id, zone, status: 'trap', message: q.feedback });
+    else if (q.role !== zone) items.push({ id, zone, status: 'wrong-zone', message: zone === 'known'
+      ? 'The problem asks you to find this, so it is an unknown.'
+      : 'This value is stated (or implied) in the problem, so it is a known.' });
+    else { items.push({ id, zone, status: 'correct', message: '' }); score++; }
+  }
+  const needed = problem.quantities.filter(q => q.role !== 'none');
+  const missing = needed.filter(q => placement[q.id] === undefined).map(q => q.text);
+  const traps = items.filter(i => i.status === 'trap').length;
+  return { score, total: needed.length, solved: score === needed.length && traps === 0, items, missing };
+}

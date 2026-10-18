@@ -14,7 +14,16 @@ Source idea: [docs/ideas/block-problem-solver.md](../ideas/block-problem-solver.
 | Accessibility | Every block is a button. Tap or Enter adds a block; ↑ ↓ ✕ buttons reorder or remove it. Mouse drag-and-drop is an extra on desktop, never required. Works by touch on phones and tablets. |
 | Authoring | Problems are data (`solve-problems.js`): statement, blocks, dependencies, distractor feedback, and each block's effect on the student's model. No code changes to add a problem. |
 
-## Behaviour
+## Step 1: knowns and unknowns (added 2026-10-18)
+
+Before choosing solution blocks, students sort **quantity cards** from the bank into **Knowns** and **Unknowns**
+(drag, or **+ Known** / **+ Unknown** buttons; ⇄ moves a card between boxes, ✕ returns it). Some cards are traps
+that belong in neither box (e.g. "v₀ = 0 (starts from rest)" for a moving cart; "μs = 0.20" for a sliding block),
+each with feedback. **Check knowns & unknowns** marks each card ✓ / ⇄ wrong box / ✗ trap. When all needed cards are
+correct and no traps are placed, Step 1 locks and the solution blocks unlock (Step 2). The problem card no longer
+lists Given/Find, so Step 1 is not given away. Score display: "Step 1 8/8 (2 tries) · Step 2 3/4 (1 try)".
+
+## Behaviour (Step 2)
 
 1. Student picks a problem; the statement lists givens and what to find.
 2. The block bank holds the correct steps plus distractors, shuffled. Each distractor encodes one misconception.

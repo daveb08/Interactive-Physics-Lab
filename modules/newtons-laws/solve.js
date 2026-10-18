@@ -3,14 +3,20 @@ import { createRun, stepRun, sampleAt } from '../../js/core/physics.js';
 import { CartView } from '../../js/components/cart.js';
 import { CalcGraph } from '../../js/components/calc-graph.js';
 import { PROBLEMS, PROBLEM_IDS } from './solve-problems.js';
-import { checkSolution, studentModel, shuffled } from './solve-check.js';
+import { checkSolution, checkQuantities, studentModel, shuffled } from './solve-check.js';
 
 const $ = id => document.getElementById(id);
 const UNITS = { a: 'm/s²', v: 'm/s', x: 'm', t: 's' };
 const STATUS_TEXT = { correct: '✓ Correct', misconception: '✗ ', order: '↕ ', duplicate: '⧉ ' };
+const Q_STATUS = { correct: '✓', 'wrong-zone': '⇄ ', trap: '✗ ' };
 const fmt = v => (Math.abs(v) < 5e-4 ? 0 : v).toFixed(Math.abs(v) >= 100 ? 1 : Math.abs(v) >= 10 ? 2 : 3);
+const tries = n => `${n} ${n === 1 ? 'try' : 'tries'}`;
 
-const state = { id: PROBLEM_IDS[0], bank: [], solution: [], attempts: 0, check: null };
+const state = {
+  id: PROBLEM_IDS[0],
+  qbank: [], placement: {}, qOrder: [], qAttempts: 0, qCheck: null, unlocked: false,
+  bank: [], solution: [], attempts: 0, check: null,
+};
 let trueRun = null, ghostRun = null, trueFull = [], model = null;
 
 const cart = new CartView($('cart-scene'));
@@ -26,35 +32,109 @@ const graphs = {
 };
 const problem = () => PROBLEMS[state.id];
 const block = id => problem().blocks.find(b => b.id === id);
+const quantity = id => problem().quantities.find(q => q.id === id);
 
-/* ---------- problem + lists ---------- */
+/* ---------- problem ---------- */
 for (const id of PROBLEM_IDS) { const o = document.createElement('option'); o.value = id; o.textContent = `${id} — ${PROBLEMS[id].title}`; $('problem-select').append(o); }
 
 function loadProblem(id) {
-  state.id = id; state.attempts = 0; state.check = null; state.solution = [];
-  state.bank = shuffled(problem().blocks.map(b => b.id), Date.now());
+  Object.assign(state, { id, placement: {}, qOrder: [], qAttempts: 0, qCheck: null, unlocked: false, solution: [], attempts: 0, check: null });
   const p = problem();
+  state.qbank = shuffled(p.quantities.map(q => q.id), Date.now());
+  state.bank = shuffled(p.blocks.map(b => b.id), Date.now() + 1);
   $('problem-title').textContent = `${id} — ${p.title}`;
   $('problem-statement').textContent = p.statement;
-  const fill = (el, items) => el.replaceChildren(...items.map(t => Object.assign(document.createElement('li'), { textContent: t })));
-  fill($('problem-given'), p.given); fill($('problem-find'), p.find);
-  $('check-summary').hidden = true; $('compare').hidden = true;
+  $('check-summary').hidden = true; $('q-summary').hidden = true; $('compare').hidden = true;
   resetSim();
-  renderLists();
+  renderAll();
 }
 
+function renderAll() { renderQuantities(); renderLists(); renderScore(); }
+
+function renderScore() {
+  const q = state.qCheck ? `Step 1 ${state.qCheck.score}/${state.qCheck.total} (${tries(state.qAttempts)})` : `Step 1 (${tries(state.qAttempts)})`;
+  const s = state.unlocked ? (state.check ? ` · Step 2 ${state.check.score}/${state.check.total} (${tries(state.attempts)})` : ` · Step 2 (${tries(state.attempts)})`) : '';
+  $('score').textContent = q + s;
+}
+
+/* ---------- Step 1: quantity cards ---------- */
+function chip(id, zone) {
+  const q = quantity(id), li = document.createElement('li'), wrap = document.createElement('div');
+  wrap.className = 'chip'; wrap.draggable = true; wrap.dataset.id = id;
+  wrap.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', `q:${id}`); e.dataTransfer.effectAllowed = 'move'; });
+  const label = document.createElement('span'); label.textContent = q.text; wrap.append(label);
+  const btn = (text, aria, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = text; b.setAttribute('aria-label', `${aria}: ${q.text}`); b.addEventListener('click', fn); wrap.append(b); };
+  if (!zone) {
+    btn('+ Known', 'Add to knowns', () => place(id, 'known'));
+    btn('+ Unknown', 'Add to unknowns', () => place(id, 'unknown'));
+  } else {
+    btn('⇄', `Move to ${zone === 'known' ? 'unknowns' : 'knowns'}`, () => place(id, zone === 'known' ? 'unknown' : 'known'));
+    btn('✕', 'Return to bank', () => unplace(id));
+    const r = state.qCheck?.items.find(i => i.id === id && i.zone === zone);
+    if (r) {
+      wrap.classList.add(`st-${r.status}`);
+      const st = document.createElement('span'); st.className = 'chip-status';
+      st.textContent = r.status === 'correct' ? '✓ Correct' : `${Q_STATUS[r.status]}${r.message}`;
+      wrap.append(st);
+    }
+  }
+  li.append(wrap); return li;
+}
+function renderQuantities() {
+  $('qbank').replaceChildren(...state.qbank.filter(id => !(id in state.placement)).map(id => chip(id)));
+  for (const zone of ['known', 'unknown']) $(`${zone}s`).replaceChildren(...state.qOrder.filter(id => state.placement[id] === zone).map(id => chip(id, zone)));
+  const locked = state.unlocked;
+  $('check-q').disabled = locked || Object.keys(state.placement).length === 0;
+  for (const b of document.querySelectorAll('#knowns button, #unknowns button, #qbank button')) b.disabled = locked;
+}
+function qEdited() { state.qCheck = null; $('q-summary').hidden = true; renderQuantities(); renderScore(); }
+function place(id, zone) {
+  if (state.unlocked || !quantity(id)) return;
+  state.placement[id] = zone;
+  state.qOrder = [...state.qOrder.filter(x => x !== id), id];
+  qEdited();
+}
+function unplace(id) { if (state.unlocked) return; delete state.placement[id]; state.qOrder = state.qOrder.filter(x => x !== id); qEdited(); }
+
+for (const zone of ['known', 'unknown']) {
+  const el = $(`zone-${zone}`);
+  el.addEventListener('dragover', e => { if (!state.unlocked) { e.preventDefault(); el.classList.add('drop-target'); } });
+  el.addEventListener('dragleave', () => el.classList.remove('drop-target'));
+  el.addEventListener('drop', e => { e.preventDefault(); el.classList.remove('drop-target'); const d = e.dataTransfer.getData('text/plain'); if (d.startsWith('q:')) place(d.slice(2), zone); });
+}
+$('qbank').addEventListener('dragover', e => e.preventDefault());
+$('qbank').addEventListener('drop', e => { e.preventDefault(); const d = e.dataTransfer.getData('text/plain'); if (d.startsWith('q:')) unplace(d.slice(2)); });
+
+$('check-q').addEventListener('click', () => {
+  state.qAttempts++;
+  state.qCheck = checkQuantities(problem(), state.placement);
+  const c = state.qCheck, box = $('q-summary');
+  box.hidden = false; box.classList.toggle('solved', c.solved); box.classList.toggle('unsolved', !c.solved);
+  if (c.solved) {
+    state.unlocked = true;
+    box.textContent = `Step 1 complete: all ${c.total} knowns and unknowns sorted (${tries(state.qAttempts)}). The solution blocks are now unlocked.`;
+  } else {
+    const flagged = c.items.filter(i => i.status !== 'correct').length;
+    box.textContent = `${c.score} of ${c.total} placed correctly.${flagged ? ` ${flagged} card${flagged > 1 ? 's' : ''} flagged: read the feedback.` : ''}${c.missing.length ? ` ${c.missing.length} quantit${c.missing.length > 1 ? 'ies are' : 'y is'} still in the bank and belong${c.missing.length > 1 ? '' : 's'} in a box.` : ''} Some cards belong in neither box. Fix it and check again.`;
+  }
+  renderAll();
+  if (c.solved) $('bank').querySelector('.block')?.focus();
+});
+
+/* ---------- Step 2: solution blocks ---------- */
 function makeBlockButton(id, inSolution) {
   const b = document.createElement('button');
   b.type = 'button'; b.className = 'block'; b.dataset.id = id; b.draggable = true;
   b.textContent = block(id).text;
   b.setAttribute('aria-label', `${block(id).text}. ${inSolution ? 'In your solution. Press Delete to remove.' : 'Add to solution.'}`);
-  b.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; });
+  b.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', `b:${id}`); e.dataTransfer.effectAllowed = 'move'; });
   return b;
 }
 
 function renderLists() {
   const bank = $('bank'), sol = $('solution');
-  bank.replaceChildren(...state.bank.filter(id => !state.solution.includes(id)).map(id => {
+  $('bank-locked').hidden = state.unlocked; $('bank-help').hidden = !state.unlocked;
+  bank.replaceChildren(...(state.unlocked ? state.bank.filter(id => !state.solution.includes(id)) : []).map(id => {
     const li = document.createElement('li'), btn = makeBlockButton(id, false);
     btn.addEventListener('click', () => addBlock(id));
     li.append(btn); return li;
@@ -62,7 +142,6 @@ function renderLists() {
   const results = state.check ? Object.fromEntries(state.check.blocks.map((r, i) => [`${r.id}#${i}`, r])) : {};
   sol.replaceChildren(...state.solution.map((id, i) => {
     const li = document.createElement('li'), btn = makeBlockButton(id, true), tools = document.createElement('div');
-    li.dataset.index = i;
     const r = results[`${id}#${i}`];
     if (r) {
       li.className = `st-${r.status}`;
@@ -71,7 +150,6 @@ function renderLists() {
       btn.append(s);
     }
     btn.addEventListener('keydown', e => { if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeBlock(i); } });
-    btn.addEventListener('click', () => btn.focus());
     tools.className = 'block-tools';
     for (const [label, aria, fn, disabled] of [['↑', 'Move up', () => move(i, -1), i === 0], ['↓', 'Move down', () => move(i, 1), i === state.solution.length - 1], ['✕', 'Remove', () => removeBlock(i), false]]) {
       const t = document.createElement('button'); t.type = 'button'; t.textContent = label; t.disabled = disabled;
@@ -80,17 +158,19 @@ function renderLists() {
     li.append(btn, tools);
     li.addEventListener('dragover', e => { e.preventDefault(); li.classList.add('drop-before'); });
     li.addEventListener('dragleave', () => li.classList.remove('drop-before'));
-    li.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); li.classList.remove('drop-before'); dropAt(e.dataTransfer.getData('text/plain'), i); });
+    li.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); li.classList.remove('drop-before'); const d = e.dataTransfer.getData('text/plain'); if (d.startsWith('b:')) dropAt(d.slice(2), i); });
     return li;
   }));
   $('solution-empty').hidden = state.solution.length > 0;
-  $('bank-count').textContent = `${bank.children.length} left`;
-  $('score').textContent = state.check ? `Score ${state.check.score}/${state.check.total} · Attempt ${state.attempts}` : `Attempt ${state.attempts}`;
-  $('check').disabled = state.solution.length === 0;
+  $('solution-empty').textContent = state.unlocked ? 'No blocks yet. Add blocks from the bank.' : 'Complete Step 1 first.';
+  const left = state.qbank.filter(id => !(id in state.placement)).length + (state.unlocked ? bank.children.length : 0);
+  $('bank-count').textContent = `${left} left`;
+  $('check').disabled = !state.unlocked || state.solution.length === 0;
+  $('reshuffle').disabled = false;
 }
 
-function edited() { state.check = null; $('check-summary').hidden = true; renderLists(); }
-function addBlock(id) { state.solution.push(id); edited(); focusSolution(state.solution.length - 1); }
+function edited() { state.check = null; $('check-summary').hidden = true; renderLists(); renderScore(); }
+function addBlock(id) { if (!state.unlocked) return; state.solution.push(id); edited(); $('solution').children[state.solution.length - 1]?.querySelector('.block')?.focus(); }
 function removeBlock(i) { state.solution.splice(i, 1); edited(); }
 function move(i, d) {
   const j = i + d; if (j < 0 || j >= state.solution.length) return;
@@ -99,45 +179,45 @@ function move(i, d) {
   $('solution').children[j]?.querySelectorAll('.block-tools button')[d < 0 ? 0 : 1]?.focus();
 }
 function dropAt(id, index) {
-  if (!id || !block(id)) return;
+  if (!state.unlocked || !id || !block(id)) return;
   const from = state.solution.indexOf(id);
   if (from >= 0) { state.solution.splice(from, 1); if (from < index) index--; }
   state.solution.splice(index, 0, id);
   edited();
 }
-function focusSolution(i) { $('solution').children[i]?.querySelector('.block')?.focus(); }
-
 for (const [el, toSolution] of [[$('solution'), true], [$('bank'), false]]) {
   el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drop-target'); });
   el.addEventListener('dragleave', () => el.classList.remove('drop-target'));
   el.addEventListener('drop', e => {
     e.preventDefault(); el.classList.remove('drop-target');
-    const id = e.dataTransfer.getData('text/plain');
+    const d = e.dataTransfer.getData('text/plain'); if (!d.startsWith('b:')) return;
+    const id = d.slice(2);
     if (toSolution) dropAt(id, state.solution.length);
     else { const i = state.solution.indexOf(id); if (i >= 0) removeBlock(i); }
   });
 }
 
-/* ---------- check & run ---------- */
 $('check').addEventListener('click', () => {
   const p = problem();
   state.attempts++;
   state.check = checkSolution(p, state.solution);
-  renderLists();
+  renderLists(); renderScore();
   const c = state.check, summary = $('check-summary');
   summary.hidden = false;
   summary.classList.toggle('solved', c.solved); summary.classList.toggle('unsolved', !c.solved);
-  if (c.solved) summary.textContent = `Solved! Score ${c.score}/${c.total} on attempt ${state.attempts}. Watch the simulation confirm your answers.`;
+  if (c.solved) summary.textContent = `Solved! Step 1 in ${tries(state.qAttempts)}, Step 2 ${c.score}/${c.total} in ${tries(state.attempts)}. Watch the simulation confirm your answers.`;
   else {
     const flagged = c.blocks.filter(b => b.status !== 'correct').length;
     summary.textContent = `${c.score} of ${c.total} steps correct.${flagged ? ` ${flagged} block${flagged > 1 ? 's' : ''} flagged: read the feedback on ${flagged > 1 ? 'them' : 'it'}.` : ''}${c.missing.length ? ` Missing: ${c.missing.join(', ')}.` : ''} Fix it and check again.`;
   }
   startRun();
 });
-$('clear').addEventListener('click', () => { state.solution = []; edited(); resetSim(); $('compare').hidden = true; });
-$('reshuffle').addEventListener('click', () => { state.bank = shuffled(state.bank, Date.now()); renderLists(); });
+$('clear').addEventListener('click', () => { if (confirmReset()) loadProblem(state.id); });
+const confirmReset = () => state.qAttempts === 0 && state.attempts === 0 ? true : window.confirm('Start this problem over? Your sorted quantities, blocks and attempt counts will be cleared.');
+$('reshuffle').addEventListener('click', () => { state.bank = shuffled(state.bank, Date.now()); state.qbank = shuffled(state.qbank, Date.now() + 7); renderAll(); });
 $('problem-select').addEventListener('change', () => loadProblem($('problem-select').value));
 
+/* ---------- simulation ---------- */
 const clock = new SimulationClock(() => {
   if (!trueRun.done) stepRun(trueRun);
   if (ghostRun && !ghostRun.done && ghostRun.state.t < trueRun.state.t + 1e-9) stepRun(ghostRun);
@@ -175,31 +255,23 @@ function startRun() {
   $('run-status').textContent = 'Running';
   clock.start();
 }
-
 function answerPoints(key) {
   return state.solution.map(block).filter(b => b.answer && b.answer.key === key)
     .map(b => ({ t: b.answer.t, value: b.answer.value, label: `you: ${fmt(b.step === 'time' ? b.answer.t : b.answer.value)} ${b.step === 'time' ? 's' : UNITS[key]}`, color: b.correct ? '#2f7d4f' : '#ba622e' }));
 }
-
 function render() {
   const s = trueRun.state;
   cart.render(trueRun);
-  if (ghostRun) {
-    const g = ghostRun.state;
-    ghost.style.display = '';
-    ghost.setAttribute('transform', `translate(${70 + (g.x + 50) / 100 * 640} 0)`);
-  } else ghost.style.display = 'none';
+  if (ghostRun) { ghost.style.display = ''; ghost.setAttribute('transform', `translate(${70 + (ghostRun.state.x + 50) / 100 * 640} 0)`); }
+  else ghost.style.display = 'none';
   $('r-t').textContent = s.t.toFixed(2); $('r-x').textContent = fmt(s.x); $('r-v').textContent = fmt(s.v); $('r-a').textContent = fmt(trueRun.a);
   const checked = !!state.check;
-  for (const k of ['x', 'v', 'a']) {
-    graphs[k].render({
-      samples: trueRun.samples,
-      overlays: ghostRun ? [{ data: ghostRun.samples, color: '#ba622e', dash: '6 4', legend: 'your model' }] : [],
-      points: checked ? answerPoints(k) : [],
-    });
-  }
+  for (const k of ['x', 'v', 'a']) graphs[k].render({
+    samples: trueRun.samples,
+    overlays: ghostRun ? [{ data: ghostRun.samples, color: '#ba622e', dash: '6 4', legend: 'your model' }] : [],
+    points: checked ? answerPoints(k) : [],
+  });
 }
-
 function showCompare() {
   const p = problem(), rows = [];
   for (const id of state.solution) {

@@ -6,6 +6,9 @@ const $ = id => document.getElementById(id);
 const KEY = 'ipl-solve-builder', AUTHOR_DRAFT = 'ipl-solve-author-draft';
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const COLORS = { F: '#c24c2a', f: '#7851a9', N: '#3d6fa8', W: '#3c4a46', Fnet: '#236d62', v0: '#2d7fb8', v: '#2d7fb8', a: '#b07d12', x: '#667674', dstop: '#667674' };
+// How much the ▲▼ arrows (and the keyboard arrow keys) change each value. Any value can still be typed.
+const STEPS = { muS: 0.01, muK: 0.01, m: 0.1, t: 0.1, v0: 0.1, a: 0.1, v: 0.1, x: 0.1, tstop: 0.1, dstop: 0.1, F: 1, W: 1, N: 1, f: 1, Fnet: 1 };
+const stepFor = (k, v) => (k === 'muS' || k === 'muK' ? 0.01 : Math.max(STEPS[k] ?? 0.1, Math.abs(v) >= 1 ? 10 ** (Math.floor(Math.log10(Math.abs(v))) - 2) : 0));
 const ROLE_TEXT = { given: 'Given in the problem', find: 'Students find', hidden: 'Leave out' };
 const HOW = {
   W: 'Typing a weight changes the mass to match (m = W / g).', N: 'Typing a normal force changes the mass to match (N = m g on a level surface).',
@@ -111,12 +114,12 @@ function drawEditor(V, roles, app) {
   const canFind = selected !== 'muS';
   const val = Number(valueOf(V, selected).toPrecision(6));
   box.innerHTML = `<div class="ed-head"><strong>${esc(q.label)}</strong> <span class="ed-sym">${esc(q.sym)}</span></div>
-    <div class="ed-row"><label>Value <input id="ed-value" type="number" step="any" value="${val}" ${selected === 'muS' || selected === 'muK' ? 'min="0" max="1"' : ''}> ${esc(q.unit)}</label>
+    <div class="ed-row"><label>Value <input id="ed-value" type="number" step="${stepFor(selected, val)}" value="${val}" ${selected === 'muS' || selected === 'muK' ? 'min="0" max="1"' : ''}> ${esc(q.unit)}</label>
     <div class="ed-roles" role="radiogroup" aria-label="In the problem">${['given', 'find', 'hidden'].map(r => `<button type="button" role="radio" aria-checked="${role === r}" data-role="${r}" class="ed-role r-${r}" ${r === 'find' && !canFind ? 'disabled title="Students cannot find μs from the motion"' : ''}>${ROLE_TEXT[r]}</button>`).join('')}</div></div>
     <p class="help">${esc(q.input ? 'This is one of the simulation’s settings.' : HOW[selected] || '')}</p>
     <p id="ed-note" class="ed-note">${esc(lastNote)}</p>`;
   const input = $('ed-value');
-  input.addEventListener('change', () => {
+  const apply = () => {
     const r = editValue(sc, selected, Number(input.value));
     if (input.value === '' || r.error) { lastNote = r.error || 'Enter a number.'; $('ed-note').textContent = lastNote; $('ed-note').classList.add('bad'); return; }
     if (sc.autoStatement === false && sc.statement) {
@@ -124,7 +127,10 @@ function drawEditor(V, roles, app) {
       if (updated !== sc.statement) { r.sc.statement = updated; r.note = `${r.note ? `${r.note} ` : ''}Updated the number in your problem statement.`; }
     }
     sc = r.sc; lastNote = r.note || ''; render(true);
-  });
+  };
+  input.addEventListener('change', apply);
+  // ▲▼ arrows and arrow keys step the value (no inputType); typed digits wait for Enter or leaving the box.
+  input.addEventListener('input', e => { if (!e.inputType && input.value !== '') apply(); });
   box.querySelectorAll('[data-role]').forEach(b => b.addEventListener('click', () => { sc.roles[selected] = b.dataset.role; lastNote = ''; render(); }));
 }
 

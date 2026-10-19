@@ -398,3 +398,12 @@ E6 resistance and Ohm's law, E7 circuits and DC instruments) and Magnetism and w
 E9 induction, E10 AC circuits and technologies, E11 electromagnetic waves). Every topic is algebra-based,
 with an optional calculus tier on the same lab. All topics show "Coming soon" until their lab ships.
 Spec: [docs/specs/electromagnetism.md](docs/specs/electromagnetism.md).
+
+## Circular Motion (module 02)
+
+Hub: `/modules/circular-motion/index.html` with three units: circular motion (C1–C2), applied cases: flat and
+banked curves, vertical circles (C3–C5), and rotational motion: angular kinematics, torque and equilibrium,
+rotational dynamics, rolling and angular momentum (C6–C9). **C1 Uniform circular motion** is built: a top view of
+a puck on a string with live v, a and F vectors, a ✂ Cut the string button, graphs of the components and the
+tension, a key-ideas table and an optional "Show the calculus" panel, plus four prediction-gated guided activities
+(U1–U4). Physics: `js/core/circular-physics.js` (tested in `tests/circular.test.js`). Plan: `docs/specs/circular-motion.md`.

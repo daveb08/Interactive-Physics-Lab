@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Uniform Circular Motion · Interactive Physics Lab</title><link rel="stylesheet" href="../../css/styles.css"><link rel="stylesheet" href="../variable-forces/variable-forces.css"><link rel="stylesheet" href="circular.css"><script type="module" src="uniform.js"></script></head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header"><a class="brand" href="../../index.html"><span class="brand-icon" aria-hidden="true">↗</span> Interactive Physics Lab</a><a class="back-link" href="index.html">← Circular Motion topics</a></header>
+<main id="main" class="lab">
+  <div class="lab-heading"><div><p class="eyebrow">MODULE 02 · C1 / CIRCULAR MOTION</p><h1>Uniform Circular Motion</h1><p>Constant speed, changing direction: why moving in a circle takes a force toward the centre.</p></div><span class="lab-tag"><span aria-hidden="true">●</span> Algebra core · calculus option</span></div>
+  <nav class="law-nav" aria-label="Unit 1: Circular motion"><a href="uniform.html" aria-current="page"><b>C1</b> Uniform circular motion</a><span class="nav-soon"><b>C2</b> What provides the force? · soon</span></nav>
+  <div class="experiment-heading">
+    <div><p class="eyebrow">TOP VIEW · PUCK ON A STRING · FRICTIONLESS TABLE</p></div>
+    <div class="mode-switch" role="group" aria-label="Experiment experience"><button id="free-exploration" aria-pressed="true">Free Exploration</button><button id="guided-experiments" aria-pressed="false">Guided U1–U4</button></div>
+  </div>
+
+  <section id="guided-intro" class="panel guided-intro vf-guided" hidden aria-labelledby="guided-title">
+    <label for="guided-select">Choose an activity</label><select id="guided-select"></select>
+    <h2 id="guided-title"></h2><h3>Learning objective</h3><p id="guided-objective"></p>
+    <h3>Conditions · locked for this activity</h3><p id="guided-conditions"></p>
+    <form id="guided-prediction-form"><fieldset><legend id="guided-question"></legend><div id="guided-choices" class="choices"></div></fieldset><button type="submit">Save prediction</button><p id="guided-prediction-status" role="status">Save a prediction to unlock the experiment.</p></form>
+  </section>
+
+  <div class="workspace">
+    <aside class="panel controls"><div class="panel-heading"><h3>Experiment controls</h3><span>01</span></div>
+      <fieldset id="settings"><legend class="sr-only">Circle settings</legend>
+        <div class="control"><label for="mass">Mass m <output id="mass-value">0.5 kg</output></label><input id="mass" type="range" min="0.1" max="5" step="0.1" value="0.5"></div>
+        <div class="control"><label for="radius">Radius r <output id="radius-value">1.5 m</output></label><input id="radius" type="range" min="0.5" max="2" step="0.05" value="1.5"></div>
+        <div class="control"><label for="speed">Speed v <output id="speed-value">3 m/s</output></label><input id="speed" type="range" min="0.5" max="6" step="0.1" value="3"></div>
+      </fieldset>
+      <fieldset class="cm-show"><legend>Show on the puck</legend>
+        <label><input type="checkbox" id="show-v" checked> <span class="k-v">Velocity v</span></label>
+        <label><input type="checkbox" id="show-a" checked> <span class="k-a">Acceleration a</span></label>
+        <label><input type="checkbox" id="show-f" checked> <span class="k-f">Net force (string tension)</span></label>
+        <label><input type="checkbox" id="show-trail" checked> Trail</label>
+      </fieldset>
+      <div class="equation"><span>CENTRIPETAL FORCE</span><strong>F = m v²/r</strong><span id="eq-values"></span></div>
+      <p class="help" id="settings-help">Settings stay fixed during a run. Reset to change them.</p>
+    </aside>
+
+    <section class="panel simulation" aria-labelledby="simulation-title"><div class="panel-heading"><h3 id="simulation-title">The experiment</h3><span class="status" id="run-status" role="status">Ready</span></div>
+      <div class="scene cm-scene"><svg id="scene" viewBox="0 0 560 520" role="img" aria-label="Top view of the puck circling the centre pin"></svg></div>
+      <div class="readouts cm-readouts">
+        <div><span>Time</span><strong><output id="r-t">0.00</output> <small>s</small></strong></div>
+        <div><span>Speed</span><strong><output id="r-v">0.00</output> <small>m/s</small></strong></div>
+        <div><span>Period T</span><strong><output id="r-T">–</output> <small>s</small></strong></div>
+        <div><span>Accel. toward centre</span><strong><output id="r-a">0.00</output> <small>m/s²</small></strong></div>
+        <div><span>String tension</span><strong><output id="r-F">0.00</output> <small>N</small></strong></div>
+        <div><span>Angular speed ω</span><strong><output id="r-w">–</output> <small>rad/s</small></strong></div>
+      </div>
+      <div class="transport"><button id="start" class="primary">▶ Start</button><button id="pause" disabled>Pause</button><button id="cut" disabled>✂ Cut the string</button><button id="reset">↺ Reset</button><button id="defaults">Defaults</button></div>
+      <p id="run-message" class="run-message" role="status"></p>
+      <div class="track-note"><strong>Model</strong><p id="model-note">A puck slides on a frictionless horizontal table, tied by a light string to a pin at the centre. Seen from above, the only horizontal force is the string’s pull toward the pin. Gravity and the table’s normal force are vertical and cancel.</p></div>
+    </section>
+
+    <section class="panel graphs" aria-labelledby="graphs-title"><div class="panel-heading"><h3 id="graphs-title">Motion graphs</h3><span>LIVE</span></div><p class="graph-help">x and y are measured from the pin; dashed lines are the y components.</p>
+      <svg id="g-x" viewBox="0 0 400 165" role="img"></svg><svg id="g-v" viewBox="0 0 400 165" role="img"></svg><svg id="g-f" viewBox="0 0 400 165" role="img"></svg></section>
+  </div>
+
+  <div class="vf-tools">
+    <section class="panel" aria-labelledby="key-title"><div class="panel-heading"><h3 id="key-title">Key ideas</h3><span>ALGEBRA</span></div>
+      <div class="vf-body">
+        <table class="vf-table cm-eqs"><tbody>
+          <tr><th scope="row">Period (time per lap)</th><td class="vf-eq">T = 2πr / v</td><td><output id="k-T"></output></td></tr>
+          <tr><th scope="row">Angular speed</th><td class="vf-eq">ω = v / r = 2π / T</td><td><output id="k-w"></output></td></tr>
+          <tr><th scope="row">Centripetal acceleration</th><td class="vf-eq">a = v² / r</td><td><output id="k-a"></output></td></tr>
+          <tr><th scope="row">Net force needed</th><td class="vf-eq">F = m v² / r</td><td><output id="k-F"></output></td></tr>
+        </tbody></table>
+        <p class="help">The speed never changes, but the direction of the velocity does, so the puck is accelerating. The acceleration and the net force point toward the centre. Nothing pushes the puck outward: cut the string and see.</p>
+      </div>
+    </section>
+    <section class="panel vf-math" aria-labelledby="math-title"><div class="panel-heading"><h3 id="math-title">Show the calculus</h3><label class="vf-toggle"><input type="checkbox" id="math-on"> On</label></div>
+      <p id="math-off" class="help cm-math-off">Turn on to see the position as a vector r(t), and the velocity and acceleration as its derivatives, with live values from the run.</p>
+      <div id="math-body" class="vf-body" hidden>
+        <p class="vf-eq">r(t) = r (cos ωt, sin ωt)</p>
+        <p class="vf-eq">v(t) = dr/dt = rω (−sin ωt, cos ωt), &nbsp;|v| = rω</p>
+        <p class="vf-eq">a(t) = dv/dt = −ω² r(t), &nbsp;|a| = ω² r = v² / r</p>
+        <table class="vf-table"><tbody>
+          <tr><th scope="row">Position r(t)</th><td><output id="c-r"></output></td></tr>
+          <tr><th scope="row">Velocity v(t)</th><td><output id="c-v"></output></td></tr>
+          <tr><th scope="row">r · v (perpendicular ⇔ 0)</th><td><output id="c-dot"></output></td></tr>
+          <tr><th scope="row">Acceleration a(t)</th><td><output id="c-a"></output></td></tr>
+          <tr><th scope="row">−ω² r(t)</th><td><output id="c-w2r"></output></td></tr>
+        </tbody></table>
+        <p class="help">d(|r|²)/dt = 2 r · v = 0 keeps the radius fixed, and d(|v|²)/dt = 2 v · a = 0 keeps the speed fixed: the acceleration only turns the velocity. On the graphs, the slope of x(t) is vₓ(t), and x and y are sinusoids a quarter period apart.</p>
+      </div>
+    </section>
+  </div>
+
+  <section id="guided-results" class="panel vf-results" hidden aria-live="polite"><h2>Results</h2><p id="guided-verdict" class="feedback"></p><div id="guided-sections"></div></section>
+  <section id="reflection-panel" class="panel reflection vf-results" hidden aria-labelledby="reflection-title"><h2 id="reflection-title">Reflect on the evidence</h2><form id="reflection-form"><label id="reflection-question" for="reflection-answer"></label><textarea id="reflection-answer" rows="4" required maxlength="5000"></textarea><p class="help">Not graded or saved.</p><button type="submit">Submit explanation</button></form><section id="model-answer-panel" hidden><h3>Instructor-authored model answer</h3><p id="model-answer"></p></section></section>
+  <p class="lab-footnote">Top view, SI units. Frictionless table, light inextensible string, puck treated as a point. Motion is computed from the exact solution; after the cut the puck moves in a straight line until it leaves the 3.2 m table.</p>
+</main><footer>Interactive Physics Lab<span>Circular Motion · C1</span></footer>
+</body></html>

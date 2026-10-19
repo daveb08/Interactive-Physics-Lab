@@ -1,0 +1,23 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const hrefs = page => [...readFileSync(join(root, page), 'utf8').matchAll(/href="([^"#:]+)"/g)].map(m => m[1]);
+
+for (const page of ['index.html', 'modules/electromagnetism/index.html']) {
+  test(`${page}: every local link points at an existing file (no bare directory links)`, () => {
+    for (const href of hrefs(page)) {
+      assert.ok(!href.endsWith('/'), `${href} is a directory link; static hosts need an explicit file`);
+      assert.ok(existsSync(join(root, dirname(page), href)), `${href} does not exist`);
+    }
+  });
+}
+
+test('Electromagnetism hub lists the 11 topics E1–E11', () => {
+  const html = readFileSync(join(root, 'modules/electromagnetism/index.html'), 'utf8');
+  const ids = [...html.matchAll(/class="module-number">(E\d+)</g)].map(m => m[1]);
+  assert.deepEqual(ids, Array.from({ length: 11 }, (_, i) => `E${i + 1}`));
+});

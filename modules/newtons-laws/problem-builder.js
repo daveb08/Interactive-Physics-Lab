@@ -426,6 +426,7 @@ function cards(sc, V, roles, steps, { usesG, timeUsed, info }) {
     const q = QUANTITIES[k], v = k === 'dstop' ? abs(V.dstop) : V[k];
     if (k === 'v0' && v === 0) return 'v₀ = 0 (starts from rest)';
     if (k === 'F' && v === 0) return 'F = 0 (no push)';
+    if (k === 'f') return `f = ${n(abs(v))} N, opposite the ${V.regime === 'static' ? 'push' : 'motion'}`;
     if (k === 'v' || k === 'x') return `${q.sym}(${n(V.t)} s) = ${n(v)} ${q.unit}`;
     return `${q.sym} = ${n(v)}${q.unit ? ` ${q.unit}` : ''}`;
   };
@@ -485,8 +486,14 @@ export function setValue(sc0, key, value) {
       sc.mass = round6(value / GRAVITY); return { sc, note: `Set the mass to ${n(sc.mass)} kg.` };
     case 'f':
       if (!V.friction) return { sc: sc0, error: 'Turn friction on first.' };
-      if (V.regime === 'static') { sc.force = round6(-value); return { sc, note: `At rest, static friction balances the push: set F to ${n(sc.force)} N.` }; }
-      sc.muK = round6(abs(value) / V.N);
+      // Friction is entered as a size; its direction always opposes the motion (or the push, at rest).
+      if (value < 0) return { sc: sc0, error: 'Enter the size of the friction force (a positive number). Its direction is set by the motion: it always points opposite the sliding, as the arrow shows.' };
+      if (V.regime === 'static') {
+        if (value > V.fmax + 1e-9) return { sc: sc0, error: `Static friction can be at most μs N = ${n(V.fmax)} N here.` };
+        sc.force = round6((Math.sign(V.F) || 1) * value);
+        return { sc, note: `At rest, static friction balances the push: set F to ${n(sc.force)} N.` };
+      }
+      sc.muK = round6(value / V.N);
       if (sc.muK > 1) return { sc: sc0, error: `That needs μk = ${n(sc.muK)}, more than 1.` };
       if (!(sc.muS > sc.muK)) sc.muS = Math.min(1, round6(sc.muK + 0.1));
       return { sc, note: `Set μk to ${n(sc.muK)}.` };
@@ -561,7 +568,7 @@ export function readProblemText(text, base = newScenario()) {
     else if (u === 'N') {
       if (/weigh/.test(ctxt)) derived.push(['W', v]);
       else if (/normal/.test(ctxt)) derived.push(['N', v]);
-      else if (/friction/.test(ctxt)) derived.push(['f', -abs(v) * (Math.sign(sc.v0) || 1)]);
+      else if (/friction/.test(ctxt)) derived.push(['f', abs(v)]);
       else if (/net/.test(ctxt)) derived.push(['Fnet', v]);
       else if (!forceSet) { sc.force = v * (/\b(left|backward|opposite|−x|-x)\b/.test(src.slice(mt.index, mt.index + 60).toLowerCase()) ? -1 : 1); sc.roles.F = 'given'; forceSet = true; found.push(`F = ${n(sc.force)} N`); }
     } else if (/^m\/s(²|\^2|2)$/.test(u)) {

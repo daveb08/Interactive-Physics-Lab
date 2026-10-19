@@ -81,7 +81,8 @@ test('setting a value on the diagram adjusts the input that produces it', () => 
   let sc = sampleScenario('pallet');
   sc = setValue(sc, 'a', 1.5).sc; near(physics(sc).a, 1.5);
   sc = setValue(sc, 'N', 981).sc; near(sc.mass, 100);
-  sc = setValue(sc, 'f', -196.2).sc; near(physics(sc).muK, 0.2); assert.ok(sc.muS > sc.muK);
+  assert.match(setValue(sc, 'f', -196.2).error, /positive/);
+  sc = setValue(sc, 'f', 196.2).sc; near(physics(sc).muK, 0.2); assert.ok(sc.muS > sc.muK);
   sc = setValue(sc, 'v', 4).sc; near(physics(sc).v, 4);
   sc = setValue(sc, 'x', 3).sc; near(physics(sc).x, 3);
   const stop = setValue(sampleScenario('stop'), 'dstop', 12).sc; near(physics(stop).dstop, 12);

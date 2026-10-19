@@ -9,10 +9,12 @@
 
   <section class="panel build-start" aria-label="Start">
     <label>Start from <select id="sample" class="vf-select"><option value="">— a sample problem —</option></select></label>
+    <label class="solve-file">📂 Load problem file (.json format)<input type="file" id="open-file" accept=".json,application/json"></label>
     <button type="button" id="paste-toggle" aria-expanded="false" aria-controls="paste-box">📝 Paste a written problem</button>
     <label>Object <select id="figure" class="vf-select"><option value="cart">Cart</option><option value="crate">Crate / box</option><option value="pallet">Pallet (construction)</option><option value="sprinter">Sprinter (exercise science)</option></select></label>
     <label class="build-check"><input type="checkbox" id="friction"> Friction</label>
     <a class="build-advanced" href="author.html">Detailed editor →</a>
+    <p id="open-note" class="help build-open-note" role="status" hidden></p>
     <div id="paste-box" class="build-paste" hidden>
       <label for="paste-text">Paste or type the problem as students will read it. The numbers, friction, “from rest”, the object and what it asks for are read into the diagram; check them there.</label>
       <textarea id="paste-text" rows="4" placeholder="e.g. A worker pushes a 120 kg pallet across a level concrete floor with a constant horizontal force of 400 N. μs = 0.30 and μk = 0.25. It starts from rest. Find the friction force and the acceleration."></textarea>

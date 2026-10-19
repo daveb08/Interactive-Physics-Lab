@@ -62,3 +62,7 @@
 .blk-no summary{cursor:pointer}
 .blk-no p{margin:4px 0 4px 14px;color:var(--ink);font-size:12px}
 .tag text .sub{font-size:9.5px}
+.build-start .solve-file{font-size:12px;font-weight:600;border:1px solid #cdd8d1;border-radius:7px;padding:9px 14px;background:white;cursor:pointer}
+.build-start .solve-file input{position:absolute;width:1px;height:1px;opacity:0}
+.build-start .solve-file:focus-within{outline:3px solid #ba622e;outline-offset:3px}
+.build-open-note{flex-basis:100%;margin:0;font-size:12px;color:var(--teal)}.build-open-note.bad{color:#9a4a1b}

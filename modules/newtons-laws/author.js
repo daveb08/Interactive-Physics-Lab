@@ -246,6 +246,7 @@ $('open-file').addEventListener('change', async e => {
   const text = await file.text(); e.target.value = '';
   let raw; try { raw = JSON.parse(text); } catch { $('draft-note').textContent = `“${file.name}” is not a problem file.`; return; }
   doc = cleanProblem(raw);
+  delete doc.builder;   // hand edits here would no longer match the saved picture; the builder rebuilds it from the problem
   const { errors } = parseProblemJson(text);
   $('draft-note').textContent = errors ? `Opened “${file.name}” with ${errors.length} thing(s) to fix (see section 5).` : `Opened “${file.name}”.`;
   render();

@@ -389,3 +389,12 @@ known fields, validated, and rendered as plain text. Drafts autosave in the inst
 
 Code: `problem-format.js` (validate, clean, engine check, encode/decode; DOM-free and unit-tested in
 `tests/problem-format.test.js`), `author.html/js/css`, and the shared-problem loader in `solve.js`.
+
+## Electromagnetism (Module 06, in development)
+
+Open `/modules/electromagnetism/index.html` or catalog card 06. The hub lists 11 topic labs in three units:
+Electrostatics (E1 charge, E2 field, E3 field lines, E4 potential), Current and circuits (E5 current,
+E6 resistance and Ohm's law, E7 circuits and DC instruments) and Magnetism and waves (E8 magnetism,
+E9 induction, E10 AC circuits and technologies, E11 electromagnetic waves). Every topic is algebra-based,
+with an optional calculus tier on the same lab. All topics show "Coming soon" until their lab ships.
+Spec: [docs/specs/electromagnetism.md](docs/specs/electromagnetism.md).

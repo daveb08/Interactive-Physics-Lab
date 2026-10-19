@@ -271,7 +271,7 @@ $('download').addEventListener('click', () => {
   const url = URL.createObjectURL(new Blob([JSON.stringify(p, null, 2)], { type: 'application/json' }));
   const a = el('a', { href: url, download: name }); document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  $('share-status').textContent = `Downloaded ${name}. Students open it with “Load problem file” on the Solve it page.`;
+  $('share-status').textContent = `Downloaded ${name}. Students open it with “Load problem file (.json format)” on the Solve it page.`;
 });
 
 /* ---------- start ---------- */

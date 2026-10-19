@@ -24,10 +24,10 @@ test('every sample builds a valid problem with no warnings and answers that matc
 test('the pallet sample reproduces the hand-written S4 numbers and its usual mistakes', () => {
   const p = buildProblem(sampleScenario('pallet')).problem;
   const text = p.blocks.map(b => b.text).join('\n');
-  assert.match(text, /f = −μk N = −0\.25 × 1177 = −294\.3 N/);
-  assert.match(text, /F_net = F \+ f = 400 \+ \(−294\.3\) = 105\.7 N/);
+  assert.match(text, /f = μk N = 0\.25 × 1177 = 294\.3 N, opposite the motion \(−x\)/);
+  assert.match(text, /F_net = F − f = 400 − 294\.3 = 105\.7 N/);
   assert.match(text, /a = F_net \/ m = 105\.7 \/ 120 = 0\.8808 m\/s²/);
-  assert.match(text, /f = −μs N/);                                    // static-for-kinetic mistake
+  assert.match(text, /f = μs N = 0\.3 × 1177 = 353\.2 N/);                                    // static-for-kinetic mistake
   assert.match(text, /F_net = F = 400 N/);                             // friction ignored
   assert.deepEqual(Object.keys(p.steps), ['N', 'slides', 'f', 'Fnet', 'a', 'v']);
   assert.deepEqual(p.blocks.find(b => b.id === 'f-ok').after, ['N', 'slides']);

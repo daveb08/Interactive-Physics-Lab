@@ -132,29 +132,31 @@ const RULES = [
       : [{ text: 'Any push starts it moving, so it slides.', effect: { a: (V.F - Math.sign(V.F) * V.muK * V.N) / V.m }, feedback: `Static friction can supply up to μs N = ${n(V.fmax)} N, more than the ${n(abs(V.F))} N push. Static friction matches the push, so the ${c.noun} stays at rest.` }]),
     { when: V => V.friction && V.v0 === 0 && V.F !== 0 }),
 
-  // Friction
+  // Friction: written as a size (f = μk N, always positive) plus a direction, opposite the motion.
+  // In F_net it enters with the sign of that direction: F_net = F − f when moving in +x, F + f in −x.
   R('f', V => (V.v0 === 0 ? ['muK', 'N', 'slides'] : ['muK', 'N']), 'Friction force',
-    V => `Sliding, so kinetic friction opposes the motion: f = ${V.s > 0 ? '−' : '+'}μk N = ${V.s > 0 ? '−' : '+'}${n(V.muK)} × ${n(V.N)} = ${n(V.f)} N`,
+    V => `Sliding, so kinetic friction: f = μk N = ${n(V.muK)} × ${n(V.N)} = ${n(abs(V.f))} N, opposite the motion (${sgnWord(-V.s)})`,
     (V, c) => [
-      { text: `f = ${V.s > 0 ? '+' : '−'}μk N = ${n(-V.f)} N`, value: -V.f, feedback: `Kinetic friction opposes the sliding. The ${c.noun} moves in the ${sgnWord(V.s)} direction, so friction points the other way.` },
-      ...(c.given.has('muS') ? [{ text: `f = ${V.s > 0 ? '−' : '+'}μs N = ${V.s > 0 ? '−' : '+'}${n(V.muS)} × ${n(V.N)} = ${n(-V.s * V.muS * V.N)} N`, value: -V.s * V.muS * V.N, feedback: 'μs N is the most static friction can supply before the object starts to slide. Once it slides, friction is kinetic: f = μk N.' }] : []),
-      { text: `f = ${V.s > 0 ? '−' : '+'}μk m = ${V.s > 0 ? '−' : '+'}${n(V.muK)} × ${n(V.m)} = ${n(-V.s * V.muK * V.m)} N`, value: -V.s * V.muK * V.m, feedback: 'μk m has units of kg, not newtons. Friction is μk times the normal force: f = μk N = μk m g.' },
+      { text: `f = μk N = ${n(abs(V.f))} N, in the direction of motion (${sgnWord(V.s)})`, value: -V.f, feedback: `Kinetic friction opposes the sliding. The ${c.noun} moves in the ${sgnWord(V.s)} direction, so friction points the other way.` },
+      ...(c.given.has('muS') ? [{ text: `f = μs N = ${n(V.muS)} × ${n(V.N)} = ${n(V.muS * V.N)} N, opposite the motion`, value: -V.s * V.muS * V.N, feedback: 'μs N is the most static friction can supply before the object starts to slide. Once it slides, friction is kinetic: f = μk N.' }] : []),
+      { text: `f = μk m = ${n(V.muK)} × ${n(V.m)} = ${n(V.muK * V.m)} N, opposite the motion`, value: -V.s * V.muK * V.m, feedback: 'μk m has units of kg, not newtons. Friction is μk times the normal force: f = μk N = μk m g.' },
     ], { when: V => V.regime === 'kinetic' }),
-  R('f', ['F', 'slides'], 'Friction force', V => `It stays at rest, so static friction balances the push: f = −F = ${n(V.f)} N`,
-    V => [{ text: `f = ${V.F > 0 ? '−' : '+'}μs N = ${n(-Math.sign(V.F) * V.fmax)} N`, value: -Math.sign(V.F) * V.fmax, feedback: 'μs N is the largest static friction can be, not its value. While the object stays at rest, static friction is only as large as needed to balance the push: f = −F.' }],
+  R('f', ['F', 'slides'], 'Friction force', V => `It stays at rest, so static friction balances the push: f = F = ${n(abs(V.F))} N, opposite the push`,
+    V => [{ text: `f = μs N = ${n(V.muS)} × ${n(V.N)} = ${n(V.fmax)} N, opposite the push`, value: -Math.sign(V.F) * V.fmax, feedback: 'μs N is the largest static friction can be, not its value. While the object stays at rest, static friction is only as large as needed to balance the push: f = F.' }],
     { when: V => V.regime === 'static' }),
-  R('f', ['Fnet', 'F'], 'Friction force', V => `F_net = F + f, so f = F_net − F = ${n(V.Fnet)} − ${p(V.F)} = ${n(V.f)} N`,
-    V => [{ text: `f = F − F_net = ${n(V.F)} − ${p(V.Fnet)} = ${n(V.F - V.Fnet)} N`, value: V.F - V.Fnet, feedback: 'Solve F_net = F + f for f: f = F_net − F. Friction comes out with the opposite sign to the motion because it opposes it.' }],
+  R('f', ['Fnet', 'F'], 'Friction force', V => `F_net = F ${V.s > 0 ? '−' : '+'} f, so f = ${V.s > 0 ? 'F − F_net' : 'F_net − F'} = ${V.s > 0 ? `${p(V.F)} − ${p(V.Fnet)}` : `${p(V.Fnet)} − ${p(V.F)}`} = ${n(abs(V.f))} N, opposite the motion`,
+    V => [{ text: `f = F + F_net = ${p(V.F)} + ${p(V.Fnet)} = ${n(abs(V.F + V.Fnet))} N`, value: -V.s * abs(V.F + V.Fnet), feedback: 'Friction opposes the motion, so it is subtracted in the net force: F_net = F − f. Solve that for f: f = F − F_net.' }],
     { when: V => V.friction }),
 
   // Net force
   R('Fnet', ['F', 'f'], 'Net force',
-    V => (V.F === 0 ? `Only friction acts horizontally: F_net = f = ${n(V.Fnet)} N` : `F_net = F + f = ${n(V.F)} + ${p(V.f)} = ${n(V.Fnet)} N`),
+    V => (V.F === 0 ? `Only friction acts horizontally, opposite the motion: F_net = ${V.s > 0 ? '−' : '+'}f = ${n(V.Fnet)} N`
+      : `Friction opposes the motion: F_net = F ${V.s > 0 ? '−' : '+'} f = ${p(V.F)} ${V.s > 0 ? '−' : '+'} ${n(abs(V.f))} = ${n(V.Fnet)} N`),
     (V, c) => (V.F === 0
       ? [{ text: `Nothing pushes the ${c.noun}, so F_net = 0`, value: 0, feedback: 'Friction is a horizontal force too. With no push, friction alone is the net force, which is why the object slows down.' }]
       : V.f === 0 ? [] : [
-        { text: `F_net = F = ${n(V.F)} N (friction does not count once it moves)`, value: V.F, feedback: 'Friction acts the whole time the object slides, so it is part of the net force: F_net = F + f.' },
-        { text: `F_net = F + |f| = ${n(V.F)} + ${n(abs(V.f))} = ${n(V.F + abs(V.f))} N`, value: V.F + abs(V.f), feedback: 'Friction points opposite the motion, so it reduces the net force. Add it with its sign: F_net = F + f.' },
+        { text: `F_net = F = ${n(V.F)} N (friction does not count once it moves)`, value: V.F, feedback: 'Friction acts the whole time the object slides, so it is part of the net force: F_net = F − f.' },
+        { text: `F_net = F ${V.s > 0 ? '+' : '−'} f = ${p(V.F)} ${V.s > 0 ? '+' : '−'} ${n(abs(V.f))} = ${n(V.F + V.s * abs(V.f))} N`, value: V.F + V.s * abs(V.f), feedback: 'Friction points opposite the motion, so it reduces the net force: subtract it, F_net = F − f.' },
       ]),
     { when: V => V.friction }),
   R('Fnet', ['F'], 'Net force',
@@ -170,8 +172,8 @@ const RULES = [
     ]),
 
   // Applied force (working backwards)
-  R('F', ['Fnet', 'f'], 'Applied force', V => `F_net = F + f, so F = F_net − f = ${n(V.Fnet)} − ${p(V.f)} = ${n(V.F)} N`,
-    V => [{ text: `F = F_net = ${n(V.Fnet)} N`, value: V.Fnet, feedback: 'The push must also overcome friction. From F_net = F + f, F = F_net − f.' }],
+  R('F', ['Fnet', 'f'], 'Applied force', V => `F_net = F ${V.s > 0 ? '−' : '+'} f, so F = F_net ${V.s > 0 ? '+' : '−'} f = ${p(V.Fnet)} ${V.s > 0 ? '+' : '−'} ${n(abs(V.f))} = ${n(V.F)} N`,
+    V => [{ text: `F = F_net = ${n(V.Fnet)} N`, value: V.Fnet, feedback: 'The push must also overcome friction. From F_net = F − f, F = F_net + f.' }],
     { when: V => V.friction && V.regime === 'kinetic' }),
   R('F', ['Fnet'], 'Applied force', V => `The push is the only horizontal force: F = F_net = ${n(V.F)} N`,
     V => [{ text: `F = F_net + m g = ${n(V.Fnet)} + ${n(V.W)} = ${n(V.Fnet + V.W)} N`, value: V.Fnet + V.W, feedback: fb.weightVertical }],
@@ -228,8 +230,8 @@ const RULES = [
     { when: V => V.a !== 0, valid: V => V.timeValid }),
   R('v0', ['v', 'a', 't'], 'Initial velocity', V => `v₀ = v − a t = ${n(V.v)} − ${p(V.a)} × ${n(V.t)} = ${n(V.v0)} m/s`,
     V => [{ text: `v₀ = v = ${n(V.v)} m/s`, value: V.v, feedback: 'The velocity changed during those seconds by a t. Undo that change: v₀ = v − a t.' }], { valid: V => V.timeValid }),
-  R('muK', ['f', 'N'], 'Coefficient of kinetic friction', V => `|f| = μk N, so μk = |f| / N = ${n(abs(V.f))} / ${n(V.N)} = ${n(V.muK)}`,
-    V => [{ text: `μk = |f| / m = ${n(abs(V.f))} / ${n(V.m)} = ${n(abs(V.f) / V.m)}`, value: abs(V.f) / V.m, feedback: 'μk compares two forces: friction and the normal force. Divide by N = m g, not by the mass.' }],
+  R('muK', ['f', 'N'], 'Coefficient of kinetic friction', V => `f = μk N, so μk = f / N = ${n(abs(V.f))} / ${n(V.N)} = ${n(V.muK)}`,
+    V => [{ text: `μk = f / m = ${n(abs(V.f))} / ${n(V.m)} = ${n(abs(V.f) / V.m)}`, value: abs(V.f) / V.m, feedback: 'μk compares two forces: friction and the normal force. Divide by N = m g, not by the mass.' }],
     { when: V => V.regime === 'kinetic' }),
   R('muK', ['a'], 'Coefficient of kinetic friction', V => `Friction alone: |a| = μk N / m = μk g, so μk = |a| / g = ${n(abs(V.a))} / 9.81 = ${n(V.muK)}`,
     V => [{ text: `μk = |a| = ${n(abs(V.a))}`, value: abs(V.a), feedback: 'μk has no units; |a| is in m/s². With friction alone, |a| = μk g, so divide by g.' }],

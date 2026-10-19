@@ -56,3 +56,12 @@
 .reveal-btn{border-style:dashed}
 .solve-reveal-note{text-align:center;margin:6px 18px 0}
 .solve-summary.revealed{border-left-color:#7851a9;background:#f3eff9}
+.armed{background:#fbf1ea!important;border-color:#b65b25!important;border-style:solid!important;color:#9a4a1b!important}
+.figure-label{font-size:11px;font-weight:700}
+.solve-pickers{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.solve-file{font-size:12px;font-weight:600;border:1px solid #cdd8d1;border-radius:7px;padding:7px 12px;background:white;cursor:pointer}
+.solve-file input{position:absolute;width:1px;height:1px;opacity:0}
+.solve-file:focus-within{outline:3px solid #ba622e;outline-offset:3px}
+.solve-author-link{font-size:12px;color:var(--teal);font-weight:600}
+#share-note{margin:0 0 16px}
+@media(max-width:760px){.solve-pickers{align-items:stretch;width:100%}}

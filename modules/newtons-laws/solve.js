@@ -3,6 +3,8 @@ import { createRun, stepRun, sampleAt } from '../../js/core/physics.js';
 import { CartView } from '../../js/components/cart.js';
 import { CalcGraph } from '../../js/components/calc-graph.js';
 import { PROBLEMS, PROBLEM_IDS } from './solve-problems.js';
+import { figureMarkup } from './solve-figures.js';
+import { decodeProblem, parseProblemJson } from './problem-format.js';
 import { checkSolution, checkQuantities, studentModel, shuffled, correctOrder, correctPlacement, revealAfter } from './solve-check.js';
 
 const $ = id => document.getElementById(id);
@@ -25,25 +27,104 @@ const ghost = document.createElementNS(NS, 'g');
 ghost.innerHTML = '<rect x="-24" y="158" width="48" height="32" rx="6" class="ghost-body"/><text y="150" class="ghost-label" text-anchor="middle" font-size="11" fill="#ba622e">your model</text>';
 ghost.style.display = 'none';
 $('cart-scene').append(ghost);
+const DEFAULT_GHOST = ghost.innerHTML;
+// Problem-specific figure drawn inside the cart group so it moves with the track position.
+const cartGroup = $('cart-scene').querySelector('#cart');
+const figure = document.createElementNS(NS, 'g');
+figure.setAttribute('class', 'solve-figure');
+cartGroup.prepend(figure);
+const figureLabel = document.createElementNS(NS, 'text');
+Object.entries({ y: 138, 'text-anchor': 'middle', class: 'figure-label' }).forEach(([k, v]) => figureLabel.setAttribute(k, v));
+cartGroup.append(figureLabel);
+const CART_PARTS = '.cart-body, .cart-highlight, .wheel, #cart-mass';
+let lastPhase = -1;
+function applyFigure() {
+  const p = problem(), custom = !!p.figure;
+  cart.setView(p.view);
+  const noun = p.noun || 'cart';
+  $('key-true').textContent = `■ Simulation: the real ${noun} (true physics)`;
+  $('key-ghost').textContent = `▢ Ghost ${noun} (dashed): the motion your blocks imply`;
+  for (const el of cartGroup.querySelectorAll(CART_PARTS)) el.style.display = custom ? 'none' : '';
+  figure.innerHTML = custom ? figureMarkup(p.figure) : '';
+  figureLabel.textContent = custom ? p.label : '';
+  const spot = p.figure === 'pallet' ? { x: 0, y: 182, 'text-anchor': 'middle', fill: '#fff' } : { x: -16, y: 172, 'text-anchor': 'end', fill: '#2b403b' };
+  for (const [k, v] of Object.entries(spot)) figureLabel.setAttribute(k, v);
+  ghost.innerHTML = custom
+    ? `${figureMarkup(p.figure, { ghost: true })}<text y="226" text-anchor="middle" font-size="11" fill="#ba622e">your model</text>`
+    : DEFAULT_GHOST;
+  lastPhase = -1;
+}
 const graphs = {
   x: new CalcGraph($('g-x'), 'x', 'Position x', 'm', '#3c6cb2'),
   v: new CalcGraph($('g-v'), 'v', 'Velocity v', 'm/s', '#236d62'),
   a: new CalcGraph($('g-a'), 'a', 'Acceleration a', 'm/s²', '#b65b25'),
 };
-const problem = () => PROBLEMS[state.id];
+// Built-in problems plus any shared problem opened from a link or file (id 'C').
+const REGISTRY = { ...PROBLEMS };
+const problem = () => REGISTRY[state.id];
 const block = id => problem().blocks.find(b => b.id === id);
 const quantity = id => problem().quantities.find(q => q.id === id);
 
+
+/** In-page two-click confirmation (browser pop-ups can be blocked inside a Canvas embed). */
+function confirmByClick(button, prompt) {
+  if (Number(button.dataset.armedUntil || 0) > Date.now()) { disarm(button); return true; }
+  button.dataset.label = button.dataset.label || button.textContent;
+  button.dataset.armedUntil = String(Date.now() + 5000);
+  button.textContent = prompt;
+  button.classList.add('armed');
+  clearTimeout(button._disarm);
+  button._disarm = setTimeout(() => disarm(button), 5000);
+  return false;
+}
+function disarm(button) {
+  clearTimeout(button._disarm);
+  delete button.dataset.armedUntil;
+  if (button.dataset.label) { button.textContent = button.dataset.label; delete button.dataset.label; }
+  button.classList.remove('armed');
+}
+
 /* ---------- problem ---------- */
 for (const id of PROBLEM_IDS) { const o = document.createElement('option'); o.value = id; o.textContent = `${id} — ${PROBLEMS[id].title}`; $('problem-select').append(o); }
+
+/** Add (or replace) the shared problem and switch to it. */
+function addShared(p, source) {
+  REGISTRY.C = p;
+  let o = $('problem-select').querySelector('option[value="C"]');
+  if (!o) { o = document.createElement('option'); o.value = 'C'; $('problem-select').prepend(o); }
+  o.textContent = `★ ${p.title} (${source})`;
+  $('problem-select').value = 'C';
+  showShareNote('', false);
+  loadProblem('C');
+}
+function showShareNote(text, isError) {
+  const n = $('share-note'); n.hidden = !text; n.textContent = text; n.classList.toggle('unsolved', !!isError);
+}
+async function loadFromHash() {
+  const m = location.hash.match(/[#&]p=([^&]+)/);
+  if (!m) return false;
+  const { problem: p, errors } = await decodeProblem(m[1]);
+  if (errors) { showShareNote(`Could not open the shared problem: ${errors[0]}`, true); return false; }
+  addShared(p, 'shared link'); return true;
+}
+$('load-file').addEventListener('change', async e => {
+  const file = e.target.files?.[0]; if (!file) return;
+  if (file.size > 200000) { showShareNote('That file is too large to be a Solve it problem.', true); return; }
+  const { problem: p, errors } = parseProblemJson(await file.text());
+  e.target.value = '';
+  if (errors) showShareNote(`Could not open “${file.name}”: ${errors.slice(0, 3).join(' ')}`, true);
+  else addShared(p, 'from file');
+});
+window.addEventListener('hashchange', () => { loadFromHash(); });
 
 function loadProblem(id) {
   Object.assign(state, { id, placement: {}, qOrder: [], qAttempts: 0, qCheck: null, unlocked: false, qRevealed: false, revealed: false, revealedBefore: false, solution: [], attempts: 0, check: null });
   const p = problem();
   state.qbank = shuffled(p.quantities.map(q => q.id), Date.now());
   state.bank = shuffled(p.blocks.map(b => b.id), Date.now() + 1);
-  $('problem-title').textContent = `${id} — ${p.title}`;
+  $('problem-title').textContent = id === 'C' ? p.title : `${id} — ${p.title}`;
   $('problem-statement').textContent = p.statement;
+  applyFigure();
   $('check-summary').hidden = true; $('q-summary').hidden = true; $('compare').hidden = true;
   resetSim();
   renderAll();
@@ -142,7 +223,7 @@ $('check-q').addEventListener('click', () => {
 
 $('reveal-q').addEventListener('click', () => {
   if (state.unlocked || state.qAttempts < revealAfter(problem())) return;
-  if (!window.confirm('Show the correct knowns and unknowns? Your Step 1 score will be marked as revealed.')) return;
+  if (!confirmByClick($('reveal-q'), 'Click again to show it (Step 1 will be marked “revealed”)')) return;
   state.placement = correctPlacement(problem());
   state.qOrder = Object.keys(state.placement);
   state.qRevealed = true; state.unlocked = true;
@@ -246,7 +327,7 @@ $('check').addEventListener('click', () => {
 });
 $('reveal').addEventListener('click', () => {
   if (!state.unlocked || state.attempts < revealAfter(problem())) return;
-  if (!window.confirm('Reveal a correct solution? Your Step 2 score will be marked as revealed.')) return;
+  if (!confirmByClick($('reveal'), 'Click again to reveal (Step 2 will be marked “revealed”)')) return;
   state.solution = correctOrder(problem());
   state.revealed = true;
   state.check = checkSolution(problem(), state.solution);
@@ -256,8 +337,10 @@ $('reveal').addEventListener('click', () => {
   box.textContent = 'Here is one correct solution. Steps that do not depend on each other (like the last two) can come in either order. Compare it with your attempt, then press “Try again” to rebuild it yourself.';
   startRun();
 });
-$('clear').addEventListener('click', () => { if (confirmReset()) loadProblem(state.id); });
-const confirmReset = () => state.qAttempts === 0 && state.attempts === 0 ? true : window.confirm('Start this problem over? Your sorted quantities, blocks and attempt counts will be cleared.');
+$('clear').addEventListener('click', () => {
+  const fresh = state.qAttempts === 0 && state.attempts === 0;
+  if (fresh || confirmByClick($('clear'), 'Click again to start over (clears tries)')) { disarm($('clear')); loadProblem(state.id); }
+});
 $('reshuffle').addEventListener('click', () => {
   if (state.revealed) {   // Try again: keep Step 1, clear Step 2 so the student rebuilds it.
     Object.assign(state, { solution: [], check: null, revealed: false, revealedBefore: true });
@@ -312,7 +395,23 @@ function answerPoints(key) {
 function render() {
   const s = trueRun.state;
   cart.render(trueRun);
-  if (ghostRun) { ghost.style.display = ''; ghost.setAttribute('transform', `translate(${70 + (ghostRun.state.x + 50) / 100 * 640} 0)`); }
+  const p = problem();
+  if (p.figure) {
+    $('cart-scene').querySelector('#surface-label').textContent = p.surface;
+    if (p.figure === 'sprinter') {   // alternate stride every half metre
+      const phase = Math.floor(s.x * 2) % 2;
+      if (phase !== lastPhase) { figure.innerHTML = figureMarkup('sprinter', { phase }); lastPhase = phase; }
+    }
+  }
+  if (ghostRun) {
+    ghost.style.display = '';
+    const gx = ghostRun.state.x, v = cart.view, off = gx > v.max ? 1 : gx < v.min ? -1 : 0;
+    // Off the zoomed view: pin the ghost at the edge and say where the student's model went.
+    const shown = off > 0 ? v.max : off < 0 ? v.min : gx;
+    ghost.setAttribute('transform', `translate(${cart.toPx(shown)} 0)`);
+    const lbl = ghost.querySelector('text');
+    if (lbl) { lbl.textContent = off ? `your model ${off > 0 ? '→' : '←'} ${gx.toFixed(1)} m` : 'your model'; lbl.setAttribute('text-anchor', off > 0 ? 'end' : off < 0 ? 'start' : 'middle'); }
+  }
   else ghost.style.display = 'none';
   $('r-t').textContent = s.t.toFixed(2); $('r-x').textContent = fmt(s.x); $('r-v').textContent = fmt(s.v); $('r-a').textContent = fmt(trueRun.a);
   const checked = !!state.check;
@@ -344,3 +443,4 @@ function showCompare() {
 
 document.addEventListener('visibilitychange', () => { if (document.hidden) clock.pause(); });
 loadProblem(state.id);
+loadFromHash();

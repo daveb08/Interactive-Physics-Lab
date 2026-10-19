@@ -8,7 +8,10 @@
   <div class="lab-heading"><div><p class="eyebrow">MODULE 01 / CLASSICAL MECHANICS</p><h1>Newton’s Laws</h1><p>Discover how forces shape the way things move.</p></div><span class="lab-tag"><span aria-hidden="true">●</span> Problem solving</span></div>
   <nav class="law-nav" aria-label="Newton’s Laws"><a href="first-law.html"><b>01</b> First Law · Inertia</a><a href="index.html"><b>02</b> Second Law · Force &amp; acceleration</a><a href="third-law.html"><b>03</b> Third Law · Action &amp; reaction</a><a href="solve.html" aria-current="page"><b>04</b> Solve it · Build the solution</a></nav>
   <div class="experiment-heading"><div><p class="eyebrow">SOLVE IT</p><h2>Build the solution, then run it.</h2><p>First sort the knowns and unknowns. Then choose and order the solution blocks. Some cards and blocks contain a common mistake.</p></div>
-    <label class="solve-pick">Problem <select id="problem-select" class="vf-select"></select></label></div>
+    <div class="solve-pickers"><label class="solve-pick">Problem <select id="problem-select" class="vf-select"></select></label>
+      <label class="solve-file">📂 Load problem file<input type="file" id="load-file" accept=".json,application/json"></label>
+      <a class="solve-author-link" href="build.html">✎ Create your own problem</a></div></div>
+  <p id="share-note" class="feedback solve-summary" role="status" hidden></p>
 
   <section class="panel solve-problem" aria-labelledby="problem-title">
     <h2 id="problem-title"></h2><p id="problem-statement"></p>
@@ -45,7 +48,7 @@
   <div class="workspace solve-workspace">
     <section class="panel simulation" aria-labelledby="sim-title"><div class="panel-heading"><h3 id="sim-title">Run it</h3><span class="status" id="run-status">Waiting for a check</span></div>
       <div class="scene"><svg id="cart-scene" viewBox="0 0 780 290" role="img" aria-label="Cart on a horizontal track"></svg></div>
-      <p class="help solve-legend"><span class="key-true">■ Simulation (true physics)</span> <span class="key-ghost">▢ Ghost cart: the motion your blocks imply</span></p>
+      <p class="help solve-legend"><span class="key-true" id="key-true">■ Simulation (true physics)</span> <span class="key-ghost" id="key-ghost">▢ Ghost cart: the motion your blocks imply</span></p>
       <div class="readouts"><div><span>Time</span><strong><output id="r-t">0.00</output> <small>s</small></strong></div><div><span>Position</span><strong><output id="r-x">0.00</output> <small>m</small></strong></div><div><span>Velocity</span><strong><output id="r-v">0.00</output> <small>m/s</small></strong></div><div><span>Acceleration</span><strong><output id="r-a">0.00</output> <small>m/s²</small></strong></div></div>
       <div class="solve-compare" id="compare" hidden><table class="vf-table"><caption>Your answers vs the simulation</caption><thead><tr><th scope="col">Quantity</th><th scope="col">Your block</th><th scope="col">Simulation</th></tr></thead><tbody id="compare-body"></tbody></table></div>
     </section>

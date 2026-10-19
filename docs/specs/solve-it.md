@@ -27,7 +27,7 @@ lists Given/Find, so Step 1 is not given away. Score display: "Step 1 8/8 (2 tri
 
 Students try first; if they get stuck they can reveal the answer. **Show correct sort** (Step 1) and **Reveal
 solution** (Step 2) unlock after 2 tries at that step (`REVEAL_AFTER`, overridable per problem with
-`revealAfter`). Revealing asks for confirmation, fills in a correct answer (Step 2 then runs the simulation), and
+`revealAfter`). Revealing asks for an in-page confirmation (click again within 5 s; browser pop-ups are avoided because Canvas embeds can block them), fills in a correct answer (Step 2 then runs the simulation), and
 the score says so: "Step 1 revealed (after 2 tries)". After a Step 2 reveal, **Try again** clears the blocks for a
 rebuild; the score keeps "solution was revealed earlier" so reported scores stay honest.
 
@@ -44,6 +44,20 @@ rebuild; the score keeps "solution was revealed earlier" so reported scores stay
 
 - **S1 — Pushed cart:** 4 kg cart, v₀ = +2 m/s, constant net force +10 N, frictionless. Find a, v and x at t = 3 s. (a = 2.5 m/s², v = 9.5 m/s, x = 17.25 m.)
 - **S2 — Sliding to a stop:** 3 kg block, v₀ = +6 m/s, μk = 0.2, no applied force. Find N, friction, a, stopping time and distance. (N = 29.43 N, f = −5.886 N, a = −1.962 m/s², t = 3.058 s, d = 9.174 m.)
+
+- **S3 — Sprinter’s start (exercise science):** 70 kg, from rest, 350 N forward push from the track for 1.5 s.
+  (a = 5.0 m/s², v = 7.5 m/s, d = 5.63 m.) Key idea: the forward push is static friction on her shoes.
+- **S4 — Pushing a pallet (construction management):** 120 kg pallet, 400 N push, μs = 0.30, μk = 0.25, from rest.
+  (N = 1177 N, f = −294.3 N, F_net = 105.7 N, a = 0.881 m/s², v(2 s) = 1.76 m/s.)
+
+## Picture builder (added 2026-10-18)
+Instructor feedback: writing every card and block by hand is tedious. The builder (`build.html`) starts from the
+picture instead. The instructor sets values on the object, the force arrows and the motion arrows and marks each
+quantity given / find / left out. `problem-builder.js` then forward-chains a rule table (target ← inputs; e.g.
+N ← m, f ← μk,N, F_net ← F,f, a ← F_net,m, v ← v₀,a,t, and inverse rules such as F ← F_net,f or a ← v,v₀,t),
+keeps only the steps that lead to what is asked, and writes each step's correct block and common-mistake blocks.
+Mistake values are propagated forward to give the ghost's acceleration. Starting from rest with μs given adds a
+"Does it slide?" step. Unreachable unknowns and times past a friction stop are reported instead of built.
 
 ## Tests
 

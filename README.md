@@ -310,14 +310,20 @@ Open `/modules/newtons-laws/solve.html` or the **04 Solve it** tab on any Newton
 solution from blocks: correct steps plus distractors that each encode a misconception (Parsons-problem format).
 Spec: [docs/specs/solve-it.md](docs/specs/solve-it.md); original idea: [docs/ideas/block-problem-solver.md](docs/ideas/block-problem-solver.md).
 
-- **Problems:** S1 Pushed cart (F = ma, v = v₀ + at, x = v₀t + ½at²) and S2 Sliding to a stop (N, friction,
-  a, stopping time and distance). Problems are data in `modules/newtons-laws/solve-problems.js`.
+- **Problems:** S1 Pushed cart (F = ma, v = v₀ + at, x = v₀t + ½at²); S2 Sliding to a stop (N, friction,
+  a, stopping time and distance); S3 Sprinter’s start (exercise science: the track’s forward static friction is
+  the net force); S4 Pushing a pallet (construction management: μs vs μk, net force, dividing by mass not weight). Problems are data in `modules/newtons-laws/solve-problems.js`.
 - **Step 1, knowns and unknowns:** students first sort quantity cards into Knowns and Unknowns (drag or
   + Known / + Unknown); trap cards belong in neither box and carry feedback. Solving Step 1 unlocks the blocks.
 - **Building (Step 2):** tap or Enter adds a block; ↑ ↓ ✕ reorder or remove; mouse drag-and-drop on desktop. Works by touch.
 - **Check & run:** each block is marked ✓ correct, ✗ misconception (targeted feedback), or ↕ out of order /
   builds on a flawed step. Missing steps are listed. Score = correct blocks in a valid position ÷ required steps,
   shown with the attempt count. Any order that respects step dependencies is accepted.
+- **Figures:** problems can name a scene figure (`figure: 'sprinter' | 'pallet'` in the data, drawn by
+  `solve-figures.js`); S3 shows a running sprinter on a track, S4 a worker pushing a brick pallet on concrete. The
+  ghost uses a dashed outline of the same figure. S1/S2 keep the cart. A problem may set `view: { min, max }` to zoom
+  the track display (S3: −2 to 14 m, S4: −2 to 8 m; physics unchanged); a ghost outside the view is pinned at the
+  edge with its position.
 - **Run:** the true motion runs on the track; if the student's blocks imply a different model (wrong
   acceleration or ignored v₀), a dashed ghost cart and dashed graph curves show that model. ✕ marks plot the
   student's numerical answers; a table compares them with the simulation.
@@ -327,6 +333,59 @@ Spec: [docs/specs/solve-it.md](docs/specs/solve-it.md); original idea: [docs/ide
   answers vs the physics engine, valid/commuting orders, out-of-order and flawed-prerequisite feedback,
   distractors, missing/duplicate steps, ghost model, shuffle).
 
-Verification: `node --test` → 112 passed, 0 failed. Browser (Chromium): reveal flow for both steps, Step 1 wrong then correct sort, unlock, wrong then correct S1 attempts, keyboard
+Verification: `node --test` → 127 passed, 0 failed. Browser (Chromium): reveal flow for both steps, Step 1 wrong then correct sort, unlock, wrong then correct S1 attempts, keyboard
 entry, reordering, S2 with distractors, no console errors, no page-wide overflow at 390 px; existing Newton's
 Laws pages load with the new tab. Not yet tested on physical phones/tablets, Safari/Firefox or a screen reader.
+
+## Problem builder for instructors (Solve it)
+
+Open `/modules/newtons-laws/build.html` (link: **✎ Create your own problem** on the Solve it page). The builder shows
+the situation as a picture: the object on the floor or track at t = 0 and later, its velocity and acceleration, and a
+free-body diagram (N, W, F, f and the net force). Click any label to type its value and choose **Given in the
+problem**, **Students find** or **Leave out**. Values that are results (a, v, x, F_net, N, f, stopping time and
+distance) can be typed too: the builder changes the setting that produces them (the push, the mass or μk), and keeps
+values the problem states fixed when another value changes.
+
+From the picture the builder writes the problem statement, the Step 1 cards (knowns, unknowns and trap cards) and
+the Step 2 solution: one step per quantity students must work out, in a valid order, each with its correct block
+and up to two common-mistake blocks with feedback, ghost settings and plotted answers. Every number comes from the
+same physics as the simulation. If students could not work something out from what is given, it says what to add.
+
+**Paste a written problem** reads numbers with units, μs/μk, "from rest", the object and what the question asks for
+into the picture; the instructor's wording is kept, and changing a value in the picture updates that number in it.
+**Fine-tune in the detailed editor** opens the result in the full editor below. Code: `problem-builder.js` (pure,
+tested in `tests/builder.test.js`, including randomized checks against the engine) and `build.html/js/css`.
+Level surfaces only for now; a ramp adds the angle to `physics()` and rules that use it.
+
+## Detailed problem editor for instructors (Solve it)
+
+Open `/modules/newtons-laws/author.html` (link: **Detailed editor →** in the builder). Instructors
+write a Solve it problem in a form, with no repo edits and no accounts:
+
+1. **Problem:** title and statement. Start blank, copy S1–S4 as a template, or open a saved `.json` file.
+2. **Simulation:** mass, applied force, v₀, optional friction (μs, μk), target time and run length; optional scene
+   figure (cart, sprinter, pallet), legend name, figure label, track caption, zoom and "reveal after". A live
+   readout shows what the simulation gives at the target time.
+3. **Step 1 cards:** text plus Knowns / Unknowns / Neither (trap, with feedback).
+4. **Step 2:** steps with names and "must come after" dependencies; one correct block per step; wrong blocks with
+   misconception feedback; optional ghost acceleration / v₀; optional plotted answers (a, v or x at a time).
+5. **Check and share:** plain-language validation (blocks sharing until fixed); **warnings** (do not block) compare
+   the statement’s numbers (kg, N, m/s, s, μk) with the settings, check the "= number unit" ending of correct blocks
+   against the simulation (a, v, x, key times, and applied / normal / friction / net forces), and flag blocks the
+   simulation cannot check; plotted answers are checked against the physics engine
+   (✓ / ✗ with the simulated value). **Preview in Solve it**, **Copy student link**, **Download .json**.
+
+**Placeholders** keep text in sync with the settings: write `{m}`, `{F}`, `{v0}`, `{muS}`, `{muK}`, `{g}`, `{t}`, or
+simulation results `{a}`, `{v}`, `{x}` (at the target time), `{v@2}` (any time), `{N}`, `{W}`, `{f}`, `{Fnet}`, `{fmax}`,
+`{tstop}` in any statement, card, block or feedback. The editor shows a live "Students see:" preview and a table of
+current values. A plotted answer left blank takes the simulation's value. Downloaded `.json` keeps the placeholders
+(for later editing); student links carry the filled-in values. Friction in authored problems must satisfy
+0 ≤ μk < μs ≤ 1 (static strictly greater than kinetic), enforced with an inline message.
+
+The **student link** carries the whole problem in the URL fragment (deflate-compressed, base64url; about 2 KB for a
+typical problem), so it works from Canvas with nothing uploaded anywhere. Students can also use **📂 Load problem
+file** on Solve it. Shared problems appear as "★ title" in the problem menu. Every shared problem is cleaned to
+known fields, validated, and rendered as plain text. Drafts autosave in the instructor's browser.
+
+Code: `problem-format.js` (validate, clean, engine check, encode/decode; DOM-free and unit-tested in
+`tests/problem-format.test.js`), `author.html/js/css`, and the shared-problem loader in `solve.js`.

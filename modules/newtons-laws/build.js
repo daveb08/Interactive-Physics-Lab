@@ -12,7 +12,7 @@ const stepFor = (k, v) => (k === 'muS' || k === 'muK' ? 0.01 : Math.max(STEPS[k]
 const ROLE_TEXT = { given: 'Given in the problem', find: 'Students find', hidden: 'Leave out' };
 const HOW = {
   W: 'Typing a weight changes the mass to match (m = W / g).', N: 'Typing a normal force changes the mass to match (N = m g on a level surface).',
-  f: 'Typing a friction force changes μk to match (or the push, if the object stays at rest).',
+  f: 'Type the size of the friction force (always positive). Its direction is opposite the motion, as the arrow shows. Typing a size changes μk to match (or the push, if the object stays at rest).',
   Fnet: 'Typing a net force changes the applied force to match.', a: 'Typing an acceleration changes the applied force to match (F_net = m a).',
   v: 'Typing a velocity at time t changes the applied force to match.', x: 'Typing a displacement at time t changes the applied force to match.',
   tstop: 'Typing a stopping time changes the applied force to match.', dstop: 'Typing a stopping distance changes the applied force to match.',
@@ -23,7 +23,8 @@ let sc, selected = null, lastNote = '', built = null, linkTimer;
 /* ---------- state ---------- */
 function save() { try { localStorage.setItem(KEY, JSON.stringify(sc)); } catch {} }
 function load() { try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s?.roles && s.mass) return s; } catch {} return null; }
-const valueOf = (V, k) => (k === 'dstop' ? Math.abs(V.dstop) : V[k]);
+// Friction is shown and typed as a size; the arrow in the free-body diagram gives its direction.
+const valueOf = (V, k) => (k === 'dstop' || k === 'f' ? Math.abs(V[k]) : V[k]);
 const fmtVal = (V, k) => { const q = QUANTITIES[k], v = valueOf(V, k); return `${n(v)}${q.unit ? ` ${q.unit}` : ''}`; };
 
 /* ---------- diagram ---------- */
@@ -114,7 +115,7 @@ function drawEditor(V, roles, app) {
   const canFind = selected !== 'muS';
   const val = Number(valueOf(V, selected).toPrecision(6));
   box.innerHTML = `<div class="ed-head"><strong>${esc(q.label)}</strong> <span class="ed-sym">${esc(q.sym)}</span></div>
-    <div class="ed-row"><label>Value <input id="ed-value" type="number" step="${stepFor(selected, val)}" value="${val}" ${selected === 'muS' || selected === 'muK' ? 'min="0" max="1"' : ''}> ${esc(q.unit)}</label>
+    <div class="ed-row"><label>Value <input id="ed-value" type="number" step="${stepFor(selected, val)}" value="${val}" ${selected === 'muS' || selected === 'muK' ? 'min="0" max="1"' : ['f', 'm', 'W', 'N', 't', 'tstop', 'dstop'].includes(selected) ? 'min="0"' : ''}> ${esc(q.unit)}</label>
     <div class="ed-roles" role="radiogroup" aria-label="In the problem">${['given', 'find', 'hidden'].map(r => `<button type="button" role="radio" aria-checked="${role === r}" data-role="${r}" class="ed-role r-${r}" ${r === 'find' && !canFind ? 'disabled title="Students cannot find μs from the motion"' : ''}>${ROLE_TEXT[r]}</button>`).join('')}</div></div>
     <p class="help">${esc(q.input ? 'This is one of the simulation’s settings.' : HOW[selected] || '')}</p>
     <p id="ed-note" class="ed-note">${esc(lastNote)}</p>`;

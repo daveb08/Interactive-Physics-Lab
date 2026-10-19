@@ -24,10 +24,10 @@ test('every sample builds a valid problem with no warnings and answers that matc
 test('the pallet sample reproduces the hand-written S4 numbers and its usual mistakes', () => {
   const p = buildProblem(sampleScenario('pallet')).problem;
   const text = p.blocks.map(b => b.text).join('\n');
-  assert.match(text, /f = −μk N = −0\.25 × 1177 = −294\.3 N/);
-  assert.match(text, /F_net = F \+ f = 400 \+ \(−294\.3\) = 105\.7 N/);
+  assert.match(text, /f = μk N = 0\.25 × 1177 = 294\.3 N, opposite the motion \(−x\)/);
+  assert.match(text, /F_net = F − f = 400 − 294\.3 = 105\.7 N/);
   assert.match(text, /a = F_net \/ m = 105\.7 \/ 120 = 0\.8808 m\/s²/);
-  assert.match(text, /f = −μs N/);                                    // static-for-kinetic mistake
+  assert.match(text, /f = μs N = 0\.3 × 1177 = 353\.2 N/);                                    // static-for-kinetic mistake
   assert.match(text, /F_net = F = 400 N/);                             // friction ignored
   assert.deepEqual(Object.keys(p.steps), ['N', 'slides', 'f', 'Fnet', 'a', 'v']);
   assert.deepEqual(p.blocks.find(b => b.id === 'f-ok').after, ['N', 'slides']);
@@ -81,7 +81,8 @@ test('setting a value on the diagram adjusts the input that produces it', () => 
   let sc = sampleScenario('pallet');
   sc = setValue(sc, 'a', 1.5).sc; near(physics(sc).a, 1.5);
   sc = setValue(sc, 'N', 981).sc; near(sc.mass, 100);
-  sc = setValue(sc, 'f', -196.2).sc; near(physics(sc).muK, 0.2); assert.ok(sc.muS > sc.muK);
+  assert.match(setValue(sc, 'f', -196.2).error, /positive/);
+  sc = setValue(sc, 'f', 196.2).sc; near(physics(sc).muK, 0.2); assert.ok(sc.muS > sc.muK);
   sc = setValue(sc, 'v', 4).sc; near(physics(sc).v, 4);
   sc = setValue(sc, 'x', 3).sc; near(physics(sc).x, 3);
   const stop = setValue(sampleScenario('stop'), 'dstop', 12).sc; near(physics(stop).dstop, 12);

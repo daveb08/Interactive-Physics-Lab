@@ -51,8 +51,9 @@ export function sampleAt(run, t) {
 /** Evenly spaced samples (for graphs and CSV). */
 export function sampleGrid(run, dt = 0.01) {
   const out = [];
-  const n = Math.round(run.endTime / dt);
+  const n = Math.floor(run.endTime / dt + 1e-9);
   for (let i = 0; i <= n; i++) out.push(sampleAt(run, Math.min(run.endTime, i * dt)));
+  if (run.endTime - out.at(-1).t > 1e-9) out.push(sampleAt(run, run.endTime));   // always include the exact final state
   if (run.cut && run.cutAt <= run.endTime) {           // exact samples either side of the cut
     out.push({ ...attachedAt(run, run.cutAt) }, sampleAt(run, run.cutAt));
     out.sort((a, b) => a.t - b.t || (a.attached ? -1 : 1));

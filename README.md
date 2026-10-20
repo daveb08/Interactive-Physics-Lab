@@ -1,5 +1,13 @@
 # Interactive Physics Lab
 
+## Reusable automated QA
+
+For QA, use Node.js 24. Install development dependencies with `npm ci` and Chromium with `npx playwright install chromium` once. Run **`npm run qa`** for the full physics, UI, content, accessibility, and visual suite. The consolidated report is written to `qa-results/report.md`, including when tests fail. Existing application defects remain failing tests until separately approved fixes are made.
+
+Use `npm run qa:fast`, `npm run qa:browser`, or `npm run qa:visual` independently. See [the inventory, coverage, and commands](docs/QA.md), [independent physics references](docs/PHYSICS-QA.md), and [reviewed findings](docs/QA-FINDINGS.md). Generated results are ignored by Git. Initial screenshot baselines are provisional and require review; update them explicitly with `npm run qa:baseline`. Test totals and manual checks elsewhere in this README are historical snapshots.
+
+Pushes to `main` and pull requests targeting `main` run fast tests and desktop browser checks in GitHub Actions. A separate Windows workflow runs the comprehensive suite every Monday at 07:17 UTC and on manual dispatch, including tablet and visual checks. Both retain failure artifacts; neither updates reference images or fixes application behavior. These triggers become active on main after the QA pull request is merged.
+
 A dependency-free HTML/CSS/JavaScript learning laboratory. The first working experiment explores Newton’s Second Law with a cart, signed forces and velocities, synchronized SVG graphs, and prediction activities. First, Second, and Third Law activities are available; other catalog modules remain **Coming soon**.
 
 ## Run locally
@@ -57,6 +65,10 @@ Before starting, inquiry-oriented objectives and hidden acceleration readouts/gr
 - `modules/newtons-laws/guided-activity.js`: guided controls, progressive results, feedback, and reflections.
 - `tests/guided.test.js`: initial conditions, correct choices, outcomes, reversal, sequence guards, common times, and boundary handling.
 - The original experiment controller uses the same `CartView`, `MotionGraph`, and `SimulationClock` for both experiences. `createRun` accepts an optional observation duration; the six-second Free Exploration default and exact kinematics remain intact. The graph component accepts an optional recorded reference curve without changing its original single-curve interface.
+
+## Electromagnetism · Unit 1 (E1 Coulomb’s law)
+
+Open **Electromagnetism → E1 Electric Charge** (`modules/electromagnetism/coulomb.html`). Drag 2–4 point charges (or Tab to one and use the arrow keys), change their charge, and use ×2 r / ×2 q to see the inverse-square law. Guided activities C1 (double the distance), C2 (third-law pair) and C3 (balance point) are prediction-gated; add `?activity=C2` to the URL to open one directly. The charging panel steps through friction, contact and induction with a running charge tally. Engine: `js/core/electrostatics.js`; tests: `tests/electrostatics.test.js`, `tests/coulomb.test.js`.
 
 ## Architecture
 

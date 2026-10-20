@@ -5,6 +5,16 @@ import { circleQuantities, createCircularRun, sampleAt, sampleGrid, timeAtAngle,
 const near = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) <= eps * Math.max(1, Math.abs(b)), `${a} ≠ ${b}`);
 const S = { mass: 0.5, radius: 1.5, speed: 3 };
 
+test('sampleGrid ends exactly at endTime, evenly spaced, never past it (QA-01)', () => {
+  for (const opts of [{ cutAt: Math.PI }, { cutAt: 1.234 }, { duration: 12 }, { duration: 7.005 }]) {
+    const run = createCircularRun(S, opts), g = sampleGrid(run);
+    near(g.at(-1).t, run.endTime);
+    assert.ok(g.every(s => s.t <= run.endTime + 1e-12));
+    for (let i = 1; i < g.length; i++) assert.ok(g[i].t >= g[i - 1].t);
+    const end = sampleAt(run, run.endTime); near(g.at(-1).x, end.x); near(g.at(-1).y, end.y);
+  }
+});
+
 test('derived quantities: ω = v/r, T = 2πr/v, a = v²/r, F = m v²/r', () => {
   const q = circleQuantities(S);
   near(q.omega, 2); near(q.period, Math.PI); near(q.frequency, 1 / Math.PI); near(q.accel, 6); near(q.force, 3);

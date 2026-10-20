@@ -1,0 +1,48 @@
+/* Unit 1 visual problem builder. Builds on coulomb.css (plane, controls) and newtons-laws/solve.css. */
+.eb{max-width:1440px}
+.eb-start{display:flex;flex-wrap:wrap;align-items:center;gap:14px 24px;padding:16px 20px;margin-bottom:18px;font-size:12px;font-weight:600}
+.eb-start>label{display:flex;align-items:center;gap:8px}
+.eb-open-note{flex-basis:100%;margin:0}.eb-open-note.bad{color:#9a4a1b}
+.eb-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
+.eb-legend{margin:4px 20px 0;font-size:12px}
+.eb-controls{border:0;margin:0;padding:14px 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:14px 22px;align-items:start}
+.eb-controls .control{grid-column:1/-1}
+.eb-xy{display:flex;gap:14px;font-size:12px;font-weight:600}
+.eb-xy label{display:flex;align-items:center;gap:6px}
+.eb-xy input,.eb-row input{width:76px;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px}
+.eb-row{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;flex-wrap:wrap}
+.eb-check{grid-column:1/-1;display:flex;gap:8px;align-items:center;font-size:12px}
+.eb-check input{accent-color:var(--teal);width:16px;height:16px}
+.eb-q3{fill:none;stroke:#1f6b5e;stroke-width:2.5;stroke-dasharray:5 4}
+.eb-q3-label{font-size:11px;font-weight:600;fill:#1f6b5e;text-anchor:middle;paint-order:stroke;stroke:#fbfcfa;stroke-width:4px}
+.eb-axis{stroke:#b9c6bf;stroke-width:1.5;stroke-dasharray:2 5}
+.eb-origin line{stroke:#8c9a95;stroke-width:1.5}.eb-origin text{font-size:10px;fill:#8c9a95;font-style:italic}
+.eb-out{padding-bottom:18px}
+.eb-status{margin:14px 20px 0}.eb-status.bad{background:#fbf1ea;border-left:3px solid #b65b25;padding:8px 12px;border-radius:4px;color:#9a4a1b;font-size:12.5px}
+.eb-status:empty{display:none}
+.eb-field{display:grid;gap:5px;margin:14px 20px 0;font-size:12px;font-weight:600}
+.eb-field input,.eb-field textarea{font:inherit;font-weight:400;font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:6px;color:var(--ink);resize:vertical;line-height:1.6}
+.eb-field small{font-weight:400}
+.eb-small{margin:6px 20px 0;font-size:12px}
+.eb-h{font-size:12px;font-weight:650;margin:18px 20px 8px;padding-top:12px;border-top:1px solid #edf0ec}
+.eb-h .help{font-weight:400;margin-left:6px}
+.eb-answers{margin:0 20px;width:calc(100% - 40px)}
+.eb-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 20px}
+.eb-card-group{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fafcf9}
+.eb-card-group h5{font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.eb-card-group ul{list-style:none;margin:0;padding:0;display:grid;gap:5px;font-size:12px}
+.eb-card-group li{background:white;border:1px solid #dfe7e1;border-radius:6px;padding:4px 7px}
+.eb-none li{border-color:#e9cdb9}
+.eb-why{display:block;color:#8a5a3a;font-size:11px;margin-top:3px;line-height:1.45}
+.eb-steps{margin:0 20px;padding-left:20px;display:grid;gap:10px}
+.eb-steps h5{font-size:12px;margin:0 0 4px}
+.eb-ok{font-size:12.5px;line-height:1.5;margin:0 0 4px;padding:6px 9px;border-left:3px solid #2f7d4f;background:#eef7ef;border-radius:4px}
+.eb-bad{font-size:12.5px;line-height:1.5;margin:3px 0;border-left:3px solid #b65b25;background:#fbf4ee;border-radius:4px;padding:5px 9px}
+.eb-bad summary{cursor:pointer}
+.eb-fb{margin:5px 0 2px;color:#9a4a1b;font-size:12px}
+.eb-share{margin:18px 20px 0;justify-content:flex-start;padding:0}
+.eb-link-label{display:block;margin:12px 20px 4px;font-size:11px;font-weight:600;color:var(--muted)}
+.eb-link{display:block;width:calc(100% - 40px);margin:0 20px;font:12px Consolas,monospace;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:#f7f9f6;color:var(--ink)}
+#share-status{margin:6px 20px 0}
+@media(max-width:1100px){.eb-grid{grid-template-columns:1fr}}
+@media(max-width:760px){.eb-controls{grid-template-columns:1fr}.eb-cards{grid-template-columns:1fr}.fv-ghost-t{font-size:19px}}

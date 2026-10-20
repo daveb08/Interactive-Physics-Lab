@@ -85,7 +85,15 @@ misconceptions the feedback targets.
 - **Tests:** `tests/em-solve.test.js` (data integrity, answers vs engine, orders, ghost model);
   `qa/browser/em-solve.spec.js` (nav/hub links; each problem: wrong sort, a flagged mistake with ghost, correct
   solution, numbers vs the independent reference).
-- **Later:** E2–E4 problems; the picture builder and JSON problem files from Newton's Laws are not wired in yet.
+- **Visual builder** (`build.html`, `em-builder.js`): instructors drag 2–4 charges onto the plane, set their values, and pick
+  *net force on a charge* or *balance point*. The builder writes the statement, Step 1 cards (with traps) and the solution
+  steps with common-mistake blocks and feedback, all from the engine. Templates: two charges (units, 1/r², direction,
+  optional third-law pair), 3–4 charges (pair forces, signed or component sum, |F| and angle with the tan⁻¹ quadrant
+  mistake), balance point (like: between; unlike: outside beyond the smaller charge). Samples rebuild S1–S4.
+  Sharing: a student link (`solve.html#s=…`, the scenario base64url-encoded) or a `.json` file; Solve it rebuilds the
+  problem from the scenario, after whitelisting and clamping every field. Tests: `tests/em-builder.test.js` (samples equal
+  S1–S4, 400 random layouts, balance cases, sharing round trip), `qa/browser/em-builder.spec.js`.
+- **Later:** E2–E4 problems; reading a pasted written problem into the builder; a detailed text editor as in Newton's Laws.
 
 ### E2 — Electric field
 - **Core:** E = F/q for a small test charge; E = k|q|/r² for a point charge; superposition; uniform field

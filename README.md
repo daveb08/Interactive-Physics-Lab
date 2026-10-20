@@ -70,7 +70,7 @@ Before starting, inquiry-oriented objectives and hidden acceleration readouts/gr
 
 Open **Electromagnetism → E1 Electric Charge** (`modules/electromagnetism/coulomb.html`). Drag 2–4 point charges (or Tab to one and use the arrow keys), change their charge, and use ×2 r / ×2 q to see the inverse-square law. Guided activities C1 (double the distance), C2 (third-law pair) and C3 (balance point) are prediction-gated; add `?activity=C2` to the URL to open one directly. The charging panel steps through friction, contact and induction with a running charge tally. Engine: `js/core/electrostatics.js`; tests: `tests/electrostatics.test.js`, `tests/coulomb.test.js`.
 
-**Unit 1 Solve it** (`modules/electromagnetism/solve.html`, also in the Unit 1 tabs): four Coulomb's law problems in the same sort-then-build format as Newton's Laws › Solve it. After **Check & run**, the charge plane shows the true force next to the force your blocks imply. Open a problem directly with `?problem=S3`.
+**Unit 1 Solve it** (`modules/electromagnetism/solve.html`, also in the Unit 1 tabs): four Coulomb's law problems in the same sort-then-build format as Newton's Laws › Solve it. After **Check & run**, the charge plane shows the true force next to the force your blocks imply. Open a problem directly with `?problem=S3`. Instructors can make their own with the **visual builder** (`build.html`, linked from Solve it): drag charges, set values, and share the student link or `.json` file.
 
 ## Architecture
 

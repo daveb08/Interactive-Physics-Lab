@@ -51,7 +51,9 @@ export class CartView {
     this.label.setAttribute('x', '0');
     this.label.setAttribute('y', '120');
     this.svg.querySelector('#extra-forces').style.display = run.frictionEnabled && reveal ? '' : 'none';
-    this.svg.querySelector('#surface-label').textContent = run.frictionEnabled ? 'HORIZONTAL TRACK · COULOMB FRICTION' : 'FRICTIONLESS HORIZONTAL TRACK';
+    const label = this.svg.querySelector('#surface-label');
+    if (run.frictionEnabled) label.innerHTML = 'HORIZONTAL TRACK · DRY FRICTION · f = μF<tspan dy="3" font-size="0.8em">N</tspan>';
+    else label.textContent = 'FRICTIONLESS HORIZONTAL TRACK';
     if (run.frictionEnabled) {
       const balance = forceBalance(run);
       const scale = 60 / Math.max(20, Math.abs(run.force), Math.abs(balance.friction), Math.abs(balance.netForce));

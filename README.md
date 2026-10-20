@@ -58,6 +58,10 @@ Before starting, inquiry-oriented objectives and hidden acceleration readouts/gr
 - `tests/guided.test.js`: initial conditions, correct choices, outcomes, reversal, sequence guards, common times, and boundary handling.
 - The original experiment controller uses the same `CartView`, `MotionGraph`, and `SimulationClock` for both experiences. `createRun` accepts an optional observation duration; the six-second Free Exploration default and exact kinematics remain intact. The graph component accepts an optional recorded reference curve without changing its original single-curve interface.
 
+## Electromagnetism · Unit 1 (E1 Coulomb’s law)
+
+Open **Electromagnetism → E1 Electric Charge** (`modules/electromagnetism/coulomb.html`). Drag 2–4 point charges (or Tab to one and use the arrow keys), change their charge, and use ×2 r / ×2 q to see the inverse-square law. Guided activities C1 (double the distance), C2 (third-law pair) and C3 (balance point) are prediction-gated; add `?activity=C2` to the URL to open one directly. The charging panel steps through friction, contact and induction with a running charge tally. Engine: `js/core/electrostatics.js`; tests: `tests/electrostatics.test.js`, `tests/coulomb.test.js`.
+
 ## Architecture
 
 ```text

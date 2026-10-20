@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Electric charge and Coulomb's law: drag point charges and watch the forces."><title>Electric Charge · Interactive Physics Lab</title><link rel="stylesheet" href="../../css/styles.css"><link rel="stylesheet" href="../variable-forces/variable-forces.css"><link rel="stylesheet" href="coulomb.css"><script type="module" src="coulomb.js"></script></head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header"><a class="brand" href="../../index.html"><span class="brand-icon" aria-hidden="true">↗</span> Interactive Physics Lab</a><a class="back-link" href="index.html">← Electromagnetism topics</a></header>
+<main id="main" class="lab">
+  <div class="lab-heading"><div><p class="eyebrow">MODULE 06 · E1 / UNIT 1 · ELECTROSTATICS</p><h1>Electric Charge and Coulomb’s Law</h1><p>Like charges repel, unlike charges attract, and the force falls off with the square of the distance.</p></div><span class="lab-tag"><span aria-hidden="true">●</span> Algebra core · calculus option</span></div>
+  <nav class="law-nav" aria-label="Unit 1: Electrostatics"><a href="coulomb.html" aria-current="page"><b>E1</b> Electric charge</a><span class="nav-soon"><b>E2</b> Electric field · soon</span><span class="nav-soon"><b>E3</b> Field lines · soon</span><span class="nav-soon"><b>E4</b> Potential · soon</span></nav>
+  <div class="experiment-heading">
+    <div><p class="eyebrow">POINT CHARGES ON A PLANE · DRAG OR USE THE ARROW KEYS</p></div>
+    <div class="mode-switch" role="group" aria-label="Experiment experience"><button id="free-exploration" aria-pressed="true">Free Exploration</button><button id="guided-experiments" aria-pressed="false">Guided C1–C3</button></div>
+  </div>
+
+  <section id="guided-intro" class="panel guided-intro vf-guided" hidden aria-labelledby="guided-title">
+    <label for="guided-select">Choose an activity</label><select id="guided-select"></select>
+    <h2 id="guided-title"></h2><h3>Learning objective</h3><p id="guided-objective"></p>
+    <h3>Conditions · locked for this activity</h3><p id="guided-conditions"></p>
+    <form id="guided-prediction-form"><fieldset><legend id="guided-question"></legend><div id="guided-choices" class="choices"></div></fieldset><button type="submit">Save prediction</button><p id="guided-prediction-status" role="status">Save a prediction to unlock the experiment.</p></form>
+  </section>
+
+  <div class="workspace">
+    <aside class="panel controls e1-controls"><div class="panel-heading"><h3>Charges</h3><span>01</span></div>
+      <fieldset id="settings"><legend class="sr-only">Charge settings</legend>
+        <div class="e1-group"><span class="e1-label" id="count-label">How many charges</span><div class="e1-seg" role="group" aria-labelledby="count-label"><button data-count="2" aria-pressed="true">2</button><button data-count="3" aria-pressed="false">3</button><button data-count="4" aria-pressed="false">4</button></div></div>
+        <div class="e1-group"><span class="e1-label" id="select-label">Selected charge</span><div class="e1-seg" id="select-buttons" role="group" aria-labelledby="select-label"></div></div>
+        <div class="control"><label for="charge">Charge <span id="charge-name">q₁</span> <output id="charge-value">+2 μC</output></label><input id="charge" type="range" min="-10" max="10" step="0.5" value="2"><div class="range-ends"><span>−10 μC</span><span>+10 μC</span></div></div>
+        <div class="e1-buttons"><button id="double-q" type="button">×2 q</button><button id="half-q" type="button">×½ q</button><button id="flip-q" type="button">± flip sign</button></div>
+        <div class="e1-group"><span class="e1-label">Distance q₁ to q₂ <output id="r12-value">0.20 m</output></span><div class="e1-buttons"><button id="double-r" type="button">×2 r</button><button id="half-r" type="button">×½ r</button></div></div>
+      </fieldset>
+      <fieldset class="e1-show"><legend>Show</legend>
+        <label><input type="checkbox" id="show-parts" checked> <span class="k-part">Pair forces F₁₂, F₁₃ …</span></label>
+        <label><input type="checkbox" id="show-net" checked> <span class="k-net">Net force F<sub>net</sub> (3 or more charges)</span></label>
+        <label><input type="checkbox" id="show-comp"> <span class="k-comp">Components F<sub>x</sub>, F<sub>y</sub> of the selected charge</span></label>
+      </fieldset>
+      <div class="equation"><span>COULOMB’S LAW</span><strong>F = k|q₁q₂|/r²</strong><span id="eq-values"></span></div>
+      <p class="help" id="change-note" role="status">Use ×2 r or ×2 q and watch how the force changes.</p>
+    </aside>
+
+    <section class="panel simulation" aria-labelledby="simulation-title"><div class="panel-heading"><h3 id="simulation-title">The plane</h3><span class="status" id="run-status" role="status">Ready</span></div>
+      <div class="scene e1-scene"><svg id="plane" role="group" aria-label="Plane of point charges, 1.0 m by 0.6 m"></svg></div>
+      <div class="readouts e1-readouts">
+        <div><span>Selected</span><strong><output id="r-name">q₁</output></strong></div>
+        <div><span>Position (x, y)</span><strong><output id="r-pos">–</output> <small>m</small></strong></div>
+        <div><span>Net force |F|</span><strong><output id="r-F">–</output> <small>N</small></strong></div>
+        <div><span>F<sub>x</sub></span><strong><output id="r-Fx">–</output> <small>N</small></strong></div>
+        <div><span>F<sub>y</sub></span><strong><output id="r-Fy">–</output> <small>N</small></strong></div>
+        <div><span>Direction</span><strong><output id="r-dir">–</output> <small>°</small></strong></div>
+      </div>
+      <div class="transport"><button id="start" class="primary" hidden>▶ Run the experiment</button><button id="reset">↺ Reset</button><button id="defaults">Defaults</button><button id="rescale">Rescale arrows</button></div>
+      <p id="run-message" class="run-message" role="status"></p>
+      <div class="track-note"><strong>Model</strong><p>Point charges at rest on a 1.0 m × 0.6 m plane, in vacuum. Each arrow is the electric force on the charge it starts from. F₁₂ means the force on q₁ due to q₂. Arrow lengths are proportional to force (scale bar, top right); press <em>Rescale arrows</em> after big changes.</p></div>
+    </section>
+
+    <section class="panel graphs e1-graphs" aria-labelledby="graphs-title"><div class="panel-heading"><h3 id="graphs-title">Force graph</h3><span>LIVE</span></div>
+      <svg id="plot" role="img" aria-label="Graph of force against distance"></svg>
+      <p class="graph-help" id="plot-help">The curve is F = k|q₁q₂|/r² for q₁ and q₂. The dot is the present distance; the hollow dot is the previous one.</p>
+      <div class="e1-table-wrap"><table class="vf-table e1-forces"><caption>Net force on each charge</caption><thead><tr><th scope="col">Charge</th><th scope="col">|F| (N)</th><th scope="col">F<sub>x</sub></th><th scope="col">F<sub>y</sub></th></tr></thead><tbody id="force-rows"></tbody></table></div>
+    </section>
+  </div>
+
+  <div class="vf-tools">
+    <section class="panel" aria-labelledby="key-title"><div class="panel-heading"><h3 id="key-title">Key ideas</h3><span>ALGEBRA</span></div>
+      <div class="vf-body">
+        <table class="vf-table e1-eqs"><tbody>
+          <tr><th scope="row">Charge is quantized</th><td class="vf-eq">q = n e, &nbsp;e = 1.602 × 10⁻¹⁹ C</td><td><output id="k-n"></output></td></tr>
+          <tr><th scope="row">Coulomb’s law</th><td class="vf-eq">F = k |q₁q₂| / r²</td><td><output id="k-F"></output></td></tr>
+          <tr><th scope="row">Coulomb constant</th><td class="vf-eq">k = 8.988 × 10⁹ N·m²/C²</td><td></td></tr>
+          <tr><th scope="row">Superposition</th><td class="vf-eq">F<sub>net</sub> = F₁₂ + F₁₃ + … (vectors)</td><td></td></tr>
+        </tbody></table>
+        <p class="help">Like charges repel and unlike charges attract. The forces between two charges are a Newton’s third law pair: equal in size and opposite in direction, even when one charge is much bigger. With several charges, add the pair forces as vectors, component by component.</p>
+      </div>
+    </section>
+    <section class="panel vf-math" aria-labelledby="math-title"><div class="panel-heading"><h3 id="math-title">Show the calculus</h3><label class="vf-toggle"><input type="checkbox" id="math-on"> On</label></div>
+      <p id="math-off" class="help e1-math-off">Turn on for Coulomb’s law in vector form and the force from a charged rod, found by integrating over the charge.</p>
+      <div id="math-body" class="vf-body" hidden>
+        <p class="vf-eq">F₁₂ = k q₁q₂ (r₁ − r₂) / |r₁ − r₂|³</p>
+        <table class="vf-table"><tbody>
+          <tr><th scope="row">r₁ − r₂</th><td><output id="c-r"></output></td></tr>
+          <tr><th scope="row">F₁₂ (vector)</th><td><output id="c-F"></output></td></tr>
+        </tbody></table>
+        <h4 class="e1-sub">A uniformly charged rod</h4>
+        <svg id="rod" viewBox="0 0 400 86" role="img" aria-label="A charged rod and a point charge on its axis"></svg>
+        <div class="e1-rod-controls">
+          <label>Rod charge Q <output id="rod-Q-v"></output><input id="rod-Q" type="range" min="1" max="10" step="1" value="5"></label>
+          <label>Rod length L <output id="rod-L-v"></output><input id="rod-L" type="range" min="0.1" max="1" step="0.05" value="0.4"></label>
+          <label>Gap d <output id="rod-d-v"></output><input id="rod-d" type="range" min="-2" max="1" step="0.05" value="-1"></label>
+          <label>Slices n <output id="rod-n-v"></output><input id="rod-n" type="range" min="1" max="100" step="1" value="5"></label>
+        </div>
+        <p class="vf-eq">F = ∫₀ᴸ k λ q dx / (L + d − x)² = k Q q / [d (d + L)]</p>
+        <table class="vf-table"><tbody>
+          <tr><th scope="row">Exact integral</th><td><output id="rod-exact"></output></td></tr>
+          <tr><th scope="row">Sum of n point-charge slices</th><td><output id="rod-sum"></output></td></tr>
+          <tr><th scope="row">All of Q at the centre, kQq/(d + L/2)²</th><td><output id="rod-point"></output></td></tr>
+        </tbody></table>
+        <p class="help">The point charge is q = +2 μC. Increase n and the sum approaches the integral. Increase d far beyond L and the rod acts like a point charge at its centre. Close to the rod, the near end dominates and the point-charge estimate is too small.</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel e1-charging" aria-labelledby="charging-title">
+    <div class="panel-heading"><h3 id="charging-title">Charging: friction, contact and induction</h3><span>ELECTROSCOPE</span></div>
+    <div class="e1-charging-body">
+      <div class="e1-charging-side">
+        <div class="e1-group"><span class="e1-label" id="method-label">How is it charged?</span><div class="e1-seg" role="group" aria-labelledby="method-label"><button data-method="friction" aria-pressed="true">Friction</button><button data-method="contact" aria-pressed="false">Contact</button><button data-method="induction" aria-pressed="false">Induction</button></div></div>
+        <div class="e1-group"><span class="e1-label" id="rod-label">The rod</span><div class="e1-seg" role="group" aria-labelledby="rod-label"><button data-sign="-1" aria-pressed="true">Plastic + wool (−)</button><button data-sign="1" aria-pressed="false">Glass + silk (+)</button></div></div>
+        <ol id="step-list" class="e1-steps"></ol>
+        <div id="step-predict" class="e1-predict" hidden><p id="step-predict-q"></p><div id="step-predict-choices" class="choices"></div><p id="step-predict-fb" class="e1-predict-fb" role="status"></p></div>
+        <div class="transport e1-step-nav"><button id="step-back">← Back</button><button id="step-next" class="primary">Next step →</button></div>
+      </div>
+      <div class="e1-charging-main">
+        <svg id="scope" viewBox="0 0 460 300" role="img"></svg>
+        <p id="step-caption" class="e1-caption" aria-live="polite"></p>
+        <div class="readouts e1-tally">
+          <div><span>Rod</span><strong><output id="t-rod">0</output></strong></div>
+          <div><span id="t-scope-label">Electroscope</span><strong><output id="t-scope">0</output></strong></div>
+          <div><span id="t-other-label">Ground</span><strong><output id="t-other">0</output></strong></div>
+          <div><span>Total</span><strong><output id="t-total">0</output></strong></div>
+        </div>
+        <p class="help">Each + or − symbol stands for a very large number of elementary charges (about 10⁹ e). Only electrons move; the positive charges stay fixed in the atoms. The total never changes: charging moves charge, it does not create it.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="guided-results" class="panel vf-results" hidden aria-live="polite"><h2>Results</h2><p id="guided-verdict" class="feedback"></p><div id="guided-sections"></div></section>
+  <section id="reflection-panel" class="panel reflection vf-results" hidden aria-labelledby="reflection-title"><h2 id="reflection-title">Reflect on the evidence</h2><form id="reflection-form"><label id="reflection-question" for="reflection-answer"></label><textarea id="reflection-answer" rows="4" required maxlength="5000"></textarea><p class="help">Not graded or saved.</p><button type="submit">Submit explanation</button></form><section id="model-answer-panel" hidden><h3>Instructor-authored model answer</h3><p id="model-answer"></p></section></section>
+  <p class="lab-footnote">SI units, k = 8.988 × 10⁹ N·m²/C². Charges are points held at rest; forces are computed exactly from Coulomb’s law and added as vectors. Charges cannot be placed closer than 4 cm.</p>
+</main><footer>Interactive Physics Lab<span>Electromagnetism · E1</span></footer>
+</body></html>

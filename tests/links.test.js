@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const hrefs = page => [...readFileSync(join(root, page), 'utf8').matchAll(/href="([^"#:]+)"/g)].map(m => m[1]);
 
-for (const page of ['index.html', 'modules/electromagnetism/index.html', 'modules/electromagnetism/coulomb.html', 'modules/circular-motion/index.html', 'modules/circular-motion/uniform.html']) {
+for (const page of ['index.html', 'modules/electromagnetism/index.html', 'modules/electromagnetism/coulomb.html', 'modules/electromagnetism/solve.html', 'modules/circular-motion/index.html', 'modules/circular-motion/uniform.html']) {
   test(`${page}: every local link points at an existing file (no bare directory links)`, () => {
     for (const href of hrefs(page)) {
       assert.ok(!href.endsWith('/'), `${href} is a directory link; static hosts need an explicit file`);
@@ -34,4 +34,6 @@ test('Electromagnetism hub links the E1 Coulomb lab; Unit 1 nav lists E1–E4', 
   const html = readFileSync(join(root, 'modules/electromagnetism/coulomb.html'), 'utf8');
   const nav = html.match(/<nav class="law-nav"[^]*?<\/nav>/)[0];
   assert.deepEqual([...nav.matchAll(/<b>(E\d)<\/b>/g)].map(m => m[1]), ['E1', 'E2', 'E3', 'E4']);
+  assert.ok(nav.includes('href="solve.html"'), 'Unit 1 nav links Solve it');
+  assert.ok(hrefs('modules/electromagnetism/index.html').includes('solve.html'), 'hub links Solve it');
 });

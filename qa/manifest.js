@@ -4,6 +4,7 @@ export const routes = [
   '/modules/newtons-laws/build.html', '/modules/newtons-laws/author.html',
   '/modules/variable-forces/index.html', '/modules/circular-motion/index.html',
   '/modules/circular-motion/uniform.html', '/modules/electromagnetism/index.html',
+  '/modules/electromagnetism/coulomb.html',
 ];
 export const labs = [
   { id:'first', path:routes[2], activities:['I1','I2','I3'], answers:['B','B','B'], time:'#time' },

@@ -9,7 +9,7 @@ const latest=new Map();
 for(const stage of run.stages){const file=`qa-results/${stage.name}/results.json`;if(existsSync(file))for(const {spec,t} of records(JSON.parse(readFileSync(file,'utf8'))))latest.set(key(spec,t),stage.name);}
 const lines=[`# Interactive Physics Lab QA report`, ``, `Run: ${run.date}. Commit: ${run.git}. Scope: ${run.mode}.`,
  '', 'Severity: Critical — incorrect physics/unusable core; High — broken activity/misleading instruction; Medium — accessibility, confusing UI or units; Low — cosmetic.',
- '', 'Inventory: First Law I1–I3; Second Law A–D/F1–F3; Third Law T1–T3/FBD; variable forces V1–V4 (linear/quadratic drag, oscillator); circle U1–U4; Solve it S1–S4; builder/editor; all 11 routes.',
+ '', 'Inventory: First Law I1–I3; Second Law A–D/F1–F3; Third Law T1–T3/FBD; variable forces V1–V4 (linear/quadratic drag, oscillator); circle U1–U4; E1 C1–C3, point charges, rod and friction/contact/induction; Solve it S1–S4; builder/editor; all 12 routes.',
  '', '| Stage | Passed | Failed | Skipped | Exit |','| --- | ---: | ---: | ---: | ---: |'];
 const details=[],evidence=['# QA evidence index',''],candidates=['# Content and layout candidates','', 'These heuristic matches are not confirmed defects. Inspect screenshots and transcripts in the [evidence index](evidence.md). The reviewed findings document distinguishes known false positives, including intentional author placeholders and controls inside closed disclosures.',''];
 const accessibility=new Map();let totalPass=0,totalFail=0;

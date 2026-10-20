@@ -1,7 +1,11 @@
 import {test,expect,frozen,free,start,advance,guided,complete} from './helpers.js';
 import {freeScenarios,routes} from '../manifest.js';
 for(const path of routes.filter(p=>!freeScenarios.some(l=>l.path===p)))test(`visual page ${path}`,async({page})=>{
- await frozen(page,path);await expect(page).toHaveScreenshot(`${path.replaceAll('/','-')}.png`,{fullPage:true});
+ await frozen(page,path);
+ // The approved E1 feature changes the hub from planned to available. Keep the
+ // original reference files intact and compare against a separately named state.
+ const snapshot=path==='/modules/electromagnetism/index.html'?'electromagnetism-hub-e1-available.png':`${path.replaceAll('/','-')}.png`;
+ await expect(page).toHaveScreenshot(snapshot,{fullPage:true});
 });
 for(const lab of freeScenarios)test(`visual states ${lab.id}`,async({page})=>{
  await frozen(page,lab.path);

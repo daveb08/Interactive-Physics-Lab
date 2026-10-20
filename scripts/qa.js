@@ -17,7 +17,7 @@ function run(name,args,env={}){
  stages.push({name,start,exit:out.status??1});
 }
 if(['all','fast'].includes(mode)){
- const files=[...readdirSync('tests').filter(f=>f.endsWith('.test.js')).map(f=>`tests/${f}`),'qa/physics.test.js'];
+ const files=['tests','qa'].flatMap(dir=>readdirSync(dir).filter(f=>f.endsWith('.test.js')).map(f=>`${dir}/${f}`));
  run('fast',['--test','--test-reporter=tap',...files]);
 }
 if(['all','browser'].includes(mode))run('browser',['node_modules/@playwright/test/cli.js','test',...browserArgs],{QA_SUITE:'browser'});

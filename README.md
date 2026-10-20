@@ -6,7 +6,7 @@ For QA, use Node.js 24. Install development dependencies with `npm ci` and Chrom
 
 Use `npm run qa:fast`, `npm run qa:browser`, or `npm run qa:visual` independently. See [the inventory, coverage, and commands](docs/QA.md), [independent physics references](docs/PHYSICS-QA.md), and [reviewed findings](docs/QA-FINDINGS.md). Generated results are ignored by Git. Initial screenshot baselines are provisional and require review; update them explicitly with `npm run qa:baseline`. Test totals and manual checks elsewhere in this README are historical snapshots.
 
-Pull requests to `main` run fast tests and desktop browser checks in GitHub Actions. A separate manually dispatched Windows workflow runs the comprehensive suite, including tablet and visual checks. Both retain failure artifacts; neither updates reference images or fixes application behavior.
+Pushes to `main` and pull requests targeting `main` run fast tests and desktop browser checks in GitHub Actions. A separate Windows workflow runs the comprehensive suite every Monday at 07:17 UTC and on manual dispatch, including tablet and visual checks. Both retain failure artifacts; neither updates reference images or fixes application behavior. These triggers become active on main after the QA pull request is merged.
 
 A dependency-free HTML/CSS/JavaScript learning laboratory. The first working experiment explores Newton’s Second Law with a cart, signed forces and velocities, synchronized SVG graphs, and prediction activities. First, Second, and Third Law activities are available; other catalog modules remain **Coming soon**.
 

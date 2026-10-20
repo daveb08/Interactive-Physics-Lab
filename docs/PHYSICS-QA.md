@@ -15,3 +15,13 @@ All quantities use SI: kg, m, s, N, J; g = 9.81 m/s². Horizontal positive is ri
 | Circular | ω=v/r; r=(r cosωt,r sinωt); v tangent; a=−ω²r; tension=mv²/r; zero force and tangent line after cut | m=.5,r=1.5,v=3; cut at π s; table exit radius 3.2 m; graph endpoint |
 
 Tolerance rule: |actual−expected| ≤ tolerance × max(1,|expected|). Closed forms use 1e−8, ODE comparisons 1e−7 (RK4 step ≤.0005 s), instructional rounded answer metadata .001. UI readouts are compared to the reference range over displayed time ±.005 s, then allow .0051 for the readout's own two-decimal rounding. This avoids confusing rounded-time error with incorrect acceleration. These are separate from prediction acceptance tolerances. Test failures are reported, not fixed during the audit.
+
+## E1 electrostatics
+
+`qa/electrostatics-reference.js` imports no production code or constants. It uses the lab's documented rounded k = 8.988×10⁹ N·m²/C², SI coulombs and metres, +x right and +y up. Charges are stationary points in vacuum. It computes electric field contributions through radial magnitudes and angles, F=qE by vector addition, and V=Σkq/r with zero at infinity.
+
+Cases cover q₁=−10,0,+10 μC; q₂=−3,0,+3 μC; separation .04,.2,1 m on a diagonal; four-charge superposition; signs, equal/opposite forces, zero net internal force; field and potential; the C3 balance point and force on either side; unlike-charge balance and the equal/opposite transition with no finite zero. Coincident charges are excluded singularities and tested as rejected pair inputs. Closed-form comparisons use 1e−9×max(1,|expected|).
+
+An independent 10,000-panel Simpson quadrature integrates k(Q/L)q/(L+d−x)² for rod lengths .1,.4,1 m and gaps .01,.1,10 m. It checks the production antiderivative and convergence of its separate midpoint slices, with tolerance 5e−8×max(1,|expected|). E1 browser readouts allow .0051×max(1,|expected|) for their variable display precision; core numerical checks remain much tighter.
+
+Guided observations are checked against literal reference conditions, not production presets. Charging tests independently count six positive electroscope units minus the rendered model's electron counts, add rod/cloth/ground charge, and verify total conservation and signed final states for all three methods and both rod signs. This validates the simplified instructional charge bookkeeping, not a physical conductor capacitance model.

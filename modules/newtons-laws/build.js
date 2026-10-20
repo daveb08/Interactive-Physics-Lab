@@ -1,5 +1,5 @@
-import { QUANTITIES, SAMPLES, FIGURE_INFO, sampleScenario, buildProblem, physics, applicable, readProblemText, updateStatementNumbers, editValue } from './problem-builder.js';
-import { encodeProblem, lintProblem, cleanProblem, formatValue as n } from './problem-format.js';
+import { QUANTITIES, SAMPLES, FIGURE_INFO, sampleScenario, buildProblem, physics, applicable, readProblemText, updateStatementNumbers, editValue, scenarioForFile, scenarioFromProblem } from './problem-builder.js';
+import { encodeProblem, lintProblem, cleanProblem, validateProblem, formatValue as n } from './problem-format.js';
 import { figureMarkup } from './solve-figures.js';
 
 const $ = id => document.getElementById(id);
@@ -232,10 +232,28 @@ $('copy-link').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(link); $('share-status').textContent = `Copied (${link.length} characters). Paste it into a Canvas page or assignment.`; }
   catch { $('share-link').select(); $('share-status').textContent = 'Your browser blocked automatic copying. The link is selected: press Ctrl+C (⌘C on a Mac).'; }
 });
+$('open-file').addEventListener('change', async e => {
+  const file = e.target.files?.[0]; if (!file) return;
+  const text = await file.text(); e.target.value = '';
+  const note = $('open-note'); note.hidden = false; note.classList.remove('bad');
+  let raw;
+  try { raw = JSON.parse(text); } catch { raw = null; }
+  const p = raw && typeof raw === 'object' ? cleanProblem(raw) : null;
+  if (!p || !(p.setup?.mass > 0) || !Number.isFinite(p.setup?.force) || !Number.isFinite(p.setup?.velocity)) {
+    note.classList.add('bad'); note.textContent = `“${file.name}” is not a Solve it problem file. Choose a .json file saved with ⬇ Download .json.`; return;
+  }
+  const r = scenarioFromProblem(p);
+  sc = r.sc; selected = null; lastNote = '';
+  note.textContent = r.exact
+    ? `Opened “${file.name}” exactly as it was saved from the builder.`
+    : `Opened “${file.name}”. The picture, title and wording come from the file${r.unread.length ? ` (cards not placed: ${r.unread.join('; ')})` : ''}. The knowns/unknowns cards and solution blocks are rewritten by the builder${validateProblem(p).length ? '' : '; to keep the file’s own hand-written blocks, open it in the detailed editor instead'}.`;
+  render();
+});
 $('download').addEventListener('click', () => {
   const p = built.problem; if (!p) return;
   const name = `${p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'problem'}.json`;
-  const url = URL.createObjectURL(new Blob([JSON.stringify(p, null, 2)], { type: 'application/json' }));
+  // The file also carries the picture setup, so it reopens in the builder exactly as it is now.
+  const url = URL.createObjectURL(new Blob([JSON.stringify({ ...p, builder: scenarioForFile(sc) }, null, 2)], { type: 'application/json' }));
   const a = document.createElement('a'); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   $('share-status').textContent = `Downloaded ${name}. Students open it with “Load problem file (.json format)” on the Solve it page.`;

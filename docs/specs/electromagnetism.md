@@ -73,6 +73,20 @@ misconceptions the feedback targets.
 - **Misconceptions:** the bigger charge pushes harder; force halves when distance doubles; charging
   creates charge.
 
+### Unit 1 · Solve it — Build the solution  ✅ built
+- **Page:** `modules/electromagnetism/solve.html`, linked from the Unit 1 nav strip and a hub card. Same two-step flow,
+  scoring, reveal rules and checker as Newton's Laws › Solve it (`modules/newtons-laws/solve-check.js`, reused unchanged).
+- **Problems** (`solve-problems.js`; every number computed from `electrostatics.js`):
+  S1 two charges (unit conversion, 1/r², direction, third-law pair); S2 three in a line (signed superposition);
+  S3 right angle (components, magnitude, second-quadrant angle); S4 balance point (√ of the charge ratio).
+- **Run it:** the charge plane shows the true Coulomb forces (solid) and the force the student's blocks imply
+  (dashed orange, "your F"); S4 draws the student's q₃ on a second track with its unbalanced net force.
+  A table compares each number in the student's blocks with the engine.
+- **Tests:** `tests/em-solve.test.js` (data integrity, answers vs engine, orders, ghost model);
+  `qa/browser/em-solve.spec.js` (nav/hub links; each problem: wrong sort, a flagged mistake with ghost, correct
+  solution, numbers vs the independent reference).
+- **Later:** E2–E4 problems; the picture builder and JSON problem files from Newton's Laws are not wired in yet.
+
 ### E2 — Electric field
 - **Core:** E = F/q for a small test charge; E = k|q|/r² for a point charge; superposition; uniform field
   between parallel plates; a charged particle in a uniform field moves like a projectile (a = qE/m).

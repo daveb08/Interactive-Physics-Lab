@@ -6,7 +6,7 @@
 const NS = 'http://www.w3.org/2000/svg';
 const SUB = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
 export const sub = n => String(n).split('').map(d => SUB[+d] ?? d).join('');
-export const COLORS = { pos: '#bf4630', neg: '#2f6db5', net: '#1f6b5e', part: '#7a8a84', comp: '#8a6d1f' };
+export const COLORS = { pos: '#bf4630', neg: '#2f6db5', net: '#1f6b5e', part: '#7a8a84', comp: '#8a6d1f', ghost: '#ba622e' };
 const MAX_ARROW = 175;
 
 export class ChargePlane {

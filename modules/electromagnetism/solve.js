@@ -7,6 +7,7 @@ import { MICRO } from '../../js/core/em-constants.js';
 import { netForce } from '../../js/core/electrostatics.js';
 import { ChargePlane, sub } from '../../js/components/field-view.js';
 import { PROBLEMS, PROBLEM_IDS, UNITS, studentModel, s3, a1 } from './solve-problems.js';
+import { decodeScenario, parseScenarioJson } from './em-builder.js';
 import { checkSolution, checkQuantities, shuffled, correctOrder, correctPlacement, revealAfter } from '../newtons-laws/solve-check.js';
 
 const $ = id => document.getElementById(id);
@@ -14,14 +15,18 @@ const STATUS_TEXT = { correct: '✓ Correct', misconception: '✗ ', order: '↕
 const Q_STATUS = { correct: '✓', 'wrong-zone': '⇄ ', trap: '✗ ' };
 const LABELS = { F21: 'F₂₁ (size)', F12: 'F₁₂ (size)', F23: 'F₂₃ (size)', F31: 'F₃₁ (size)', F32: 'F₃₂ (size)', Fnet: 'Net force', ang21: 'Direction of F₂₁', angle: 'Angle θ of F_net', x: 'Position x of q₃' };
 const tries = n => `${n} ${n === 1 ? 'try' : 'tries'}`;
-const show = (key, v) => (UNITS[key] === '°' ? `${a1(v)}°` : `${s3(v)} ${UNITS[key]}`);
+const unitOf = key => problem().units?.[key] ?? UNITS[key];
+const labelOf = key => problem().labels?.[key] ?? LABELS[key] ?? key;
+const show = (key, v) => (unitOf(key) === '°' ? `${a1(v)}°` : `${s3(v)} ${unitOf(key)}`);
 
 const state = {
   id: PROBLEM_IDS[0],
   qbank: [], placement: {}, qOrder: [], qAttempts: 0, qCheck: null, unlocked: false, qRevealed: false, revealed: false, revealedBefore: false,
   bank: [], solution: [], attempts: 0, check: null, ran: false,
 };
-const problem = () => PROBLEMS[state.id];
+// Built-in problems plus one shared problem from the builder (link or file), id 'C'.
+const REGISTRY = { ...PROBLEMS };
+const problem = () => REGISTRY[state.id];
 const block = id => problem().blocks.find(b => b.id === id);
 const quantity = id => problem().quantities.find(q => q.id === id);
 
@@ -54,7 +59,7 @@ function loadProblem(id) {
   state.qbank = shuffled(p.quantities.map(q => q.id), Date.now());
   state.bank = shuffled(p.blocks.map(b => b.id), Date.now() + 1);
   $('problem-select').value = id;
-  $('problem-title').textContent = `${id} — ${p.title}`;
+  $('problem-title').textContent = id === 'C' ? p.title : `${id} — ${p.title}`;
   $('problem-statement').textContent = p.statement;
   $('check-summary').hidden = true; $('q-summary').hidden = true;
   renderAll(); drawRun();
@@ -335,7 +340,7 @@ function showCompare() {
     const b = block(id); if (!b.answer) continue;
     const yours = b.answer.value, truth = p.truth[b.answer.key];
     const ok = Math.abs(yours - truth) <= 0.005 * Math.abs(truth) + 1e-9;
-    rows.push([LABELS[b.answer.key] || b.answer.key, `${ok ? '✓' : '✗'} ${show(b.answer.key, yours)}`, show(b.answer.key, truth), ok]);
+    rows.push([labelOf(b.answer.key), `${ok ? '✓' : '✗'} ${show(b.answer.key, yours)}`, show(b.answer.key, truth), ok]);
   }
   $('compare').hidden = !rows.length; $('compare-empty').hidden = !!rows.length;
   $('compare-empty').textContent = state.ran ? 'None of your blocks states a number to compare yet.' : 'Check your solution to compare its numbers with the physics.';
@@ -346,5 +351,32 @@ function showCompare() {
   }));
 }
 
+/* ---------- shared problems from the builder ---------- */
+function addShared(p, source) {
+  REGISTRY.C = p;
+  let o = $('problem-select').querySelector('option[value="C"]');
+  if (!o) { o = document.createElement('option'); o.value = 'C'; $('problem-select').prepend(o); }
+  o.textContent = `★ ${p.title} (${source})`;
+  showShareNote('', false);
+  loadProblem('C');
+}
+function showShareNote(text, isError) { const n = $('share-note'); n.hidden = !text; n.textContent = text; n.classList.toggle('unsolved', !!isError); }
+function loadFromHash() {
+  const m = location.hash.match(/[#&]s=([^&]+)/);
+  if (!m) return false;
+  const res = decodeScenario(decodeURIComponent(m[1]));
+  if (res.errors) { showShareNote(`Could not open the shared problem: ${res.errors[0]}`, true); return false; }
+  addShared(res.problem, 'shared link'); return true;
+}
+$('load-file').addEventListener('change', async e => {
+  const file = e.target.files?.[0]; if (!file) return;
+  e.target.value = '';
+  if (file.size > 100000) { showShareNote('That file is too large to be a Solve it problem.', true); return; }
+  const res = parseScenarioJson(await file.text());
+  if (res.errors) showShareNote(`Could not open “${file.name}”: ${res.errors.slice(0, 3).join(' ')}`, true);
+  else addShared(res.problem, 'from file');
+});
+window.addEventListener('hashchange', loadFromHash);
+
 const asked = new URLSearchParams(location.search).get('problem');
-loadProblem(PROBLEMS[asked] ? asked : state.id);
+if (!loadFromHash()) loadProblem(PROBLEMS[asked] ? asked : state.id);

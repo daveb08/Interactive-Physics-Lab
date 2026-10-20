@@ -4,8 +4,8 @@
 calculus tier on each topic for engineering physics and physics majors.
 **Purpose:** a new section of the lab covering electric charge through electromagnetic waves, built as
 11 topic labs (E1–E11) behind one module hub.
-**Status:** draft. This round adds the spec, the hub page and catalog card 06 only; each topic lab is
-its own later branch and PR. Do not merge a topic to `main` until browser-verified: merges go live in Canvas.
+**Status:** E1 built (`coulomb.html`, `electrostatics.js`, `field-view.js`, `xy-plot.js`); E2–E11 to come. Each topic lab is
+its own branch and PR. Do not merge a topic to `main` until browser-verified: merges go live in Canvas.
 
 ## Ground rules (same as the existing lab)
 
@@ -55,7 +55,12 @@ js/components/circuit-view.js SVG circuit board: drag components onto a grid, me
 Each entry lists the algebra core, the calculus tier, the lab, two or more guided activities and the
 misconceptions the feedback targets.
 
-### E1 — Electric charge and Coulomb's law
+### E1 — Electric charge and Coulomb's law  ✅ built
+- **As built:** 2–4 charges, −10 to +10 μC in 0.5 μC steps, 4 cm minimum separation; ×2/×½ r and q with a
+  before/after readout; F vs r graph; force labels F₁₂ (force on q₁ by q₂) and F_net; guided C1–C3 hide arrows
+  and readouts until a prediction is saved; electroscope scene covers friction, contact and induction with a
+  conserved-charge tally and prediction gates; calculus tier adds the vector form and the rod (exact, n-slice sum,
+  point-charge limit).
 - **Core:** charge is conserved and quantized (q = n e); charging by friction, conduction and induction;
   conductors vs insulators; F = k|q₁q₂|/r², like charges repel; superposition of forces.
 - **Calculus:** force from a uniformly charged rod on a point charge, ∫ k λ dx / x², checked against the

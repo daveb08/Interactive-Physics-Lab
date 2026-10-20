@@ -118,6 +118,25 @@ export function cleanProblem(p) {
   for (const k of ['noun', 'label', 'surface']) if (typeof p[k] === 'string' && p[k].trim()) out[k] = p[k].trim();
   if (isNum(p.view?.min) && isNum(p.view?.max)) out.view = { min: p.view.min, max: p.view.max };
   if (Number.isInteger(p.revealAfter)) out.revealAfter = p.revealAfter;
+  const b = cleanBuilder(p.builder);
+  if (b) out.builder = b;
+  return out;
+}
+
+/**
+ * The picture-builder setup saved inside a downloaded file, so the file reopens in the builder as it was left.
+ * Only known fields survive; Solve it ignores it.
+ */
+const BUILDER_ROLES = ['m', 'F', 'v0', 'muS', 'muK', 't', 'W', 'N', 'f', 'Fnet', 'a', 'v', 'x', 'tstop', 'dstop'];
+export function cleanBuilder(b) {
+  if (!b || typeof b !== 'object') return undefined;
+  const nums = ['mass', 'force', 'v0', 'muS', 'muK', 't'];
+  if (!nums.every(k => isNum(b[k]))) return undefined;
+  const out = { figure: FIGURES.includes(b.figure) ? b.figure : 'cart', friction: !!b.friction, autoStatement: b.autoStatement !== false };
+  for (const k of nums) out[k] = b[k];
+  if (typeof b.title === 'string') out.title = b.title.slice(0, LIMITS.title);
+  if (typeof b.statement === 'string') out.statement = b.statement.slice(0, LIMITS.statement);
+  out.roles = Object.fromEntries(BUILDER_ROLES.map(k => [k, ['given', 'find', 'hidden'].includes(b.roles?.[k]) ? b.roles[k] : 'hidden']));
   return out;
 }
 

@@ -8,7 +8,7 @@
  * and rules that use it; everything else (roles, chaining, cards, blocks) stays the same.
  */
 import { GRAVITY, createRun, sampleAt } from '../../js/core/physics.js';
-import { formatValue, frictionError } from './problem-format.js';
+import { formatValue, frictionError, cleanBuilder } from './problem-format.js';
 
 const n = formatValue;
 const p = x => (x < 0 ? `(${n(x)})` : n(x));            // parenthesise negatives inside arithmetic
@@ -653,4 +653,49 @@ export function editValue(sc, key, value) {
   const r2 = setValue(r.sc, keep, target);
   if (r2.error) return { ...r, note: `${r.note ? `${r.note} ` : ''}The stated ${QUANTITIES[keep].label.toLowerCase()} changes as a result.` };
   return { sc: r2.sc, note: `${r.note ? `${r.note} ` : ''}Kept the stated ${QUANTITIES[keep].label.toLowerCase()} (${n(target)} ${QUANTITIES[keep].unit}); the applied force is now ${n(r2.sc.force)} N.` };
+}
+
+/* ---------- saving to and opening from a problem file ---------- */
+
+/** The setup to store inside a downloaded file (field `builder`). */
+export function scenarioForFile(sc) { return cleanBuilder(sc); }
+
+/** Which quantity a Step 1 card is about, from the symbol before “=” (e.g. “F_net = ?” → Fnet). */
+export function quantityOfCard(text) {
+  const lhs = String(text).split('=')[0].replace(/\s+/g, '').replace(/[()]/g, m => m);
+  const rules = [
+    [/^m$/, 'm'], [/^(v₀|v0|v_0)/, 'v0'], [/^F_?net/i, 'Fnet'], [/^(F_?N|N)$/, 'N'], [/^(F_?W|F_?g|W)$/, 'W'], [/^(F_?f|f|F_?fr)$/, 'f'],
+    [/^(F|F_?A|F_?app(lied)?|F_?horizontal|F_?push)$/i, 'F'], [/^(μk|μ_k|mu_?k)/i, 'muK'], [/^(μs|μ_s|mu_?s)/i, 'muS'],
+    [/^t_?stop/, 'tstop'], [/^d_?stop$|^d$/, 'dstop'], [/^t$/, 't'], [/^a$/, 'a'], [/^v(\(|$)/, 'v'], [/^(x|d|Δx)\(/, 'x'], [/^(x|Δx)$/, 'x'],
+  ];
+  return rules.find(([re]) => re.test(lhs))?.[1] ?? null;
+}
+
+/**
+ * A scenario for the builder from a problem file. Files saved by the builder carry their setup and reopen
+ * exactly; other files (built-in or hand-edited) are rebuilt from the simulation settings and the Step 1 cards,
+ * keeping their title and wording.
+ * @returns {{ sc, exact: boolean, unread: string[] }} unread = card texts the builder could not place
+ */
+export function scenarioFromProblem(p) {
+  const saved = cleanBuilder(p.builder);
+  if (saved) return { sc: newScenario({ ...saved, roles: saved.roles }), exact: true, unread: [] };
+  const s = p.setup || {};
+  const friction = !!s.frictionEnabled;
+  const sc = newScenario({
+    figure: FIGURE_INFO[p.figure] ? p.figure : 'cart', title: p.title || '', statement: p.statement || '', autoStatement: false,
+    mass: s.mass, force: s.force, v0: s.velocity, friction, muS: friction ? s.muS : 0.3, muK: friction ? s.muK : 0.2,
+    t: Number((p.targetTime > 0 ? p.targetTime : 2).toPrecision(6)),
+  });
+  for (const k of Object.keys(sc.roles)) sc.roles[k] = 'hidden';
+  const unread = [];
+  for (const c of p.quantities || []) {
+    if (c.role === 'none') continue;
+    const k = quantityOfCard(c.text);
+    if (k && sc.roles[k] !== undefined) sc.roles[k] = c.role === 'known' ? 'given' : 'find';
+    else if (!/^(g|x₀|x0|v_?final|v_f)(=|$)/.test(String(c.text).replace(/\s+/g, ''))) unread.push(c.text);
+  }
+  // A stopping problem asks for the time and distance to stop; the target time is then the stop, not a given t.
+  if (sc.roles.tstop !== 'hidden' || sc.roles.dstop !== 'hidden') { if (sc.roles.t === 'hidden') sc.t = Math.max(0.5, Math.floor(sc.t * 10) / 10); }
+  return { sc, exact: false, unread };
 }

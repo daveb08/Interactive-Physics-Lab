@@ -132,3 +132,24 @@ test('editing keeps the values the problem states; the unstated push is re-solve
   const p = sampleScenario('pallet');                                   // F is stated: nothing else is held
   near(editValue(p, 'm', 100).sc.force, 400);
 });
+
+import { scenarioFromProblem, scenarioForFile, quantityOfCard } from '../modules/newtons-laws/problem-builder.js';
+import { PROBLEMS } from '../modules/newtons-laws/solve-problems.js';
+test('opening files: builder files reopen exactly; other files are rebuilt from their settings and cards', () => {
+  const sc = sampleScenario('pallet'); sc.title = 'My pallet'; sc.roles.x = 'find';
+  const p = cleanProblem({ ...buildProblem(sc).problem, builder: scenarioForFile(sc) });
+  assert.ok(p.builder, 'the setup survives cleaning');
+  const back = scenarioFromProblem(JSON.parse(JSON.stringify(p)));
+  assert.equal(back.exact, true); assert.deepEqual(buildProblem(back.sc).problem, buildProblem(sc).problem);
+  assert.equal(cleanProblem({ ...p, builder: { mass: 'x' } }).builder, undefined, 'a broken setup is dropped');
+  for (const id of Object.keys(PROBLEMS)) {
+    const r = scenarioFromProblem(PROBLEMS[id]);
+    assert.equal(r.exact, false); assert.deepEqual(r.unread, [], id);
+    const b = buildProblem(r.sc);
+    assert.deepEqual(b.issues, [], id);
+    assert.equal(b.problem.statement, PROBLEMS[id].statement, `${id} keeps its wording`);
+    const asked = PROBLEMS[id].quantities.filter(q => q.role === 'unknown').map(q => quantityOfCard(q.text)).sort();
+    assert.deepEqual(Object.keys(r.sc.roles).filter(k => r.sc.roles[k] === 'find').sort(), asked, id);
+  }
+  assert.equal(quantityOfCard('F_net = ?'), 'Fnet'); assert.equal(quantityOfCard('F_N = 1177 N'), 'N'); assert.equal(quantityOfCard('d(1.5 s) = ?'), 'x');
+});

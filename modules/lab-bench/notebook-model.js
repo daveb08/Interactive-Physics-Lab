@@ -16,10 +16,20 @@ export function deleteTrial(book, id, note = 'deleted') {
 }
 export const active = book => book.filter(r => !r.deleted && r.h > 0 && r.t > 0);
 
+/** A combination is one ball with one timer; only trials from the same combination belong in one fit. */
+export const comboKey = r => `${r.object} · ${r.timer}`;
+/** The combinations in the notebook, most trials first. */
+export function combos(book) {
+  const m = new Map();
+  for (const r of active(book)) m.set(comboKey(r), { key: comboKey(r), object: r.object, timer: r.timer, n: (m.get(comboKey(r))?.n ?? 0) + 1 });
+  return [...m.values()].sort((a, b) => b.n - a.n);
+}
+const pick = (book, key) => (key ? active(book).filter(r => comboKey(r) === key) : active(book));
+
 /** Heights within 0.5 mm count as the same height (students re-read the stick). */
-export function groupByHeight(book) {
+export function groupByHeight(book, key = null) {
   const groups = [];
-  for (const r of active(book)) {
+  for (const r of pick(book, key)) {
     let g = groups.find(x => Math.abs(x.h - r.h) < 0.0005);
     if (!g) groups.push(g = { h: r.h, rows: [] });
     g.rows.push(r);
@@ -36,9 +46,9 @@ export function groupByHeight(book) {
  * t² goes on the vertical axis because timing is the noisy measurement: least squares assumes the error is in y.
  * (Fitting h against t² instead biases g low; with ±0.04 s stopwatch scatter it averages about 8.9 m/s² on Earth.)
  */
-export function analyse(book) {
-  const pts = active(book).map(r => ({ x: r.h, y: r.t * r.t }));
-  const groups = groupByHeight(book);
+export function analyse(book, key = null) {
+  const pts = pick(book, key).map(r => ({ x: r.h, y: r.t * r.t }));
+  const groups = groupByHeight(book, key);
   const out = { points: pts, groups, fit: null, g: NaN, gSE: NaN, error: '' };
   if (groups.length < 2) { out.error = 'Measure at least two different heights to draw a line.'; return out; }
   const fit = linearFit(pts);
@@ -48,8 +58,8 @@ export function analyse(book) {
 }
 
 /** Progress toward the assignment's minimum design. */
-export function progress(book) {
-  const groups = groupByHeight(book);
+export function progress(book, key = null) {
+  const groups = groupByHeight(book, key);
   const full = groups.filter(g => g.n >= MIN.trialsPerHeight).length;
   return { heights: groups.length, fullHeights: full, done: full >= MIN.heights };
 }

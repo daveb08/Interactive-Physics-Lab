@@ -121,6 +121,12 @@ test('Stage 2: a student ID gives the same hidden planet every time, its own not
  const g=Number((await page.locator('#f-g').innerText()).split(' ')[0]);
  expect(Math.abs(g-planet.g)/planet.g).toBeLessThan(.02);
  await page.locator('#r-g').fill(g.toFixed(2));await page.locator('#r-dg').fill((planet.g*.03).toFixed(2));
+ // too few drops: the page warns that the ± cannot be trusted and will not take a submission
+ await expect(page.locator('#fit-warn')).toBeVisible();
+ await page.getByRole('button',{name:'Submit my result'}).click();
+ await expect(page.locator('#result-msg')).toContainText('Not yet');await expect(page.getByRole('button',{name:/Reveal my planet/})).toBeHidden();
+ await gateDrops(page,[['PageUp',4],['PageDown',8],['PageDown',4]],5,planet.g);
+ await expect(page.locator('#fit-warn')).toBeHidden();
  await page.getByRole('button',{name:'Submit my result'}).click();
  await expect(page.locator('#result-msg')).toContainText('Result recorded');
  await page.getByRole('button',{name:/Reveal my planet/}).click();
@@ -129,7 +135,7 @@ test('Stage 2: a student ID gives the same hidden planet every time, its own not
  await evidence(page,info,'stage2-planet');
  // same ID after a reload: same planet and its notebook; Earth keeps its own (empty) notebook
  await page.reload();await expect(page.locator('#planet-status')).toContainText(planet.name);
- await expect(page.locator('#trial-rows tr')).toHaveCount(6);
+ await expect(page.locator('#trial-rows tr')).toHaveCount(21);
  await page.getByRole('button',{name:'Earth (practice)'}).click();await expect(page.locator('#trial-rows tr')).toHaveCount(0);
  expect((await layout(page)).overflow).toBe(false);
 });

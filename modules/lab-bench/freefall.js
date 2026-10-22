@@ -9,7 +9,7 @@ import { fallAt, fallTime, BALLS, AIR } from '../../js/core/freefall-drag.js';
 import { planetFor, normaliseId, PRACTICE_CODE } from '../../js/core/lab-noise.js';
 import { XYPlot } from '../../js/components/xy-plot.js';
 import { downloadCsv } from '../../js/components/csv-export.js';
-import { addTrial, deleteTrial, groupByHeight, analyse, progress, notebookCsv, combos, comboKey, MIN } from './notebook-model.js';
+import { addTrial, deleteTrial, groupByHeight, analyse, progress, notebookCsv, combos, comboKey, MIN, idealFitG } from './notebook-model.js';
 
 const $ = id => document.getElementById(id);
 const EARTH = { g: 9.81, rho: AIR.earth, air: 'earth' };
@@ -18,6 +18,8 @@ const H_MIN = 0.20, H_MAX = 2.00;
 const f2 = v => v.toFixed(2), f3 = v => v.toFixed(3);
 const sig = (v, n = 3) => (!Number.isFinite(v) ? '–' : Math.abs(v) < 5e-7 ? '0' : (+v.toPrecision(n)).toString());   // rounding noise (e.g. 6e-17) shows as 0
 const minus = s => String(s).replace('-', '−');
+const decFor = d => Math.min(6, Math.max(0, 1 - Math.floor(Math.log10(d))));   // decimal places that show d to 2 significant figures
+const pm = (v, d) => (d > 0 && Number.isFinite(d) ? `${v.toFixed(decFor(d))} ± ${d.toFixed(decFor(d))}` : `${sig(v, 3)} ± –`);
 const params = new URLSearchParams(location.search);
 const CODE = (params.get('a') || PRACTICE_CODE).toLowerCase().slice(0, 40);
 const TIMER = { watch: 'Hand stopwatch', gate: 'Electronic timer' };
@@ -354,15 +356,20 @@ function renderAnalysis() {
   $('fit-table').hidden = !a.fit;
   $('explain-fit').hidden = !a.fit;
   if (a.fit) {
-    $('f-slope').textContent = `${sig(a.fit.slope, 3)} ± ${sig(a.fit.slopeSE, 2)} s²/m`;
-    $('f-int').textContent = `${minus(sig(a.fit.intercept, 2))} ± ${sig(a.fit.interceptSE, 2)} s²`;
-    $('f-g').textContent = `${sig(a.g, 3)} ± ${sig(a.gSE, 2)} m/s²`;
+    $('f-slope').textContent = `${sig(a.fit.slope, 3)} ± ${sig((a.gSE * a.fit.slope ** 2) / 2, 2)} s²/m`;   // equals the fit's own ± unless the equipment floor applies
+    const intSE = a.fit.interceptSE * (a.floored && a.gSEfit > 0 ? a.gSE / a.gSEfit : 1);   // the floor widens the intercept's ± in the same proportion
+    $('f-int').textContent = `${minus(sig(a.fit.intercept, 2))} ± ${sig(intSE, 2)} s²`;
+    $('f-g').textContent = `${minus(pm(a.g, a.gSE))} m/s²`;
     $('explain-fit-body').innerHTML = `<p>For a drop from rest, h = ½ g t², so <b>t² = (2/g) h</b>. Plotting t² against h gives a straight line through the origin with <b>slope 2/g</b>, so <b>g = 2 / slope</b>. Your slope ${sig(a.fit.slope, 3)} s²/m gives g = 2 / ${sig(a.fit.slope, 3)} = ${sig(a.g, 3)} m/s².</p>`
-      + `<p>The ± on the slope comes from how far your points scatter about the line. It carries over to g: δg = 2 δslope / slope² = ${sig(a.gSE, 2)} m/s².</p>`
+      + `<p>The ± on the slope comes from how far your points scatter about the line. It carries over to g: δg = 2 δslope / slope² = ${sig(a.gSEfit, 2)} m/s²${a.floored ? ' from the scatter alone' : ''}.</p>`
+      + (a.floored ? `<p><b>Why is the ± on g larger than that?</b> Your points sit closer to the line than your equipment can resolve (the ruler reads to 1 mm, the ${key.includes(TIMER.gate) ? 'electronic timer to 1 ms' : 'stopwatch to 0.01 s'}). With few trials that happens by luck, and the scatter then understates the uncertainty. So the ± shown is the equipment limit, ${sig(a.gSEfloor, 2)} m/s², instead.</p>` : '')
       + `<p><b>Why t² on the vertical axis?</b> A least-squares fit assumes the error is in the vertical quantity. Times are the noisier measurement, especially by hand, so time belongs on the vertical axis. (Fitting h against t² instead would pull g low.)</p>`
-      + `<p>The intercept should be close to zero. ${Math.abs(a.fit.intercept) > 2 * a.fit.interceptSE ? `Yours (${minus(sig(a.fit.intercept, 2))} s²) is not: a ${a.fit.intercept > 0 ? 'positive' : 'negative'} intercept often means the timing ran ${a.fit.intercept > 0 ? 'long (started early or stopped late)' : 'short (started late or stopped early)'} by about the same amount every time. A timing offset δ adds 2δt + δ² to every t², and because 2δt grows with height it also tilts the line a little, so it biases g as well as the intercept. That is a systematic error: more trials will not remove it, a better timer will.` : 'Yours is, within its uncertainty.'}</p>`;
+      + `<p>The intercept should be close to zero. ${Math.abs(a.fit.intercept) > 2 * intSE ? `Yours (${minus(sig(a.fit.intercept, 2))} s²) is not: a ${a.fit.intercept > 0 ? 'positive' : 'negative'} intercept often means the timing ran ${a.fit.intercept > 0 ? 'long (started early or stopped late)' : 'short (started late or stopped early)'} by about the same amount every time. A timing offset δ adds 2δt + δ² to every t², and because 2δt grows with height it also tilts the line a little, so it biases g as well as the intercept. That is a systematic error: more trials will not remove it, a better timer will.` : 'Yours is, within its uncertainty.'}</p>`;
   }
-  const ex = a.fit && a.gSE > 0 ? { g: a.g, d: a.gSE } : { g: 9.7234, d: 0.2871 };   // a perfect fit (zero scatter) falls back to the example
+  const ex = a.fit && a.gSE > 0 ? { g: a.g, d: a.gSE } : { g: 9.7234, d: 0.2871 };
+  const pr = progress(state.book, key);
+  $('fit-warn').hidden = !a.fit || pr.done;
+  $('fit-warn').textContent = `Not enough data yet: the assignment needs ${MIN.heights} heights with ${MIN.trialsPerHeight} drops each (so far: ${pr.fullHeights} ${pr.fullHeights === 1 ? 'height' : 'heights'} with ${MIN.trialsPerHeight}). With fewer drops the ± cannot be trusted, and ${state.mode === 'planet' ? 'you cannot submit a result yet' : 'your comparison is only a rough check'}.`;   // a perfect fit (zero scatter) falls back to the example
   const d1 = +ex.d.toPrecision(1), dec = Math.min(6, Math.max(0, -Math.floor(Math.log10(d1))));
   $('explain-report').innerHTML = `<p>Round the uncertainty to <b>1 or 2 significant figures</b>, then round the value to the <b>same decimal place</b>. ${a.fit && a.gSE > 0 ? 'Your fit gives' : 'For example,'} ${sig(ex.g, 5)} ± ${sig(ex.d, 4)} m/s² → <b>${ex.g.toFixed(dec)} ± ${d1.toFixed(dec)} m/s²</b>.</p>`
     + `<p>Then ask: <b>does my range include the expected value?</b> If it does, your measurement agrees with it.</p>`
@@ -409,30 +416,57 @@ $('explain-q').addEventListener('submit', e => {
 });
 
 /* ---------- result ---------- */
-function verdict(g, d, G) {
-  const lo = g - d, hi = g + d, inside = lo <= G && G <= hi, pct = ((g - G) / G) * 100;
-  return { inside, text: `Your range is ${lo.toFixed(2)} to ${hi.toFixed(2)} m/s². ${state.mode === 'planet' ? `Your planet’s g is ${G.toFixed(2)} m/s²` : `Earth’s g is ${G} m/s²`}, ${inside ? 'inside your range: your measurement agrees with it. ✓' : `outside your range: your value is ${Math.abs(pct).toFixed(1)} % ${pct > 0 ? 'high' : 'low'}. Look for a systematic error, or check whether your uncertainty is too small.`}` };
+const BY_NAME = Object.fromEntries(Object.values(BALL_INFO).map(b => [b.name, b]));
+/** What a perfect experiment gets with this combination's ball and heights in this air (drag included). */
+function idealFor(key) {
+  const a = analyse(state.book, key), b = BY_NAME[key.split(' · ')[0]] || BALL_INFO.steel, e = env();
+  return idealFitG(a.groups.map(g => g.h), h => fallTime({ g: e.g, ball: b, rho: e.rho }, h));
+}
+function verdict({ g, d, ideal }, G) {
+  const dec = Math.max(2, decFor(d)), lo = g - d, hi = g + d, has = v => lo <= v && v <= hi, near = v => Math.abs(g - v) <= 2 * d;
+  const pct = v => ((g - v) / v) * 100, how = v => `${Math.abs(pct(v)).toFixed(Math.abs(pct(v)) < 1 ? 2 : 1)} % ${pct(v) > 0 ? 'high' : 'low'}`;
+  const name = state.mode === 'planet' ? 'Your planet’s g' : 'Earth’s g';
+  let text = `Your range is ${lo.toFixed(dec)} to ${hi.toFixed(dec)} m/s². ${name} is ${G.toFixed(2)} m/s²`, kind;
+  const dragPct = Number.isFinite(ideal) ? ((G - ideal) / G) * 100 : 0, dragMatters = dragPct > 0.05;
+  const twice = ' That is normal: about one careful measurement in three lands between one and two uncertainties away, so physicists count anything within 2 × your uncertainty as agreement.';
+  if (has(G)) { kind = 'good'; text += ', inside your range: your measurement agrees with it. ✓'; }
+  else if (near(G)) { kind = 'good'; text += `, just outside your range (${how(G)}) but within twice your uncertainty: your measurement agrees with it. ✓${twice}`; }
+  else if (dragMatters && near(ideal)) {
+    kind = 'good';
+    text += `, outside your range (${how(G)}). But this air slows your ball: a perfect experiment with your ball and heights would measure ${ideal.toFixed(dec)} m/s², which is ${has(ideal) ? 'inside your range' : 'within twice your uncertainty'}. ✓ The ${dragPct.toFixed(dragPct < 1 ? 2 : 1)} % gap is air drag, a systematic error${dragPct > 2 ? ': a heavier ball would remove most of it' : ''}.`;
+  } else {
+    kind = 'bad';
+    text += `, outside your range: your value is ${how(G)}.`;
+    if (dragMatters) text += ` (With this air, a perfect experiment with your ball and heights would measure ${ideal.toFixed(dec)} m/s²; you are ${how(ideal)} from that.)`;
+    text += ' Look for a systematic error, or check whether your uncertainty is too small.';
+  }
+  return { kind, text };
 }
 $('check').addEventListener('click', () => {
-  const g = +$('r-g').value, d = +$('r-dg').value, box = $('result-msg');
+  const g = +$('r-g').value, d = +$('r-dg').value, box = $('result-msg'), { key } = currentCombo();
   box.hidden = false; box.className = 'feedback';
-  if (!(g > 0) || !(d > 0)) { box.textContent = 'Enter your value of g and its uncertainty (both positive).'; box.classList.add('lb-bad'); return; }
+  const bad = msg => { box.textContent = msg; box.classList.add('lb-bad'); };
+  if (!(g > 0) || !(d > 0)) return bad('Enter your value of g and its uncertainty (both positive).');
+  const pr = key ? progress(state.book, key) : { done: false, fullHeights: 0 };
+  const short = `the assignment needs ${MIN.heights} heights with ${MIN.trialsPerHeight} drops each, using one ball and one timer (${key || 'no trials yet'}: ${pr.fullHeights} so far)`;
   const rel = (d / g) * 100, big = rel > 15 ? ` Your uncertainty is large (${rel.toFixed(0)} % of g): more trials, longer drops or the electronic timer would shrink it.` : '';
   if (state.mode === 'planet') {
-    if (!state.planet) { box.textContent = 'Enter your student ID to go to your planet first.'; box.classList.add('lb-bad'); return; }
-    state.submitted = { g, d }; state.revealed = false;
-    box.textContent = `Result recorded: g = ${g} ± ${d} m/s² on ${state.planet.name}.${big} This is practice, so you can reveal your planet’s g to check it. (In a graded assignment it stays hidden.)`;
+    if (!state.planet) return bad('Enter your student ID to go to your planet first.');
+    if (!pr.done) return bad(`Not yet: ${short}. Finish the measurements, then submit.`);
+    state.submitted = { g, d, key, ideal: idealFor(key) }; state.revealed = false;
+    box.textContent = `Result recorded: g = ${g} ± ${d} m/s² on ${state.planet.name} (${key}).${big} This is practice, so you can reveal your planet’s g to check it. (In a graded assignment it stays hidden.)`;
     renderMode(); return;
   }
-  const v = verdict(g, d, EARTH.g);
-  box.textContent = v.text + big; box.classList.toggle('lb-good', v.inside); box.classList.toggle('lb-bad', !v.inside);
+  const v = verdict({ g, d, ideal: key ? idealFor(key) : NaN }, EARTH.g);
+  box.textContent = (pr.done ? '' : `Rough check only: ${short}. `) + v.text + big;
+  box.classList.add(v.kind === 'good' ? 'lb-good' : 'lb-bad');
 });
 $('reveal').addEventListener('click', () => {
   if (!state.submitted || !state.planet) return;
-  const v = verdict(state.submitted.g, state.submitted.d, state.planet.g), box = $('result-msg'), airWords = { none: 'no air', thin: 'thin air', earth: 'Earth-like air' }[state.planet.air];
+  const v = verdict(state.submitted, state.planet.g), box = $('result-msg'), airWords = { none: 'no air', thin: 'thin air', earth: 'Earth-like air' }[state.planet.air];
   state.revealed = true;
   box.textContent = `${v.text} ${state.planet.name} has ${airWords}.`;
-  box.className = `feedback ${v.inside ? 'lb-good' : 'lb-bad'}`;
+  box.className = `feedback ${v.kind === 'good' ? 'lb-good' : 'lb-bad'}`;
   renderMode();
 });
 

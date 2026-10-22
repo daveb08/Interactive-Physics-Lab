@@ -21,7 +21,7 @@ test('E&M Solve it is linked from the Unit 1 nav and the hub',async({page})=>{
 for(const [id,p] of Object.entries(PROBLEMS))test(`E&M Solve it ${id}: sorting, a flagged mistake with a ghost force, then the correct solution`,async({page},info)=>{
  await frozen(page,route);await page.getByRole('combobox',{name:/^Problem/}).selectOption(id);
  const first=p.quantities.find(q=>q.role==='known');
- await page.getByRole('button',{name:`Add to unknowns: ${first.text}`,exact:true}).click();
+ await page.getByRole('button',{name:`+ Unknown: ${first.text}`,exact:true}).click();
  await page.getByRole('button',{name:/Check knowns/}).click();await expect(page.locator('#q-summary')).toContainText(/flagged|still/);
  await page.getByRole('button',{name:`Move to knowns: ${first.text}`,exact:true}).click();
  for(const q of p.quantities.filter(q=>q.id!==first.id&&q.role!=='none'))await page.getByRole('button',{name:`Add to ${q.role==='known'?'knowns':'unknowns'}: ${q.text}`,exact:true}).click();

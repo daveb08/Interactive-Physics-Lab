@@ -23,13 +23,13 @@
 .tag.role-find rect{fill:#fff4e8;stroke:#ba622e;stroke-dasharray:4 2.5}
 .tag.role-find text{fill:#9a4a1b}
 .tag.role-hidden rect{fill:#f4f5f2;stroke:#c3cbc6}
-.tag.role-hidden text{fill:#8b9693;font-weight:500}
+.tag.role-hidden text{fill:#656d6b;font-weight:500}
 .tag:hover rect{stroke-width:2.5}
 .tag.sel rect{stroke:#243d3b;stroke-width:3}
 .tag:focus{outline:none}.tag:focus-visible rect{stroke:#ba622e;stroke-width:3}
 .build-legend{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:0}
 .lg{font-size:11.5px;font-weight:650;border-radius:5px;padding:2px 7px;border:1.5px solid #337a68;color:var(--ink)}
-.lg-given{background:#e7f0e9}.lg-find{background:#fff4e8;border:1.5px dashed #ba622e;color:#9a4a1b}.lg-hidden{background:#f4f5f2;border-color:#c3cbc6;color:#8b9693}
+.lg-given{background:#e7f0e9}.lg-find{background:#fff4e8;border:1.5px dashed #ba622e;color:#9a4a1b}.lg-hidden{background:#f4f5f2;border-color:#c3cbc6;color:#656d6b}
 .build-editor{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:white;min-height:58px}
 .build-editor .help{margin:6px 0 0}
 .ed-head{font-size:14px}.ed-sym{color:var(--muted);margin-left:4px}

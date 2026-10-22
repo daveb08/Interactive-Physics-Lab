@@ -109,7 +109,12 @@ function describeModel() {
     $('math-ode').textContent = lin ? `${model.mass} dv/dt = ${model.force} − ${model.coef} v` : `${model.mass} dv/dt = ${model.force} − ${model.coef} v²`;
     if (lin) $('math-solution').textContent = `v(t) = ${f3(model.vT)} + (${f3(model.v0)} − ${f3(model.vT)}) e^(−t/${f3(model.tau)})   [v_T = F/b, τ = m/b]`;
     else if (model.force === 0) $('math-solution').textContent = `v(t) = v₀ / (1 + c v₀ t / m) = ${model.v0} / (1 + ${f3(model.coef * model.v0 / model.mass)} t)`;
-    else $('math-solution').textContent = `v(t) = ${f3(model.vT)} ${model.v0 < model.vT ? 'tanh' : model.v0 > model.vT ? 'coth' : '·'}(t/${f3(model.tau)} + φ)   [v_T = √(F/c), τ = m/(c v_T)]`;
+    else if (Math.abs(model.v0 - model.vT) < 1e-9 * Math.max(1, model.vT)) $('math-solution').textContent = `v(t) = v_T = ${f3(model.vT)} m/s for all t: the push and the drag balance from the start   [v_T = √(F/c)]`;
+    else {
+      // v₀ below v_T: v = v_T tanh(t/τ + φ), φ = artanh(v₀/v_T); above: v = v_T coth(t/τ + φ), φ = artanh(v_T/v₀) (QA-02)
+      const below = model.v0 < model.vT, phi = Math.atanh(below ? model.v0 / model.vT : model.vT / model.v0);
+      $('math-solution').textContent = `v(t) = ${f3(model.vT)} ${below ? 'tanh' : 'coth'}(t/${f3(model.tau)} + φ),  φ = ${below ? 'artanh(v₀/v_T)' : 'artanh(v_T/v₀)'} = ${f3(phi)}   [v_T = √(F/c), τ = m/(c v_T)]`;
+    }
     if (!guidedHidden && model.force > 0) params.push(['Terminal speed v_T', `${f3(model.vT)} m/s`]);
     if (!guidedHidden && Number.isFinite(model.tau)) params.push(['Time constant τ', `${f3(model.tau)} s`]);
     $('model-note').textContent = `Applied force constant at ${model.force} N; drag ${lin ? 'proportional to v' : 'proportional to v²'} and opposite the motion. ${model.reason === 'boundary' ? `The cart reaches x = 50 m at t = ${f3(model.endTime)} s, where observation ends.` : 'Observation lasts 10 s.'}`;
@@ -118,12 +123,15 @@ function describeModel() {
     $('ode-short').textContent = 'm x″ + b x′ + k x = 0';
     $('ode-params').textContent = `m = ${model.mass} kg · b = ${model.b} kg/s · k = ${model.k} N/m`;
     $('math-ode').textContent = `${model.mass} x″ + ${model.b} x′ + ${model.k} x = 0,   x(0) = ${model.x0} m,  v(0) = ${model.v0} m/s`;
-    const g = f3(model.gamma);
+    const g = f3(model.gamma), x0 = model.x0, v0 = model.v0, ga = model.gamma, w0 = model.w0;
+    // The constants are fixed by x(0) = x₀ and x′(0) = v₀; show how, with their values (QA-03).
+    const wd = w0 * Math.sqrt(Math.max(0, 1 - model.zeta ** 2)), s = w0 * Math.sqrt(Math.max(0, model.zeta ** 2 - 1)), r1 = -ga + s, r2 = -ga - s;
+    const C1 = (v0 - r2 * x0) / (r1 - r2), C2 = x0 - C1;
     $('math-solution').textContent = {
-      undamped: `x(t) = A cos(${f3(model.w0)} t) + B sin(${f3(model.w0)} t)`,
-      underdamped: `x(t) = e^(−${g} t)[A cos(ω_d t) + B sin(ω_d t)],  ω_d = ${f3(model.w0 * Math.sqrt(1 - model.zeta ** 2))} s⁻¹`,
-      critical: `x(t) = (A + B t) e^(−${f3(model.w0)} t)`,
-      overdamped: `x(t) = C₁ e^(r₁ t) + C₂ e^(r₂ t),  r = −${g} ± ${f3(model.w0 * Math.sqrt(model.zeta ** 2 - 1))} s⁻¹`,
+      undamped: `x(t) = A cos(${f3(w0)} t) + B sin(${f3(w0)} t),  where A = x₀ = ${f3(x0)} m and B = v₀/ω₀ = ${f3(v0 / w0)} m`,
+      underdamped: `x(t) = e^(−${g} t)[A cos(ω_d t) + B sin(ω_d t)],  ω_d = ${f3(wd)} s⁻¹,  where A = x₀ = ${f3(x0)} m and B = (v₀ + γx₀)/ω_d = ${f3((v0 + ga * x0) / wd)} m  (γ = b/2m = ${g} s⁻¹)`,
+      critical: `x(t) = (A + B t) e^(−${f3(w0)} t),  where A = x₀ = ${f3(x0)} m and B = v₀ + ω₀x₀ = ${f3(v0 + w0 * x0)} m/s`,
+      overdamped: `x(t) = C₁ e^(r₁ t) + C₂ e^(r₂ t),  r₁, r₂ = −${g} ± ${f3(s)} s⁻¹,  where C₁ = (v₀ − r₂x₀)/(r₁ − r₂) = ${f3(C1)} m and C₂ = x₀ − C₁ = ${f3(C2)} m`,
     }[model.regime];
     params = [['ω₀ = √(k/m)', `${f3(model.w0)} s⁻¹`]];
     if (!guidedHidden) params.push(['ζ = b/(2√(km))', f3(model.zeta)], ['Regime', REGIME_TEXT[model.regime]], ['b for ζ = 1', `${f3(model.bCritical)} kg/s`]);
@@ -259,9 +267,10 @@ for (const scenario of ['drag', 'oscillator']) {
   });
 }
 $('set-critical').addEventListener('click', () => {
-  const s = state.free.oscillator;
-  state.free.oscillator = { ...s, b: +criticalDamping(s.mass, s.k).toFixed(4) };
-  if (state.free.oscillator.b > 20) { $('run-message').textContent = `Critical damping would need b = ${f2(criticalDamping(s.mass, s.k))} kg/s, above the 20 kg/s limit. Lower m or k.`; return; }
+  const s = state.free.oscillator, bc = criticalDamping(s.mass, s.k);
+  // Check the limit before storing: a rejected value must not be left in the settings (QA-05).
+  if (bc > 20) { $('run-message').textContent = `Critical damping would need b = ${f2(bc)} kg/s, above the 20 kg/s limit. Lower m or k.`; return; }
+  state.free.oscillator = { ...s, b: +bc.toFixed(4) };
   rebuild();
 });
 

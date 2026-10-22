@@ -69,15 +69,20 @@ export class ChargePlane {
     this.layer('arrows').innerHTML = h;
     // charges: persistent nodes
     const g = this.layer('charges');
-    while (this.nodes.length > charges.length) this.nodes.pop().remove();
+    // The visible sign and name are drawn in a separate, hidden-from-AT group on top of each charge button, so the
+    // button's accessible name (its aria-label) never conflicts with visible text inside it (QA-06).
+    this.labels ??= [];
+    while (this.nodes.length > charges.length) { this.nodes.pop().remove(); this.labels.pop().remove(); }
     while (this.nodes.length < charges.length) {
-      const i = this.nodes.length, n = document.createElementNS(NS, 'g');
+      const i = this.nodes.length, n = document.createElementNS(NS, 'g'), lbl = document.createElementNS(NS, 'g');
       n.setAttribute('tabindex', '0'); n.setAttribute('role', 'button'); n.classList.add('fv-charge');
-      n.innerHTML = '<circle class="fv-halo" r="22"/><circle class="fv-body"/><text class="fv-sign" y="6"></text><text class="fv-name" y="-24"></text>';
+      n.innerHTML = '<circle class="fv-halo" r="22"/><circle class="fv-body"/>';
+      lbl.setAttribute('aria-hidden', 'true'); lbl.classList.add('fv-charge-label'); lbl.style.pointerEvents = 'none';
+      lbl.innerHTML = '<text class="fv-sign" y="6"></text><text class="fv-name" y="-24"></text>';
       n.addEventListener('pointerdown', e => this.down(e, i));
       n.addEventListener('keydown', e => this.key(e, i));
       n.addEventListener('focus', () => this.onSelect?.(i));
-      g.append(n); this.nodes.push(n);
+      g.append(n); this.nodes.push(n); this.labels.push(lbl);
     }
     charges.forEach((c, i) => {
       const n = this.nodes[i], [X, Y] = this.px(c.x, c.y), uC = c.q * 1e6, movable = this.canMove(i);
@@ -87,8 +92,10 @@ export class ChargePlane {
       n.setAttribute('aria-disabled', String(!movable));
       n.querySelector('.fv-body').setAttribute('r', (10 + Math.sqrt(Math.abs(uC)) * 1.6).toFixed(1));
       n.querySelector('.fv-body').setAttribute('fill', uC >= 0 ? COLORS.pos : COLORS.neg);
-      n.querySelector('.fv-sign').textContent = uC >= 0 ? '+' : '−';
-      n.querySelector('.fv-name').textContent = `q${sub(i + 1)} ${uC > 0 ? '+' : '−'}${+Math.abs(uC).toFixed(1)} μC`;
+      const lbl = this.labels[i]; g.append(lbl);   // keep every label above every charge
+      lbl.setAttribute('transform', n.getAttribute('transform'));
+      lbl.querySelector('.fv-sign').textContent = uC >= 0 ? '+' : '−';
+      lbl.querySelector('.fv-name').textContent = `q${sub(i + 1)} ${uC > 0 ? '+' : '−'}${+Math.abs(uC).toFixed(1)} μC`;
       n.setAttribute('aria-label', `Charge q${i + 1}, ${uC > 0 ? 'plus' : 'minus'} ${+Math.abs(uC).toFixed(1)} microcoulombs, at x ${c.x.toFixed(2)} metres, y ${c.y.toFixed(2)} metres.${movable ? ' Arrow keys move it.' : ' Fixed in this activity.'}`);
     });
   }

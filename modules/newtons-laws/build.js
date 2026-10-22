@@ -5,7 +5,7 @@ import { figureMarkup } from './solve-figures.js';
 const $ = id => document.getElementById(id);
 const KEY = 'ipl-solve-builder', AUTHOR_DRAFT = 'ipl-solve-author-draft';
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const COLORS = { F: '#c24c2a', f: '#7851a9', N: '#3d6fa8', W: '#3c4a46', Fnet: '#236d62', v0: '#2d7fb8', v: '#2d7fb8', a: '#b07d12', x: '#667674', dstop: '#667674' };
+const COLORS = { F: '#c24c2a', f: '#7851a9', N: '#3d6fa8', W: '#3c4a46', Fnet: '#236d62', v0: '#2d7fb8', v: '#2d7fb8', a: '#b07d12', x: '#5f6e6d', dstop: '#5f6e6d' };
 // How much the ▲▼ arrows (and the keyboard arrow keys) change each value. Any value can still be typed.
 const STEPS = { muS: 0.01, muK: 0.01, m: 0.1, t: 0.1, v0: 0.1, a: 0.1, v: 0.1, x: 0.1, tstop: 0.1, dstop: 0.1, F: 1, W: 1, N: 1, f: 1, Fnet: 1 };
 const stepFor = (k, v) => (k === 'muS' || k === 'muK' ? 0.01 : Math.max(STEPS[k] ?? 0.1, Math.abs(v) >= 1 ? 10 ** (Math.floor(Math.log10(Math.abs(v))) - 2) : 0));
@@ -42,7 +42,7 @@ function tag(k, x, y, V, roles, app, { anchor = 'middle', prefix } = {}) {
   const body = sub ? `F<tspan class="sub" dy="4">${sub}</tspan><tspan dy="-4">${esc(rest)}</tspan>` : esc(label);
   let x0 = anchor === 'start' ? x : anchor === 'end' ? x - w : x - w / 2;
   x0 = Math.max(4, Math.min(756 - w, x0));
-  return `<g class="tag role-${role}${selected === k ? ' sel' : ''}" data-k="${k}" tabindex="0" role="button" aria-pressed="${selected === k}" aria-label="${esc(`${q.label}: ${role === 'find' ? 'students find it' : role === 'given' ? 'given' : 'left out'}, value ${fmtVal(V, k)}. Activate to edit.`)}">
+  return `<g class="tag role-${role}${selected === k ? ' sel' : ''}" data-k="${k}" tabindex="0" role="button" aria-pressed="${selected === k}" aria-label="${esc(`${sub ? `F${sub}${rest}` : label}: ${q.label}, ${role === 'find' ? 'students find it' : role === 'given' ? 'given' : 'left out'}, value ${fmtVal(V, k)}. Activate to edit.`)}">
     <rect x="${x0}" y="${y - h / 2}" width="${w}" height="${h}" rx="6"/><text x="${x0 + w / 2}" y="${y + 4.5}" text-anchor="middle">${body}</text></g>`;
 }
 function arrow(x1, y1, x2, y2, color, faded) {

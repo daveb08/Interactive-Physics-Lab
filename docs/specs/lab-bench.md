@@ -166,5 +166,19 @@ pendulum (g again, a different method), incline (μ), spring (k), and later Coul
 
 1. Default tolerance (±5 %) and uncertainty ceiling (15 %): right for these students?
 2. Should the assignment require both timers (to compare them), or let students choose?
-3. Brief "uncertainty basics" help (mean, spread, standard error, slope uncertainty) is needed. Is a short in-page
-   explainer enough, or does it need its own guided activity first?
+3. ~~Is a short in-page explainer enough for uncertainty basics?~~ **Decided 2026-10-22: yes, for this version** (see
+   "Uncertainty basics" below). Revisit after the first class uses it.
+
+## Uncertainty basics (in-page, just in time)
+
+No separate reading or activity. Three short explainers, each a collapsible "What does this mean?" panel attached to
+the step where it is first needed, each under ~120 words with one worked mini-example using the student's own numbers:
+
+| Where it appears | What it explains |
+|---|---|
+| Notebook, when a height has 2+ trials | Mean, spread (standard deviation) and standard error = SD/√n; why more trials help |
+| Analysis, next to the fit | Why plot h against t² (a straight line through the origin, slope = g/2); reading the slope and its ± |
+| Result panel, before submitting | Reporting g ± δg with sensible significant figures; "does my range include the expected value?"; random vs systematic error in one sentence each |
+
+The explainers are written for students with no statistics background. The Explanation rubric question, not the
+explainers, checks understanding.

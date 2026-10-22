@@ -91,10 +91,10 @@ export function idealFitG(heights, timeOf) {
 }
 
 /** Progress toward the assignment's minimum design. */
-export function progress(book, key = null) {
+export function progress(book, key = null, min = MIN) {
   const groups = groupByHeight(book, key);
-  const full = groups.filter(g => g.n >= MIN.trialsPerHeight).length;
-  return { heights: groups.length, fullHeights: full, done: full >= MIN.heights };
+  const full = groups.filter(g => g.n >= min.trialsPerHeight).length;
+  return { heights: groups.length, fullHeights: full, done: full >= min.heights };
 }
 
 export function notebookCsv(book) {

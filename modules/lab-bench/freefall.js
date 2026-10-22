@@ -3,13 +3,16 @@
  * Stage 1: bench, stick, steel ball, hand stopwatch (the student is the timer), notebook, t²–h fit, explainers.
  * Stage 2: electronic timer (1 ms), ping-pong ball with exact quadratic drag, a mystery planet seeded by the
  * student's ID, one fit per ball-and-timer combination, and an "explain your result" question chosen from the data.
+ * Stage 3: an assignment link (?a=…) makes it graded: the planet comes from the ID and the assignment code, its g stays
+ * hidden, the first answer to the question counts, and submitting gives a completion code for Canvas (grading.js).
  * Physics: js/core/freefall-drag.js. Seeding: js/core/lab-noise.js.
  */
 import { fallAt, fallTime, BALLS, AIR } from '../../js/core/freefall-drag.js';
-import { planetFor, normaliseId, PRACTICE_CODE } from '../../js/core/lab-noise.js';
+import { planetFor, normaliseId, PRACTICE_CODE, rng, hash32 } from '../../js/core/lab-noise.js';
 import { XYPlot } from '../../js/components/xy-plot.js';
 import { downloadCsv } from '../../js/components/csv-export.js';
-import { addTrial, deleteTrial, groupByHeight, analyse, progress, notebookCsv, combos, comboKey, MIN, idealFitG } from './notebook-model.js';
+import { addTrial, deleteTrial, groupByHeight, analyse, progress as progressMin, notebookCsv, combos, comboKey, MIN as MIN_DEFAULT, idealFitG } from './notebook-model.js';
+import { parseAssignment, assignmentPlanet, questionFor as questionKind, encodeSubmission } from './grading.js';
 
 const $ = id => document.getElementById(id);
 const EARTH = { g: 9.81, rho: AIR.earth, air: 'earth' };
@@ -21,7 +24,10 @@ const minus = s => String(s).replace('-', '−');
 const decFor = d => Math.min(6, Math.max(0, 1 - Math.floor(Math.log10(d))));   // decimal places that show d to 2 significant figures
 const pm = (v, d) => (d > 0 && Number.isFinite(d) ? `${v.toFixed(decFor(d))} ± ${d.toFixed(decFor(d))}` : `${sig(v, 3)} ± –`);
 const params = new URLSearchParams(location.search);
-const CODE = (params.get('a') || PRACTICE_CODE).toLowerCase().slice(0, 40);
+const ASG = parseAssignment(location.search);                     // null unless this is a graded assignment link
+const CODE = ASG ? ASG.code : PRACTICE_CODE;
+const MIN = ASG ? { heights: ASG.heights, trialsPerHeight: ASG.trials } : MIN_DEFAULT;
+const progress = (book, key) => progressMin(book, key, MIN);
 const TIMER = { watch: 'Hand stopwatch', gate: 'Electronic timer' };
 const BALL_INFO = { steel: { ...BALLS.steel, px: 8 }, pingpong: { ...BALLS.pingpong, px: 11 } };
 
@@ -67,10 +73,12 @@ function setMode(mode, id = '') {
   if (mode === 'planet') {
     const nid = normaliseId(id);
     if (!nid) { state.mode = 'planet'; state.planet = null; }
-    else { state.mode = 'planet'; state.planet = planetFor(nid, CODE); store.set('ipl-lab1-id', nid); }
+    else { state.mode = 'planet'; state.planet = ASG ? assignmentPlanet(nid, ASG) : planetFor(nid, CODE); store.set('ipl-lab1-id', nid); }
   } else { state.mode = 'earth'; state.planet = null; }
   store.set('ipl-lab1-mode', state.mode);
   state.book = loadBook(); state.combo = ''; state.submitted = null; state.revealed = false;
+  const lastCode = ASG && state.mode === 'planet' && state.planet ? store.get(`${bookKey()}-code`) : null;
+  if (lastCode) state.submitted = { code: lastCode };
   resetWatch(); state.gate.value = 0; state.phase = 'ready';
   $('result-msg').hidden = true; $('r-g').value = ''; $('r-dg').value = '';
   renderAll();
@@ -86,9 +94,15 @@ function renderMode() {
   $('change-id')?.addEventListener('click', () => { state.planet = null; $('student-id').value = ''; renderAll(); $('student-id').focus(); });
   $('mode-tag').innerHTML = `<span aria-hidden="true">●</span> ${planet ? (p ? `Mystery planet · ${p.name}` : 'Mystery planet') : 'Practice · Earth'}`;
   $('check').textContent = planet ? 'Submit my result' : 'Compare with Earth’s g';
-  $('reveal').hidden = !planet || !state.submitted || state.revealed;
+  $('reveal').hidden = !!ASG || !planet || !state.submitted || state.revealed;
+  $('completion').hidden = !(ASG && planet && state.submitted?.code);
+  if (ASG && planet && state.submitted?.code) $('completion-code').textContent = state.submitted.code;
   $('nb-where').textContent = planet ? (p ? `· ${p.name}` : '') : '· Earth';
-  $('footnote').textContent = planet
+  $('graded-banner').hidden = !ASG;
+  if (ASG) $('graded-banner').innerHTML = `<b>Graded assignment “${ASG.code}”.</b> Choose <b>Mystery planet</b> and enter your student ID: your planet’s g stays hidden. Measure at least <b>${MIN.heights} heights with ${MIN.trialsPerHeight} drops each</b> using one ball and one timer, answer the “Explain your result” question (your first answer counts), then submit to get a completion code for Canvas. Earth practice is still here if you want to warm up.`;
+  $('footnote').textContent = planet && ASG
+    ? `Graded assignment “${ASG.code}”. Your planet comes from your student ID and this assignment, so it is the same on any computer and different from the practice planet. Your notebook stays in this browser; only the completion code you paste into Canvas is graded. Use the same student ID you use in Canvas.`
+    : planet
     ? 'Mystery planet: gravity between 3 and 20 m/s², and either no air, thin air or Earth-like air, chosen by your student ID. The fall is exact, including air drag on the ping-pong ball; the errors are in your readings and your timer. Nothing is saved or sent; your notebook stays in this browser.'
     : 'Practice mode: Earth, g = 9.81 m/s², with Earth’s air (it slows the ping-pong ball noticeably, the steel ball by less than 0.1 % over 2 m). The fall is exact; the errors are in your readings and your timer. Nothing is saved or sent; your notebook stays in this browser.';
 }
@@ -173,17 +187,19 @@ function drawLoupe() {
   const show = !!state.ball && state.placed.stick && state.phase === 'ready';
   $('loupe-wrap').hidden = !show;
   if (!show) return;
-  const k = 3250, mid = state.h, yOf = h => 130 - (h - mid) * k, R = ball().diameter / 2;
-  let s = `<rect x="104" y="0" width="56" height="260" class="lb-stick"/>`;
-  for (let mm = Math.ceil((mid - 0.042) * 1000); mm <= (mid + 0.042) * 1000; mm++) {
-    const y = yOf(mm / 1000), len = mm % 10 === 0 ? 22 : mm % 5 === 0 ? 15 : 9;
-    s += `<line x1="104" x2="${104 + len}" y1="${y}" y2="${y}" class="lb-tick"/>`;
-    if (mm % 10 === 0) s += `<text x="${130}" y="${y + 6}" class="lb-loupe-num">${mm / 10}</text>`;
+  // 3 cm of stick, about 12 px per millimetre, so every millimetre mark can be read and counted.
+  const W = 240, H = 360, k = 12000, half = 0.015, mid = state.h, yOf = h => H / 2 - (h - mid) * k, R = ball().diameter / 2;
+  const X = 132, SW = 108;   // stick left edge and width
+  let s = `<rect x="${X}" y="0" width="${SW}" height="${H}" class="lb-stick"/>`;
+  for (let mm = Math.ceil((mid - half) * 1000); mm <= (mid + half) * 1000; mm++) {
+    const y = yOf(mm / 1000), len = mm % 10 === 0 ? 46 : mm % 5 === 0 ? 30 : 18;
+    s += `<line x1="${X}" x2="${X + len}" y1="${y}" y2="${y}" class="lb-tick${mm % 10 === 0 ? ' lb-tick-cm' : ''}"/>`;
+    if (mm % 10 === 0) s += `<text x="${X + 52}" y="${y + 8}" class="lb-loupe-num">${mm / 10}</text>`;
   }
-  s += `<rect x="136" y="240" width="24" height="20" fill="#efe0a8"/><text x="158" y="256" class="lb-loupe-unit">cm</text>`;
   const bottom = yOf(mid), rr = R * k;
-  s += `<clipPath id="lc"><rect x="0" y="0" width="104" height="260"/></clipPath><g clip-path="url(#lc)"><circle cx="52" cy="${bottom - rr}" r="${rr}" class="${state.ball === 'pingpong' ? 'lb-ball lb-ball-pp' : 'lb-ball'}"/></g>`;
-  s += `<line x1="12" x2="104" y1="${bottom}" y2="${bottom}" class="lb-sight lb-sight-strong"/>`;
+  s += `<clipPath id="lc"><rect x="0" y="0" width="${X}" height="${H}"/></clipPath><g clip-path="url(#lc)"><circle cx="${X / 2}" cy="${bottom - rr}" r="${rr}" class="${state.ball === 'pingpong' ? 'lb-ball lb-ball-pp' : 'lb-ball'}"/></g>`;
+  s += `<line x1="8" x2="${X + 20}" y1="${bottom}" y2="${bottom}" class="lb-sight lb-sight-strong"/>`;
+  $('loupe').setAttribute('viewBox', `0 0 ${W} ${H}`);
   $('loupe').innerHTML = s;
   $('loupe').setAttribute('aria-label', `Magnified measuring stick. The bottom of the ball is at ${(Math.round(mid * 1000) / 1000).toFixed(3)} metres, to the nearest millimetre.`);
 }
@@ -369,7 +385,7 @@ function renderAnalysis() {
   const ex = a.fit && a.gSE > 0 ? { g: a.g, d: a.gSE } : { g: 9.7234, d: 0.2871 };
   const pr = progress(state.book, key);
   $('fit-warn').hidden = !a.fit || pr.done;
-  $('fit-warn').textContent = `Not enough data yet: the assignment needs ${MIN.heights} heights with ${MIN.trialsPerHeight} drops each (so far: ${pr.fullHeights} ${pr.fullHeights === 1 ? 'height' : 'heights'} with ${MIN.trialsPerHeight}). With fewer drops the ± cannot be trusted, and ${state.mode === 'planet' ? 'you cannot submit a result yet' : 'your comparison is only a rough check'}.`;   // a perfect fit (zero scatter) falls back to the example
+  $('fit-warn').textContent = `Not enough data yet: the assignment needs ${MIN.heights} heights with ${MIN.trialsPerHeight} drops each (so far: ${pr.fullHeights} ${pr.fullHeights === 1 ? 'height' : 'heights'} with ${MIN.trialsPerHeight}). With fewer drops the ± cannot be trusted, and ${state.mode === 'planet' ? 'you cannot submit a result yet' : 'your comparison is only a rough check'}.`;
   const d1 = +ex.d.toPrecision(1), dec = Math.min(6, Math.max(0, -Math.floor(Math.log10(d1))));
   $('explain-report').innerHTML = `<p>Round the uncertainty to <b>1 or 2 significant figures</b>, then round the value to the <b>same decimal place</b>. ${a.fit && a.gSE > 0 ? 'Your fit gives' : 'For example,'} ${sig(ex.g, 5)} ± ${sig(ex.d, 4)} m/s² → <b>${ex.g.toFixed(dec)} ± ${d1.toFixed(dec)} m/s²</b>.</p>`
     + `<p>Then ask: <b>does my range include the expected value?</b> If it does, your measurement agrees with it.</p>`
@@ -389,28 +405,39 @@ const QUESTIONS = {
     ['a', 'How precisely I read the drop height, and from which point of the ball'], ['b', 'My reaction time'], ['c', 'Air resistance on the steel ball'], ['d', 'The timer only reads to 1 ms']],
     feedback: { a: 'Yes. With good timing, the height reading matters: measuring to the middle of a ball instead of its bottom is off by its radius, a few percent on a short drop. Long drops make that error smaller.', b: 'The electronic timer starts and stops itself, so your reaction time is not involved.', c: 'Over 2 m air changes a steel ball’s fall time by less than 0.1 %.', d: 'One millisecond in a 0.3–0.6 s fall is 0.2–0.3 %, smaller than a careless height reading.' } },
 };
-function questionFor(key) {
-  if (key.includes(TIMER.watch)) return 'watch';
-  if (key.startsWith(BALLS.pingpong.name) && env().rho >= 0.5) return 'drag';
-  return 'height';
+const comboParts = key => ({ timer: key.includes(TIMER.watch) ? 'watch' : 'gate', ball: key.startsWith(BALLS.pingpong.name) ? 'pingpong' : 'steel' });
+const questionFor = key => questionKind({ ...comboParts(key), rho: env().rho });
+const answersKey = () => `${bookKey()}-answers`;
+function firstAnswers() { try { return JSON.parse(store.get(answersKey()) || '{}') || {}; } catch { return {}; } }
+/** Choices in an order fixed for each student (so the right answer is not always first). */
+function shuffled(choices, salt) {
+  const r = rng(hash32(`${state.planet?.id || 'earth'}|${salt}`)), out = [...choices];
+  for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
+  return out;
 }
 let qShown = '';
 function renderQuestion(key, a) {
   const form = $('explain-q');
   form.hidden = !a.fit;
   if (!a.fit) return;
-  const id = questionFor(key);
-  if (id === qShown) return;
-  qShown = id;
+  const id = questionFor(key), shownKey = `${id}|${bookKey()}|${key}`;
+  if (shownKey === qShown) return;
+  qShown = shownKey;
   const q = QUESTIONS[id];
   $('q-text').textContent = `Explain your result (${key}): ${q.text}`;
-  $('q-choices').replaceChildren(...q.choices.map(([v, label]) => { const l = document.createElement('label'), i = document.createElement('input'); Object.assign(i, { type: 'radio', name: 'q', value: v }); l.append(i, document.createTextNode(` ${label}`)); return l; }));
+  $('q-choices').replaceChildren(...shuffled(q.choices, id).map(([v, label]) => { const l = document.createElement('label'), i = document.createElement('input'); Object.assign(i, { type: 'radio', name: 'q', value: v }); l.append(i, document.createTextNode(` ${label}`)); return l; }));
   $('q-feedback').textContent = ''; $('q-feedback').className = 'lb-q-feedback';
+  const first = firstAnswers()[id];
+  $('q-first').hidden = !ASG || state.mode !== 'planet';
+  $('q-first').textContent = first ? 'Your first answer has been recorded for grading. You can still try the others to read their feedback.' : 'Graded: your first answer is the one that counts.';
 }
 $('explain-q').addEventListener('submit', e => {
   e.preventDefault();
-  const v = new FormData(e.currentTarget).get('q'), q = QUESTIONS[qShown];
+  const qid = qShown.split('|')[0], v = new FormData(e.currentTarget).get('q'), q = QUESTIONS[qid];
   if (!v) { $('q-feedback').textContent = 'Choose an answer first.'; return; }
+  const answers = firstAnswers();
+  if (!answers[qid]) { answers[qid] = v; store.set(answersKey(), JSON.stringify(answers)); }
+  if (ASG && state.mode === 'planet') $('q-first').textContent = 'Your first answer has been recorded for grading. You can still try the others to read their feedback.';
   $('q-feedback').textContent = `${v === q.correct ? '✓ ' : ''}${q.feedback[v]}`;
   $('q-feedback').className = `lb-q-feedback ${v === q.correct ? 'lb-good' : 'lb-bad'}`;
 });
@@ -450,6 +477,25 @@ $('check').addEventListener('click', () => {
   const pr = key ? progress(state.book, key) : { done: false, fullHeights: 0 };
   const short = `the assignment needs ${MIN.heights} heights with ${MIN.trialsPerHeight} drops each, using one ball and one timer (${key || 'no trials yet'}: ${pr.fullHeights} so far)`;
   const rel = (d / g) * 100, big = rel > 15 ? ` Your uncertainty is large (${rel.toFixed(0)} % of g): more trials, longer drops or the electronic timer would shrink it.` : '';
+  if (state.mode === 'planet' && ASG) {
+    if (!state.planet) return bad('Enter your student ID to go to your planet first.');
+    if (!key) return bad('Record your measurements first.');
+    const qid = questionFor(key), answer = firstAnswers()[qid];
+    if (!answer) { $('explain-q').scrollIntoView({ block: 'center' }); return bad('Answer the “Explain your result” question below first; your first answer is part of your grade.'); }
+    const btn = $('check');
+    if (!pr.done && !btn.dataset.armed) {
+      btn.dataset.armed = '1'; btn.textContent = 'Submit anyway';
+      setTimeout(() => { delete btn.dataset.armed; renderMode(); }, 6000);
+      return bad(`Not finished: ${short}. You can submit anyway, but the method check will not pass. Press “Submit anyway” to do so.`);
+    }
+    delete btn.dataset.armed;
+    const { timer, ball: b } = comboParts(key);
+    const code = encodeSubmission({ code: ASG.code, id: state.planet.id, g, dg: d, timer, ball: b, heights: analyse(state.book, key).groups.map(x => [Math.round(x.h * 1000), x.n]), answer });
+    state.submitted = { g, d, key, code };
+    store.set(`${bookKey()}-code`, code);
+    box.textContent = `Submitted: g = ${g} ± ${d} m/s² on ${state.planet.name} (${key}). Copy your completion code below into Canvas. Your planet’s g stays hidden; your instructor grades the result.`;
+    renderMode(); $('completion-code').focus(); return;
+  }
   if (state.mode === 'planet') {
     if (!state.planet) return bad('Enter your student ID to go to your planet first.');
     if (!pr.done) return bad(`Not yet: ${short}. Finish the measurements, then submit.`);
@@ -460,6 +506,11 @@ $('check').addEventListener('click', () => {
   const v = verdict({ g, d, ideal: key ? idealFor(key) : NaN }, EARTH.g);
   box.textContent = (pr.done ? '' : `Rough check only: ${short}. `) + v.text + big;
   box.classList.add(v.kind === 'good' ? 'lb-good' : 'lb-bad');
+});
+$('copy-code').addEventListener('click', async () => {
+  const code = $('completion-code').textContent;
+  try { await navigator.clipboard.writeText(code); $('copy-msg').textContent = 'Copied. Paste it into the Canvas assignment.'; }
+  catch { getSelection().selectAllChildren($('completion-code')); $('copy-msg').textContent = 'Selected: press Ctrl+C (or ⌘C) to copy, then paste it into Canvas.'; }
 });
 $('reveal').addEventListener('click', () => {
   if (!state.submitted || !state.planet) return;
@@ -501,6 +552,6 @@ function renderControls() {
 function renderAll() { renderMode(); drawBench(performance.now()); drawLoupe(); renderControls(); renderNotebook(); renderAnalysis(); }
 
 /* ---------- start ---------- */
-const startMode = params.get('mode') === 'planet' || store.get('ipl-lab1-mode') === 'planet' ? 'planet' : 'earth';
+const startMode = ASG || params.get('mode') === 'planet' || store.get('ipl-lab1-mode') === 'planet' ? 'planet' : 'earth';
 if (startMode === 'planet') { const id = store.get('ipl-lab1-id') || ''; $('student-id').value = id; setMode('planet', id); }
 else setMode('earth');

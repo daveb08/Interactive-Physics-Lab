@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Lab Bench for instructors: make a graded assignment link and grade students' completion codes."><title>Instructor · Lab Bench · Interactive Physics Lab</title><link rel="stylesheet" href="../../css/styles.css"><link rel="stylesheet" href="lab-bench.css"><script type="module" src="instructor.js"></script></head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header"><a class="brand" href="../../index.html"><span class="brand-icon" aria-hidden="true">↗</span> Interactive Physics Lab</a><a class="back-link" href="index.html">← Lab Bench</a></header>
+<main id="main" class="lab lb lb-inst">
+  <div class="lab-heading"><div><p class="eyebrow">MODULE 07 · LAB BENCH / FOR INSTRUCTORS</p><h1>Assign and grade Lab 1</h1><p>Make a link for a graded assignment, post it in Canvas, then paste the completion codes students submit to get a score table for the gradebook. Nothing is stored or sent anywhere: every planet is recomputed from each student’s ID and the assignment code.</p></div></div>
+
+  <section class="panel lb-inst-panel" aria-labelledby="make-title">
+    <div class="panel-heading"><h2 id="make-title">1 · Make an assignment link</h2><span>01</span></div>
+    <form id="make-form" class="lb-inst-form">
+      <label class="lb-wide">Assignment code <input id="m-code" required maxlength="40" placeholder="e.g. PHY2201-F26-Lab1" autocomplete="off"><span class="help">Letters, numbers and dashes. A new code gives every student a new planet, so use one code per assignment.</span></label>
+      <label>Value tolerance, electronic timer (%) <input id="m-tg" type="number" min="0.5" max="50" step="0.5" value="3"></label>
+      <label>Value tolerance, hand stopwatch (%) <input id="m-tw" type="number" min="0.5" max="50" step="0.5" value="15"></label>
+      <label>Largest allowed uncertainty (% of g) <input id="m-u" type="number" min="1" max="100" step="1" value="15"></label>
+      <label>Heights needed <input id="m-h" type="number" min="2" max="8" step="1" value="3"></label>
+      <label>Drops at each height <input id="m-n" type="number" min="2" max="20" step="1" value="5"></label>
+      <label>Air on the planets <select id="m-air" class="vf-select"><option value="any">Mixed: none, thin or Earth-like (one third each)</option><option value="none">None: no air on any planet</option></select></label>
+      <div class="lb-wide"><button type="submit" class="primary">Make the link</button></div>
+    </form>
+    <div id="made" class="lb-made" hidden>
+      <p class="lb-key-line"><span>Your grading key</span> <strong id="made-key"></strong></p>
+      <p class="help lb-key-help">Write this down or keep it with your course notes. You need it, with the student link, to grade. Students never see it.</p>
+      <p><b>Student link</b>: post this in Canvas.</p>
+      <div class="lb-code-row"><code id="made-link" tabindex="0"></code><button type="button" id="copy-link">Copy link</button><a id="open-link" class="lb-btn-link" target="_blank" rel="noopener">Try it</a></div>
+      <p class="help" id="copy-link-msg" role="status"></p>
+    </div>
+  </section>
+
+  <section class="panel lb-inst-panel" aria-labelledby="grade-title">
+    <div class="panel-heading"><h2 id="grade-title">2 · Grade completion codes</h2><span>02</span></div>
+    <form id="grade-form" class="lb-inst-form">
+      <label class="lb-wide">Student link for the assignment <input id="g-link" required autocomplete="off" placeholder="…/freefall.html?a=…"></label>
+      <label class="lb-wide">Grading key <input id="g-key" autocomplete="off" placeholder="e.g. amber-orbit-42"></label>
+      <label class="lb-wide">Completion codes <textarea id="g-codes" rows="7" placeholder="Paste the codes: one per line, or a whole Canvas export. Anything that is not a code is ignored."></textarea></label>
+      <div class="lb-wide transport lb-left"><button type="submit" class="primary">Grade</button><button type="button" id="g-csv" disabled>⬇ Download grades (.csv)</button></div>
+    </form>
+    <p id="g-msg" class="feedback" role="status" hidden></p>
+    <div class="lb-table-wrap lb-grades-wrap"><table class="lb-table lb-grades" id="grades" hidden><caption>Scores (one point per check). Hover or focus a mark for the detail.</caption>
+      <thead><tr><th scope="col">#</th><th scope="col">Student ID</th><th scope="col">Score</th><th scope="col">Value</th><th scope="col">Uncertainty</th><th scope="col">Method</th><th scope="col">Explanation</th><th scope="col">Reported g</th><th scope="col">True g</th><th scope="col">Notes</th></tr></thead><tbody id="grade-rows"></tbody></table></div>
+    <details class="lb-explain lb-pad"><summary>How the four checks work</summary><div>
+      <p><b>Value</b>: the reported g is within the tolerance of the student’s true g; the tolerance depends on the timer the result came from.</p>
+      <p><b>Uncertainty</b>: what a perfect experiment would measure (the true g, lowered by air drag on that planet for that ball and those heights) lies within 2 × the reported uncertainty, and the uncertainty is no more than the allowed percentage of g.</p>
+      <p><b>Method</b>: the required number of heights each have the required number of drops, with one ball and one timer.</p>
+      <p><b>Explanation</b>: the student’s first answer to the “Explain your result” question, which is chosen from their own data, is correct.</p>
+      <p>A code is refused if it was edited (checksum), damaged in copying, or made for a different assignment. If a student pastes more than one code, the last one counts. Identical data under two IDs is flagged. The checksum stops casual editing, not a determined student who reads the page source.</p>
+    </div></details>
+  </section>
+  <p class="lab-footnote">Grades are computed in this browser. Nothing is stored or sent.</p>
+</main><footer>Interactive Physics Lab<span>Lab Bench · Instructors</span></footer>
+</body></html>

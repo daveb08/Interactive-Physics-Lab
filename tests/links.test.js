@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const hrefs = page => [...readFileSync(join(root, page), 'utf8').matchAll(/href="([^"#:]+)"/g)].map(m => m[1]);
 
-for (const page of ['index.html', 'modules/electromagnetism/index.html', 'modules/electromagnetism/coulomb.html', 'modules/electromagnetism/solve.html', 'modules/electromagnetism/build.html', 'modules/lab-bench/index.html', 'modules/lab-bench/freefall.html', 'modules/circular-motion/index.html', 'modules/circular-motion/uniform.html']) {
+for (const page of ['index.html', 'modules/electromagnetism/index.html', 'modules/electromagnetism/coulomb.html', 'modules/electromagnetism/solve.html', 'modules/electromagnetism/build.html', 'modules/lab-bench/index.html', 'modules/lab-bench/freefall.html', 'modules/lab-bench/instructor.html', 'modules/circular-motion/index.html', 'modules/circular-motion/uniform.html']) {
   test(`${page}: every local link points at an existing file (no bare directory links)`, () => {
     for (const href of hrefs(page)) {
       assert.ok(!href.endsWith('/'), `${href} is a directory link; static hosts need an explicit file`);

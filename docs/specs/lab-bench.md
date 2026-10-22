@@ -1,7 +1,7 @@
 # Spec: Module 07 — Lab Bench (virtual measurement labs)
 
 Decisions by Dave Bennett, 2026-10-22.
-**Status:** Stages 1 and 2 built (Earth practice and ungraded mystery planets). Stage 3 (grading) to come. Each stage is its own branch and PR,
+**Status:** Stages 1–3 built: Earth practice, mystery planets, and graded assignments with an instructor grading page. Each stage is its own branch and PR,
 browser-verified before merging, because merges go live in Canvas.
 
 ## Purpose
@@ -117,10 +117,10 @@ Students choose which result to report and type g ± δg.
 ### Auto-graded rubric (4 checks, shown to the student with a message for each)
 | Check | Pass condition |
 |---|---|
-| Value | Reported g within ±5 % of the student's true g |
+| Value | Reported g within the tolerance of the student's true g: **±3 % with the electronic timer, ±15 % with the hand stopwatch** (decided 2026-10-22: a careful stopwatch run lands 5–20 % off, so one ±5 % tolerance would fail most honest stopwatch students). Both are set per assignment. |
 | Uncertainty | The value a perfect experiment would measure (drag included, at the student's own heights) lies within 2 δg of the reported g, and δg/g < 15 % |
-| Method | ≥ 3 heights, ≥ 5 trials at each, and the fit was used |
-| Explanation | One multiple-choice question on the main systematic error, chosen to match the student's own data (e.g. drag if they used the ping-pong ball with air; reaction time if they used the stopwatch) |
+| Method | ≥ 3 heights with ≥ 5 trials at each, using one ball and one timer (both numbers set per assignment) |
+| Explanation | The student's **first** answer to one multiple-choice question on the main systematic error, chosen to match the student's own data (e.g. drag if they used the ping-pong ball with air; reaction time if they used the stopwatch) |
 
 Free-text discussion is optional and ungraded, as in the guided activities.
 
@@ -144,7 +144,7 @@ reading the source. This is the accepted trade-off.
 |---|---|---|
 | 1 ✅ | Lab Bench section and card; bench, stand, 2 m measuring stick, steel ball, hand stopwatch; notebook; t² against h graph and fit; practice mode (Earth) | Yes, ungraded |
 | 2 ✅ | Electronic timer, ping-pong ball, air drag, mystery planet from student ID, systematic-error questions; larger text on the Lab Bench pages | Yes, ungraded |
-| 3 | Rubric, completion code, assignment links, instructor grading page; backlog: a larger measuring-stick zoom so the mm marks are easy to read | Yes, graded |
+| 3 ✅ | Rubric, completion code, assignment links, instructor grading page; a larger measuring-stick zoom so the mm marks are easy to read | Yes, graded |
 
 ## Stage 2 as built (2026-10-22)
 
@@ -186,6 +186,37 @@ reading the source. This is the accepted trade-off.
 - **Larger text** on the Lab Bench pages: body 15 px, help and captions 13.5 px, tables 14.5 px, stick and graph labels
   enlarged; nothing under 12.5 px.
 
+## Stage 3 as built (2026-10-22)
+
+- **Instructor page** (`modules/lab-bench/instructor.html`, linked from the Lab Bench hub under "For instructors").
+  1. *Make an assignment link*: assignment code, value tolerances by timer, largest uncertainty, heights × drops, air
+     (mixed or none). It shows the student link to post in Canvas and a **grading key** (e.g. `ember-vector-73`).
+  2. *Grade completion codes*: paste the student link, the grading key and the codes (one per line or a whole Canvas
+     export; anything else is ignored). Output: a table (score out of 4, ✓/✗ per check with the detail, reported and true g,
+     notes) and a CSV for the gradebook.
+- **Assignment link**: `freefall.html?a=<code>&t=<gate %>,<watch %>&u=<max %>&n=<heights>x<drops>&air=any|none&k=<key check>`.
+  `k` is a hash of the grading key, so the link lets the page check a key without containing it. Without the key the
+  grading page refuses to grade, so students cannot use it to test their answers.
+- **Graded mode on the lab page** (any `?a=` other than `practice`): a banner explains the assignment; the student's
+  planet comes from their ID and the assignment code (a different planet from practice); the planet's g is never
+  shown and there is no reveal; the "explain your result" choices are shuffled per student and the **first answer is
+  recorded**; submitting requires that answer; submitting below the minimum design asks for "Submit anyway" (the
+  method check then fails). Submitting shows a **completion code** with a Copy button; it is kept in the browser and
+  shown again on return. A student may submit again; the grading page uses the last code per student ID.
+- **Students do not see their rubric results.** (Change from the original plan, which showed a message per check.)
+  Showing them would let a student resubmit until the value check passed, which turns the lab into guessing g. The
+  Earth practice and the practice planet still give full feedback, including a reveal.
+- **Completion code**: `LB1-` + base64url of `version|code|id|g|δg|timer|ball|heights mm:n;…|first answer|checksum`
+  (about 110 characters). The checksum is FNV-1a with a key in `grading.js`: it stops casual editing, not a determined
+  student reading the source, as accepted. Refused codes: edited (checksum), damaged in copying, or made for another
+  assignment. Identical data under two IDs is flagged.
+- **Rubric recomputed on the grading page** (`grading.js`, pure and unit-tested): the planet from ID + code, the
+  drag-corrected ideal value from the student's own heights and ball, and the question from timer, ball and air.
+- **Larger measuring-stick zoom**: 3 cm of stick at about 12 px per mm (was about 8 cm at 3 px per mm), centimetre
+  numbers at 24 px, "numbers in cm" in the title and "each small mark is 1 mm" under it. The bench labels were enlarged
+  to match.
+- **Not done** (from the original plan): a planet-range option (fixed at 3–20 m/s²).
+
 ## Tests
 
 - **Physics:** free fall exact; the drag solution matches its terminal velocity and agrees with RK4 integration;
@@ -211,8 +242,8 @@ pendulum (g again, a different method), incline (μ), spring (k), and later Coul
 
 ## Open questions
 
-1. Default tolerance (±5 %) and uncertainty ceiling (15 %): right for these students?
-2. Should the assignment require both timers (to compare them), or let students choose?
+1. ~~Default tolerance (±5 %) and uncertainty ceiling (15 %)?~~ **Decided 2026-10-22: tolerance by timer, ±3 % (electronic) and ±15 % (stopwatch); ceiling 15 %.** Revisit after the first graded class.
+2. ~~Require both timers, or let students choose?~~ **Decided 2026-10-22: students choose.** One complete combination is enough; this also keeps the lab possible without the stopwatch (see Accessibility note).
 3. ~~Is a short in-page explainer enough for uncertainty basics?~~ **Decided 2026-10-22: yes, for this version** (see
    "Uncertainty basics" below). Revisit after the first class uses it.
 

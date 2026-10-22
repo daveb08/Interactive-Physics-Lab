@@ -118,3 +118,32 @@ test('notebook combinations: one fit per ball-and-timer, progress counted per co
   assert.equal(progress(b, steel).done, true); assert.equal(progress(b, 'Steel ball · Hand stopwatch').done, false);
   assert.equal(comboKey(b[0]), steel);
 });
+
+test('uncertainty floor: a lucky 4-point fit cannot claim more precision than the ruler and timer allow (planet 1N6H notebook)', async () => {
+  const { idealFitG, slopeFloor, RESOLUTION } = await import('../modules/lab-bench/notebook-model.js');
+  let b = [];
+  for (const [h, t] of [[1.972, 0.805], [0.806, 0.515], [0.564, 0.431], [0.33, 0.33]]) b = addTrial(b, { object: 'Steel ball', timer: 'Electronic timer', h, t });
+  const a = analyse(b);
+  near(a.g, 6.0915, 1e-4);
+  assert.ok(a.gSEfit < 0.0005, `fit SE ${a.gSEfit}`);                     // the timer errors happened to lie on a line
+  assert.ok(a.floored && a.gSE > 0.005 && a.gSE < 0.012, `floored SE ${a.gSE}`);
+  assert.ok(RESOLUTION.time('Hand stopwatch') > RESOLUTION.time('Electronic timer'));
+  assert.ok(Number.isFinite(slopeFloor(a.groups, a.fit.slope)));
+  // with Earth-like air a perfect experiment on a g = 6.08 planet measures about 6.070, not 6.08
+  const ideal = idealFitG([1.972, 0.806, 0.564, 0.33], h => fallTime({ g: 6.08, ball: BALLS.steel, rho: AIR.earth }, h));
+  near(ideal, 6.0696, 2e-4);
+  near(idealFitG([0.5, 1, 1.5], h => fallTime({ g: 6.08 }, h)), 6.08, 1e-12);   // no air: exactly g
+  assert.ok(Number.isNaN(idealFitG([1, 1], h => h)));
+});
+
+test('with 3 heights × 5 timer drops, the reported ± covers the drag-corrected value about 95 % of the time', async () => {
+  const { idealFitG } = await import('../modules/lab-bench/notebook-model.js');
+  let seed = 7; const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32);
+  const P = { g: 6.08, ball: BALLS.steel, rho: AIR.earth }; let cov = 0; const runs = 400;
+  for (let r = 0; r < runs; r++) {
+    const H = [0.3, 1, 1.9].map(h => Math.round((h + rnd() * 0.1) * 1e4) / 1e4); let b = [];
+    for (const h of H) for (let i = 0; i < 5; i++) b = addTrial(b, { object: 'Steel ball', timer: 'Electronic timer', h: Math.round(h * 1000) / 1000, t: Math.round((fallTime(P, h) + (rnd() - 0.5) * 0.001) * 1000) / 1000 });
+    const a = analyse(b); if (Math.abs(a.g - idealFitG(H, h => fallTime(P, h))) <= 2 * a.gSE) cov++;
+  }
+  assert.ok(cov / runs > 0.88 && cov / runs < 0.995, `coverage ${cov / runs}`);
+});

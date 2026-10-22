@@ -118,7 +118,7 @@ Students choose which result to report and type g ± δg.
 | Check | Pass condition |
 |---|---|
 | Value | Reported g within ±5 % of the student's true g |
-| Uncertainty | Reported δg covers the true g and δg/g < 15 % |
+| Uncertainty | The value a perfect experiment would measure (drag included, at the student's own heights) lies within 2 δg of the reported g, and δg/g < 15 % |
 | Method | ≥ 3 heights, ≥ 5 trials at each, and the fit was used |
 | Explanation | One multiple-choice question on the main systematic error, chosen to match the student's own data (e.g. drag if they used the ping-pong ball with air; reaction time if they used the stopwatch) |
 
@@ -144,7 +144,7 @@ reading the source. This is the accepted trade-off.
 |---|---|---|
 | 1 ✅ | Lab Bench section and card; bench, stand, 2 m measuring stick, steel ball, hand stopwatch; notebook; t² against h graph and fit; practice mode (Earth) | Yes, ungraded |
 | 2 ✅ | Electronic timer, ping-pong ball, air drag, mystery planet from student ID, systematic-error questions; larger text on the Lab Bench pages | Yes, ungraded |
-| 3 | Rubric, completion code, assignment links, instructor grading page | Yes, graded |
+| 3 | Rubric, completion code, assignment links, instructor grading page; backlog: a larger measuring-stick zoom so the mm marks are easy to read | Yes, graded |
 
 ## Stage 2 as built (2026-10-22)
 
@@ -167,6 +167,22 @@ reading the source. This is the accepted trade-off.
 - **Explain your result.** One multiple-choice question, chosen from the combination analysed: stopwatch data → what limits
   hand timing (reaction time); electronic timer with the ping-pong ball in Earth-like air → why g comes out low (drag);
   otherwise → what limits the result now (the height reading). Each wrong answer has its own feedback. Ungraded until Stage 3.
+- **Result checks (added 2026-10-22 after the first instructor test run).** A planet run with one drop at each of four
+  heights gave g = 6.0915 ± 0.00034 against a true 6.08: the four timer errors (−0.97 to +0.49 ms) happened to lie on a line,
+  so the fit absorbed them and reported an impossibly small ±. Fixes:
+  - *Equipment floor.* The fit's ± on g never goes below what the ruler (1 mm, read once per height) and timer (1 ms ± 0.5 ms
+    jitter; stopwatch 0.01 s) can resolve, computed from the height means (`slopeFloor` in `notebook-model.js`). The page says
+    when the floor applies. That run now reads 6.0915 ± 0.0080.
+  - *Minimum design enforced.* Below 3 heights × 5 drops (for the combination analysed) the page warns that the ± cannot be
+    trusted; a planet result cannot be submitted, and an Earth comparison is labelled a rough check.
+  - *Drag-aware comparison.* The verdict also computes what a perfect experiment would measure with the student's ball and
+    heights in that air (`idealFitG`). Steel in Earth-like air measures about 0.17 % low; in simulation, 3 × 5 timer runs
+    cover that value within 2 SE about 95 % of the time but the bare g only about 30 %. A result that misses g but matches
+    the drag-corrected value is marked as agreeing, with the drag gap named as a systematic error.
+  - *Within 2 × δg counts as agreement*, with a sentence explaining why (about one careful result in three lands between 1σ
+    and 2σ).
+  - *Digits.* The fit's g is shown to the decimal place of its 2-significant-figure ±, and the range message uses the same
+    places (no more "6.09 to 6.09").
 - **Larger text** on the Lab Bench pages: body 15 px, help and captions 13.5 px, tables 14.5 px, stick and graph labels
   enlarged; nothing under 12.5 px.
 

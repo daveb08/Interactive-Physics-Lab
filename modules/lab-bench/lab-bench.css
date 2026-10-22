@@ -103,6 +103,7 @@
 .lb-seg button[aria-pressed=true]{background:var(--teal);color:white;border-color:var(--teal)}
 .lb-fit{margin:10px 18px;width:calc(100% - 36px);font-size:15px}
 .lb-fit th{font-size:14px}
+.lb-fit-warn{margin:4px 18px 10px;padding:10px 12px;border-left:4px solid #c27b22;background:#fbf3e6;border-radius:6px;font-size:14.5px;line-height:1.45}
 .lb-analysis .lb-explain{margin:12px 18px 18px}
 .lb-result{padding:16px 18px 18px;display:grid;gap:12px}
 .lb-result-row{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:600}

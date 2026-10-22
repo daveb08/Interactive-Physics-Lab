@@ -72,6 +72,10 @@ Open **Electromagnetism → E1 Electric Charge** (`modules/electromagnetism/coul
 
 **Unit 1 Solve it** (`modules/electromagnetism/solve.html`, also in the Unit 1 tabs): four Coulomb's law problems in the same sort-then-build format as Newton's Laws › Solve it. After **Check & run**, the charge plane shows the true force next to the force your blocks imply. Open a problem directly with `?problem=S3`. Instructors can make their own with the **visual builder** (`build.html`, linked from Solve it): drag charges, set values, and share the student link or `.json` file.
 
+## Lab Bench (Module 07)
+
+Virtual measurement labs. **Lab 1 · Find g** (`modules/lab-bench/freefall.html`, practice mode on Earth): place a steel ball, a 2 m measuring stick and a stopwatch on the bench, set the drop height, read it off the magnified stick, and time each drop yourself (button or Space bar) on a "3, 2, 1, drop" beat. The notebook keeps every trial (deleted ones stay crossed out), is saved in this browser only, and exports to CSV. The analysis fits t² against h, giving g = 2 / slope with an uncertainty; short explainers cover mean, SD and SE, the fit, and how to report a result. Spec: `docs/specs/lab-bench.md`. Engines: `js/core/freefall-drag.js`, `js/core/fit.js`; tests: `tests/lab-bench.test.js`, `qa/browser/lab-bench.spec.js`.
+
 ## Architecture
 
 ```text

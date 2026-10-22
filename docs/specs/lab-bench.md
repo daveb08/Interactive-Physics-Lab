@@ -1,7 +1,7 @@
 # Spec: Module 07 — Lab Bench (virtual measurement labs)
 
 Decisions by Dave Bennett, 2026-10-22.
-**Status:** spec only. Nothing is built yet. Build in three stages (below); each stage is its own branch and PR,
+**Status:** Stage 1 built (practice mode, Earth). Stages 2 and 3 to come. Each stage is its own branch and PR,
 browser-verified before merging, because merges go live in Canvas.
 
 ## Purpose
@@ -70,8 +70,8 @@ main source of error in your measurement.
 |---|---|
 | Steel ball | 25.4 mm diameter, 67 g (density 7.8 g/cm³). Air drag negligible. |
 | Ping-pong ball | 40 mm diameter, 2.7 g. Air drag clearly matters on planets with air. |
-| Metre stick | Read by the student from a zoomed scale; 1 mm divisions. |
-| Hand stopwatch | The **student clicks** Start at release and Stop at impact (button, or Space bar). Their own reaction time is the error; nothing is faked. Display to 0.01 s. |
+| Measuring stick (2 m) | Read by the student from a magnified view at the bottom of the ball; 1 mm divisions, labelled in cm. (2 m, not a metre stick, because drops go to 2 m.) |
+| Hand stopwatch | The **student clicks** Start at release and Stop at impact (button, or Space bar). Their own reaction time is the error; nothing is faked. Display to 0.01 s (truncated, like a real stopwatch). The release follows a steady "3, 2, 1, drop" beat, as a lab partner would count, so students can start on the beat. (A random delay was tried and rejected: it makes every start ~0.2 s late and gives g in the high teens.) |
 | Electronic timer (release + impact pad) | Electromagnet release starts the clock, an impact pad stops it. 1 ms resolution, ±0.5 ms jitter. |
 
 Five items only. More are added when a later lab needs them.
@@ -97,12 +97,19 @@ a bad trial (the deletion is noted, as in a real notebook). The notebook shows p
 standard error once a height has two or more trials.
 
 ### Analysis
-Plot h against t² (students may also view h against t, to see why linearising helps). A least-squares fit gives the
-slope with its uncertainty; g = 2 × slope, δg = 2 δslope. Students can also compute g per height and average.
+Plot **t² against h** (students may also view t against h, to see why linearising helps). A least-squares fit gives the
+slope with its uncertainty; **g = 2 / slope, δg = 2 δslope / slope²**. Students can also compute g per height and average.
+
+**Correction during Stage 1 (2026-10-22):** the earlier plan to plot h against t² was wrong for this lab. Least squares assumes
+the error is in the vertical quantity, and here the noisy measurement is the time. With ±0.04 s stopwatch scatter, fitting
+h against t² biases g low (about 8.9 m/s² on Earth on average, 6.8 with ±0.08 s); fitting t² against h is nearly unbiased
+(about 2 % high) and its ±2σ range covers the true g about 94 % of the time (`tests/lab-bench.test.js`).
 Students choose which result to report and type g ± δg.
 
 ### Lessons built in (discovered, not announced)
-1. Stopwatch: large spread and a small positive bias from reaction time; more trials shrink the standard error.
+1. Stopwatch: large spread and a small positive bias from reaction time; more trials shrink the standard error. Expect
+   hand-timed results within roughly ±15–20 % of g: falls last only 0.3–0.6 s. That is realistic, and it is the lesson
+   the electronic timer (Stage 2) answers.
 2. Electronic timer: tight spread; the systematic error that remains is the height reading.
 3. Ping-pong ball with air: g comes out low, worst at large heights (curvature on the h vs t² graph).
 4. Short drops: timing error is a larger fraction of t, so short drops give poorer g.
@@ -142,7 +149,7 @@ reading the source. This is the accepted trade-off.
 ## Tests
 
 - **Physics:** free fall exact; the drag solution matches its terminal velocity and agrees with RK4 integration;
-  drag → 0 reduces to free fall.
+  drag → 0 reduces to free fall. *(Stage 1: done.)*
 - **Fit:** least squares against hand-computed cases; slope uncertainty against the textbook formula; the fit
   recovers a known g from synthetic noisy data within its stated uncertainty in ~95 % of seeded runs.
 - **Seeding:** the same ID and assignment always give the same g; different IDs spread across the range.

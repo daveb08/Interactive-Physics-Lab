@@ -6,6 +6,16 @@ import { stats, linearFit } from '../../js/core/fit.js';
 
 export const MIN = { heights: 3, trialsPerHeight: 5 };
 
+/**
+ * The smallest scatter the equipment allows, as standard deviations.
+ * Height: read to the nearest millimetre (uniform ±0.5 mm). It is read once per height, so it does not average away.
+ * Electronic timer: shown to 1 ms with ±0.5 ms jitter (two uniform 1 ms spreads). Stopwatch: shown to 0.01 s.
+ */
+export const RESOLUTION = {
+  height: 0.001 / Math.sqrt(12),
+  time: timer => (/electronic/i.test(timer ?? '') ? Math.sqrt(2 / 12) * 0.001 : 0.01 / Math.sqrt(12)),
+};
+
 export function addTrial(book, trial) {
   const id = (book.at(-1)?.id ?? 0) + 1;
   return [...book, { id, deleted: false, note: '', ...trial }];
@@ -52,9 +62,32 @@ export function analyse(book, key = null) {
   const out = { points: pts, groups, fit: null, g: NaN, gSE: NaN, error: '' };
   if (groups.length < 2) { out.error = 'Measure at least two different heights to draw a line.'; return out; }
   const fit = linearFit(pts);
-  Object.assign(out, { fit, g: 2 / fit.slope, gSE: (2 * fit.slopeSE) / (fit.slope * fit.slope) });
+  const toG = se => (2 * se) / (fit.slope * fit.slope);
+  const gSEfit = toG(fit.slopeSE), gSEfloor = toG(slopeFloor(groups, fit.slope));
+  // A fit with few points can scatter less than the equipment allows by luck (e.g. 4 points whose timer errors fall on a line).
+  // The reported ± never goes below what the ruler and timer can resolve.
+  Object.assign(out, { fit, g: 2 / fit.slope, gSEfit, gSEfloor, gSE: Number.isFinite(gSEfit) ? Math.max(gSEfit, gSEfloor) : NaN, floored: !(gSEfit >= gSEfloor) });
   if (!(fit.n > 2)) out.error = 'Add more trials to estimate the uncertainty.';
   return out;
+}
+
+/**
+ * Slope standard error if the only errors were the equipment's resolution, from the height means:
+ * σᵢ² = (2 t̄ᵢ σₜ)² / nᵢ + (slope σₕ)², slope SE = 1 / √Σ wᵢ (hᵢ − h̄_w)², wᵢ = 1/σᵢ².
+ */
+export function slopeFloor(groups, slope) {
+  const w = groups.map(g => 1 / ((2 * g.tMean * RESOLUTION.time(g.rows[0]?.timer)) ** 2 / g.n + (slope * RESOLUTION.height) ** 2));
+  const W = w.reduce((s, v) => s + v, 0), hBar = groups.reduce((s, g, i) => s + w[i] * g.h, 0) / W;
+  return 1 / Math.sqrt(groups.reduce((s, g, i) => s + w[i] * (g.h - hBar) ** 2, 0));
+}
+
+/**
+ * The g a perfect experimenter would measure at these heights: exact fall times, fitted the same way.
+ * With air this is a little below the true g (drag lengthens each fall), and for a light ball well below it.
+ */
+export function idealFitG(heights, timeOf) {
+  if (new Set(heights).size < 2) return NaN;
+  return 2 / linearFit(heights.map(h => ({ x: h, y: timeOf(h) ** 2 }))).slope;
 }
 
 /** Progress toward the assignment's minimum design. */

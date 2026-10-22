@@ -37,7 +37,7 @@
 .vf-table output{color:var(--ink);font-weight:600}
 #method-fields{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px}#method-fields legend{font-size:12px;font-weight:600;margin-bottom:8px;width:100%}
 #method-fields input{accent-color:var(--teal)}
-.m-euler{color:#c24c2a;font-weight:600}.m-semi{color:#7851a9;font-weight:600}.m-rk4{color:#b07d12;font-weight:600}
+.m-euler{color:#c24c2a;font-weight:600}.m-semi{color:#7851a9;font-weight:600}.m-rk4{color:#8c630e;font-weight:600}
 .vf-inline{font-size:12px;display:flex;align-items:center;gap:8px}
 .vf-numeric svg{width:100%;max-width:520px;display:block;margin:0 auto}
 .vf-results{margin-top:18px;padding:22px 26px;display:grid;gap:12px}

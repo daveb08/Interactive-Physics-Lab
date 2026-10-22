@@ -158,7 +158,16 @@ function chip(id, zone) {
   wrap.className = 'chip'; wrap.draggable = true; wrap.dataset.id = id;
   wrap.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', `q:${id}`); e.dataTransfer.effectAllowed = 'move'; });
   const label = document.createElement('span'); label.textContent = q.text; wrap.append(label);
-  const btn = (text, aria, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = text; b.setAttribute('aria-label', `${aria}: ${q.text}`); b.addEventListener('click', fn); wrap.append(b); };
+  // Accessible names contain the visible words (speech input): "+ Known: m = 4.0 kg"; icon buttons hide the icon and use words (QA-06).
+  const btn = (text, aria, fn, icon = false) => {
+    const b = document.createElement('button'); b.type = 'button'; b.title = aria;
+    if (icon) {
+      const vis = document.createElement('span'); vis.textContent = text; vis.setAttribute('aria-hidden', 'true');
+      const sr = document.createElement('span'); sr.className = 'sr-only'; sr.textContent = `${aria}: ${q.text}`;
+      b.append(vis, sr);
+    } else { b.textContent = text; b.setAttribute('aria-label', `${text}: ${q.text}`); }
+    b.addEventListener('click', fn); wrap.append(b);
+  };
   if (!zone) {
     btn('+ Known', 'Add to knowns', () => place(id, 'known'));
     btn('+ Unknown', 'Add to unknowns', () => place(id, 'unknown'));
@@ -168,8 +177,8 @@ function chip(id, zone) {
       wrap.append(st);
     }
   } else {
-    btn('⇄', `Move to ${zone === 'known' ? 'unknowns' : 'knowns'}`, () => place(id, zone === 'known' ? 'unknown' : 'known'));
-    btn('✕', 'Return to bank', () => unplace(id));
+    btn('⇄', `Move to ${zone === 'known' ? 'unknowns' : 'knowns'}`, () => place(id, zone === 'known' ? 'unknown' : 'known'), true);
+    btn('✕', 'Return to bank', () => unplace(id), true);
     const r = state.qCheck?.items.find(i => i.id === id && i.zone === zone);
     if (r) {
       wrap.classList.add(`st-${r.status}`);

@@ -1,5 +1,5 @@
 /* E1 Coulomb's law lab: charge plane, controls, graph, rod and electroscope. Builds on styles.css and variable-forces.css. */
-.nav-soon{color:var(--muted);font-size:13px;padding:12px 0;opacity:.75}
+.nav-soon{color:var(--muted);font-size:13px;padding:12px 0}
 .nav-soon b{font:600 11px Consolas,monospace;margin-right:6px}
 
 /* controls */
@@ -60,7 +60,7 @@
 .xy-note{font-size:10.5px;fill:#8c9a95;text-anchor:end;font-style:italic}
 .xy-grid{stroke:#edf1ed}.xy-zero{stroke:#9fb0a9;stroke-width:1.2}
 .xy-tick{font-size:9.5px;fill:#8c9a95;text-anchor:middle}.xy-tick-y{text-anchor:end}
-.xy-label{font-size:10.5px;fill:#667674;text-anchor:middle}
+.xy-label{font-size:10.5px;fill:#5f6e6d;text-anchor:middle}
 .xy-legend{font-size:10px;fill:#4f605a}
 .xy-legend-bg{fill:rgba(255,255,255,.85)}
 .xy-mlabel{font-size:10.5px;font-weight:700;paint-order:stroke;stroke:white;stroke-width:3px}
@@ -78,7 +78,7 @@
 .rod-slice{stroke:#bf4630;stroke-width:1}
 .rod-dot{fill:#bf4630}
 .rod-sign{fill:white;font:700 13px Arial,sans-serif;text-anchor:middle}
-.rod-lab{font-size:10.5px;fill:#667674;text-anchor:middle}
+.rod-lab{font-size:10.5px;fill:#5f6e6d;text-anchor:middle}
 .rod-dim{stroke:#9fb0a9;stroke-dasharray:3 3}
 .e1-rod-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;font-size:12px}
 .e1-rod-controls label{display:grid;gap:4px;font-weight:600}
@@ -104,7 +104,7 @@
 .es-plus{fill:#bf4630;font:700 14px Arial,sans-serif;text-anchor:middle}
 .es-minus{fill:#2f6db5;font:700 15px Arial,sans-serif;text-anchor:middle}
 .es-on-dark.es-minus{fill:#9cc7ff}.es-on-dark.es-plus{fill:#ffb3a3}
-.es-lab{font-size:11px;fill:#667674;text-anchor:middle}
+.es-lab{font-size:11px;fill:#5f6e6d;text-anchor:middle}
 .es-flow{fill:#ba622e;font-weight:600}
 .es-jar{fill:#eef3f6;stroke:#c3cfd6;stroke-width:2}
 .es-stem{stroke:#8b8f93;stroke-width:5}
@@ -112,7 +112,7 @@
 .es-leaf{stroke:#c9a227;stroke-width:4;stroke-linecap:round}
 .es-plastic{fill:#3d3f45;opacity:.85}
 .es-glass{fill:#cfe6ee;stroke:#8fb4c2;stroke-width:1.5}
-.es-plastic+text,.es-glass+text{fill:#667674}
+.es-plastic+text,.es-glass+text{fill:#5f6e6d}
 .es-cloth{fill:#efe4cf;stroke:#cdb98f;stroke-width:1.5}
 .es-rub{fill:none;stroke:#ba622e;stroke-width:2}
 .es-wire{fill:none;stroke:#5d6f66;stroke-width:2}

@@ -27,7 +27,7 @@
 .solve-summary.solved{border-left-color:#2f7d4f;background:#eef7ef}
 .solve-summary.unsolved{border-left-color:#b65b25;background:#fbf1ea}
 .solve-workspace{grid-template-columns:minmax(340px,1fr) 340px}
-.solve-legend{margin:10px 20px 0;display:flex;gap:16px;flex-wrap:wrap}.key-true{color:#337a68}.key-ghost{color:#ba622e}
+.solve-legend{margin:10px 20px 0;display:flex;gap:16px;flex-wrap:wrap}.key-true{color:#337a68}.key-ghost{color:#a55728}
 .ghost-body{fill:none;stroke:#ba622e;stroke-width:2.5;stroke-dasharray:5 3}
 .solve-compare{margin:0 20px 20px}.solve-compare caption{text-align:left;font-size:12px;font-weight:600;margin-bottom:6px}
 .solve-compare td,.solve-compare th{text-align:left}

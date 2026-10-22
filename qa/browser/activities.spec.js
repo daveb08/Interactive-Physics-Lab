@@ -3,7 +3,7 @@ import {PROBLEMS} from '../../modules/newtons-laws/solve-problems.js';
 test('Solve it reveal gates, two-click confirmation and retry',async({page},info)=>{
  await frozen(page,'/modules/newtons-laws/solve.html');
  await expect(page.locator('#reveal-q')).toBeDisabled();
- await page.getByRole('button',{name:'Add to unknowns: m = 4.0 kg',exact:true}).click();
+ await page.getByRole('button',{name:'+ Unknown: m = 4.0 kg',exact:true}).click();
  await page.locator('#check-q').click();await page.locator('#check-q').click();
  await page.locator('#reveal-q').click();await expect(page.locator('#reveal-q')).toContainText('Click again');await page.locator('#reveal-q').click();
  await expect(page.locator('#score')).toContainText('Step 1 revealed');
@@ -18,11 +18,11 @@ for(const [id,p] of Object.entries(PROBLEMS))test(`Solve it ${id} sorting, wrong
  await frozen(page,'/modules/newtons-laws/solve.html');await page.getByRole('combobox',{name:/^Problem/}).selectOption(id);
  // Tap/click and keyboard alternatives exercise the same accessible controls used on tablets.
  const first=p.quantities.find(q=>q.role==='known');
- await page.getByRole('button',{name:`Add to unknowns: ${first.text}`,exact:true}).click();
+ await page.getByRole('button',{name:`+ Unknown: ${first.text}`,exact:true}).click();
  await page.getByRole('button',{name:/Check knowns/}).click();await expect(page.locator('#q-summary')).toContainText(/flagged|still/);
  await evidence(page,info,'incorrect-sort');
  await page.getByRole('button',{name:`Move to knowns: ${first.text}`,exact:true}).click();
- for(const q of p.quantities.filter(q=>q.id!==first.id&&q.role!=='none'))await page.getByRole('button',{name:`Add to ${q.role==='known'?'knowns':'unknowns'}: ${q.text}`,exact:true}).click();
+ for(const q of p.quantities.filter(q=>q.id!==first.id&&q.role!=='none'))await page.getByRole('button',{name:`${q.role==='known'?'+ Known':'+ Unknown'}: ${q.text}`,exact:true}).click();
  await page.getByRole('button',{name:/Check knowns/}).click();await expect(page.locator('#q-summary')).toContainText('Step 1 complete');
  const wrong=p.blocks.find(b=>!b.correct);await page.getByRole('button',{name:`${wrong.text}. Add to solution.`,exact:true}).click();
  await page.getByRole('button',{name:/Check & run/}).click();await advance(page,250);

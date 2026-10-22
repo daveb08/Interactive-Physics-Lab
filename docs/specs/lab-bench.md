@@ -1,0 +1,170 @@
+# Spec: Module 07 — Lab Bench (virtual measurement labs)
+
+Decisions by Dave Bennett, 2026-10-22.
+**Status:** spec only. Nothing is built yet. Build in three stages (below); each stage is its own branch and PR,
+browser-verified before merging, because merges go live in Canvas.
+
+## Purpose
+
+Give students the experience of a real physics lab: a bench, a shelf of equipment, instruments with limited
+precision, repeated trials, a lab notebook, a graph with a fit, and a result reported with an uncertainty. They
+then explain why it differs from the expected value.
+
+The lab is about **measurement and experimental method**. Kinematics (and later other topics) is the tool, not the
+target. A simulator that hands students a perfect time and lets them compute g = 2h/t² teaches nothing. The
+difficulty must sit where it sits in a real lab: imperfect readings, design choices, analysis and systematic error.
+
+It complements the real PHY 2201 lab and does not replace it. Natural uses: a pre-lab before the real experiment,
+makeup labs, online sections, and things a real lab cannot do (other planets, air vs no air, one error source at a time).
+
+## Decisions
+
+| Question | Decision |
+|---|---|
+| How much freedom | **Guided bench.** The assignment unlocks only the equipment it needs; students make real choices within it (object, heights, timer, number of trials). An open sandbox with any equipment is a later option, not v1. |
+| Primary goal | Measurement and experimental method. A sensible value with a sensible uncertainty and a correct explanation of error counts as success, not "got 9.81". |
+| Visual style | Plain 2D side view in the existing style. Effort goes into **process realism** (choices, readings, imperfections), not visual realism (no 3D room, no textures). |
+| Where it lives | New top-level section **Lab Bench** (catalog card 07). Not inside Newton's Laws: every future lab reuses the same bench. |
+| Grading | Simple built-in auto-grading so an instructor can assign a lab as graded work without marking by hand: a per-student mystery value, a completion code, and an instructor grading page (below). |
+| Grading security | **Cheat-resistant, not cheat-proof.** Accepted for low-stakes lab grades. Everything runs in the browser; a student who reads the code could game it. |
+| Student identity | Students type a name or student ID (ID preferred: names collide and get misspelled). Nothing is sent anywhere; it only seeds their mystery value and appears in their completion code. |
+| Analysis | Graph and fit happen in the page. CSV export for students who also want Excel; Excel is never required. |
+
+## Ground rules (same as the rest of the lab)
+
+- Plain HTML/CSS/JS ES modules. No dependencies, CDN, build step, server, accounts or tracking.
+- Physics in `js/core/` stays DOM-free and SI. Exact closed forms wherever they exist; numerics are tested against them.
+- Learning loop as elsewhere: predict, run, explain, with misconception-specific feedback.
+- Every control works by keyboard and touch; dragging is never the only way to do something.
+- Links use explicit `index.html` paths. New routes go in `qa/manifest.js`. All existing tests must still pass.
+
+## The bench (shared by every lab)
+
+```text
+index.html                         Catalog card 07 "Lab Bench" → modules/lab-bench/index.html
+modules/lab-bench/index.html       Lab list (Lab 1 first), short "how a lab works" note
+modules/lab-bench/freefall.html    Lab 1
+modules/lab-bench/grade.html       Instructor grading page (stage 3)
+js/core/lab-noise.js               Seeded random numbers (per student), instrument resolution, rounding
+js/core/fit.js                     Least-squares line with slope/intercept uncertainty; mean and standard error
+js/core/freefall-drag.js           Fall with and without quadratic air drag (closed form)
+js/components/bench-view.js        SVG bench: shelf, stand, clamp, pad; drag-or-click to place equipment
+js/components/notebook.js          Lab notebook table: add/delete rows, per-trial values, CSV export
+```
+
+**Layout:** equipment shelf (left) · bench scene (centre) · lab notebook (right on wide screens, below on phones) ·
+analysis panel (graph + fit) · result and report panel.
+
+**Placing equipment:** drag an item from the shelf onto the bench, or select it and press **Place** (keyboard and
+touch). Items snap to their spot (a ball to the release clamp, a timer to the stand). Only items the assignment
+unlocks appear on the shelf; others are shown greyed with "not needed for this lab".
+
+## Lab 1 — Find g on the mystery planet
+
+### Assignment (what students are told)
+Determine the acceleration due to gravity, g, on this planet. Report g with an uncertainty and explain the
+main source of error in your measurement.
+
+### Shelf
+| Item | Model |
+|---|---|
+| Steel ball | 25.4 mm diameter, 67 g (density 7.8 g/cm³). Air drag negligible. |
+| Ping-pong ball | 40 mm diameter, 2.7 g. Air drag clearly matters on planets with air. |
+| Metre stick | Read by the student from a zoomed scale; 1 mm divisions. |
+| Hand stopwatch | The **student clicks** Start at release and Stop at impact (button, or Space bar). Their own reaction time is the error; nothing is faked. Display to 0.01 s. |
+| Electronic timer (release + impact pad) | Electromagnet release starts the clock, an impact pad stops it. 1 ms resolution, ±0.5 ms jitter. |
+
+Five items only. More are added when a later lab needs them.
+
+### Bench
+A stand with an adjustable release clamp (drop heights 0.20–2.00 m). The drop distance is measured **from the
+bottom of the ball to the pad**, read off the metre stick. A guided hint asks "height to which point of the ball?",
+because the ball's size makes this a real question (measuring to the centre of the steel ball is off by 12.7 mm, about 6 % at a 0.20 m drop).
+
+### Physics
+- No air: y(t) = ½ g t², exact.
+- With air (quadratic drag, F = ½ ρ C_d A v², C_d = 0.47): v(t) = v_t tanh(g t / v_t), y(t) = (v_t²/g) ln cosh(g t / v_t),
+  v_t = √(2 m g / (ρ C_d A)). Exact closed form, so no integrator is needed.
+- Air density per planet: none, thin (0.02 kg/m³) or Earth-like (1.2 kg/m³). An instructor can force air on or off.
+
+### Mystery planet
+g for each student comes from a seeded hash of (student ID + assignment code), uniform in 3–20 m/s², rounded to
+0.01. The hidden value is never shown during the lab. Practice mode (no ID) uses Earth, g = 9.81 m/s².
+
+### Measuring and the notebook
+Release, time, record. Each trial adds a notebook row: object, height reading, timer, time. Students may delete
+a bad trial (the deletion is noted, as in a real notebook). The notebook shows per-height mean, spread and
+standard error once a height has two or more trials.
+
+### Analysis
+Plot h against t² (students may also view h against t, to see why linearising helps). A least-squares fit gives the
+slope with its uncertainty; g = 2 × slope, δg = 2 δslope. Students can also compute g per height and average.
+Students choose which result to report and type g ± δg.
+
+### Lessons built in (discovered, not announced)
+1. Stopwatch: large spread and a small positive bias from reaction time; more trials shrink the standard error.
+2. Electronic timer: tight spread; the systematic error that remains is the height reading.
+3. Ping-pong ball with air: g comes out low, worst at large heights (curvature on the h vs t² graph).
+4. Short drops: timing error is a larger fraction of t, so short drops give poorer g.
+
+### Auto-graded rubric (4 checks, shown to the student with a message for each)
+| Check | Pass condition |
+|---|---|
+| Value | Reported g within ±5 % of the student's true g |
+| Uncertainty | Reported δg covers the true g and δg/g < 15 % |
+| Method | ≥ 3 heights, ≥ 5 trials at each, and the fit was used |
+| Explanation | One multiple-choice question on the main systematic error, chosen to match the student's own data (e.g. drag if they used the ping-pong ball with air; reaction time if they used the stopwatch) |
+
+Free-text discussion is optional and ungraded, as in the guided activities.
+
+## Grading (stage 3)
+
+1. **Assignment link.** The instructor sets an assignment code and options (planet range, air, tolerance, required
+   heights and trials) on the grading page and copies a student link (carried in the URL, like Solve it share links).
+2. **Completion code.** When a student submits, the page shows a short code containing: format version, assignment
+   code, student ID, reported g and δg, rubric results, trial counts, and a checksum. The student pastes it into a
+   Canvas assignment or quiz text box.
+3. **Grading page.** The instructor pastes all codes, one per line or from a Canvas export. The page recomputes each
+   student's true g from their ID, re-checks the rubric, flags tampered or mismatched codes (bad checksum, wrong
+   assignment, an ID that does not match its value), and produces a score table and CSV for the Canvas gradebook.
+
+The checksum uses a key embedded in the page, so it stops casual editing and copying, not a determined student
+reading the source. This is the accepted trade-off.
+
+## Build stages
+
+| Stage | Contents | Can be used in class? |
+|---|---|---|
+| 1 | Lab Bench section and card; bench, stand, metre stick, steel ball, hand stopwatch; notebook; h vs t² graph and fit; practice mode (Earth) | Yes, ungraded |
+| 2 | Electronic timer, ping-pong ball, air drag, mystery planet from student ID, systematic-error questions | Yes, ungraded |
+| 3 | Rubric, completion code, assignment links, instructor grading page | Yes, graded |
+
+## Tests
+
+- **Physics:** free fall exact; the drag solution matches its terminal velocity and agrees with RK4 integration;
+  drag → 0 reduces to free fall.
+- **Fit:** least squares against hand-computed cases; slope uncertainty against the textbook formula; the fit
+  recovers a known g from synthetic noisy data within its stated uncertainty in ~95 % of seeded runs.
+- **Seeding:** the same ID and assignment always give the same g; different IDs spread across the range.
+- **Codes:** round trip; any edited character fails the checksum; a code from another assignment or ID is flagged.
+- **Rubric:** each check passes and fails at its boundaries.
+- **Browser QA:** a scripted student completes Lab 1 by keyboard only, then with touch, on desktop, laptop and iPad
+  profiles; the grading page scores a batch of codes, including tampered ones.
+
+## Accessibility note
+
+The hand stopwatch depends on reaction time by design. Students who cannot use it reliably (motor or vision
+needs) must be able to complete the lab with the electronic timer alone. The rubric never requires the stopwatch.
+
+## Not in v1
+
+Open sandbox bench; 3D or a visual "room"; video-based measurement; LTI or other automatic grade return to
+Canvas (needs a server); free-text auto-grading; equipment beyond the five items. Later labs reuse the bench:
+pendulum (g again, a different method), incline (μ), spring (k), and later Coulomb's k.
+
+## Open questions
+
+1. Default tolerance (±5 %) and uncertainty ceiling (15 %): right for these students?
+2. Should the assignment require both timers (to compare them), or let students choose?
+3. Brief "uncertainty basics" help (mean, spread, standard error, slope uncertainty) is needed. Is a short in-page
+   explainer enough, or does it need its own guided activity first?

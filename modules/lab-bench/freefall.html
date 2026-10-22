@@ -1,26 +1,36 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Lab Bench, Lab 1: measure the acceleration due to gravity with a dropped ball, a measuring stick and a stopwatch."><title>Lab 1 · Find g · Lab Bench · Interactive Physics Lab</title><link rel="stylesheet" href="../../css/styles.css"><link rel="stylesheet" href="lab-bench.css"><script type="module" src="freefall.js"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Lab Bench, Lab 1: measure the acceleration due to gravity with a dropped ball, a measuring stick and a timer, on Earth or a mystery planet."><title>Lab 1 · Find g · Lab Bench · Interactive Physics Lab</title><link rel="stylesheet" href="../../css/styles.css"><link rel="stylesheet" href="lab-bench.css"><script type="module" src="freefall.js"></script></head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header"><a class="brand" href="../../index.html"><span class="brand-icon" aria-hidden="true">↗</span> Interactive Physics Lab</a><a class="back-link" href="index.html">← Lab Bench</a></header>
 <main id="main" class="lab lb">
-  <div class="lab-heading"><div><p class="eyebrow">MODULE 07 · LAB 1 / LAB BENCH</p><h1>Find g</h1><p>Measure the acceleration due to gravity the way you would in a real lab: set up the equipment, time the drops yourself, record everything, then let the graph tell you g.</p></div><span class="lab-tag"><span aria-hidden="true">●</span> Practice mode · Earth</span></div>
+  <div class="lab-heading"><div><p class="eyebrow">MODULE 07 · LAB 1 / LAB BENCH</p><h1>Find g</h1><p>Measure the acceleration due to gravity the way you would in a real lab: set up the equipment, take your own readings, record everything, then let the graph tell you g.</p></div><span class="lab-tag" id="mode-tag"><span aria-hidden="true">●</span> Practice · Earth</span></div>
 
   <section class="panel lb-brief" aria-labelledby="brief-title">
     <h2 id="brief-title">Your assignment</h2>
-    <p>Determine g, the acceleration due to gravity, and report it with an uncertainty. Measure at <strong>3 or more heights</strong>, with <strong>5 or more drops at each</strong>.</p>
+    <div>
+      <p>Determine g, the acceleration due to gravity, and report it with an uncertainty. Measure at <strong>3 or more heights</strong>, with <strong>5 or more drops at each</strong>, using one ball and one timer.</p>
+      <div class="e1-group lb-mode"><span class="lb-label" id="mode-label">Where are you?</span>
+        <div class="lb-seg" role="group" aria-labelledby="mode-label"><button type="button" data-mode="earth" aria-pressed="true">Earth (practice)</button><button type="button" data-mode="planet" aria-pressed="false">Mystery planet</button></div></div>
+      <form id="planet-form" class="lb-planet" hidden>
+        <label for="student-id">Your student ID</label>
+        <div class="lb-planet-row"><input id="student-id" autocomplete="off" maxlength="40" placeholder="e.g. 00123456"><button type="submit" class="primary">Go to my planet</button></div>
+        <p class="help">Your ID chooses your planet: its gravity and its air are hidden, and they are the same every time you use this ID, on any computer. Nothing is sent anywhere.</p>
+      </form>
+      <p id="planet-status" class="lb-planet-status" role="status" hidden></p>
+    </div>
     <ol class="lb-checklist" id="checklist" aria-label="Set-up checklist">
-      <li data-item="ball">Put the steel ball in the release clamp</li>
+      <li data-item="ball">Put a ball in the release clamp</li>
       <li data-item="stick">Stand the measuring stick next to the drop</li>
-      <li data-item="watch">Pick up the stopwatch</li>
+      <li data-item="timer">Add a timer: the hand stopwatch, the electronic timer, or both</li>
     </ol>
   </section>
 
   <div class="lb-workspace">
     <aside class="panel lb-shelf" aria-labelledby="shelf-title">
       <div class="panel-heading"><h3 id="shelf-title">Equipment shelf</h3><span>01</span></div>
-      <p class="help lb-pad">Drag an item onto the bench, or press <b>Place on bench</b>.</p>
+      <p class="help lb-pad">Drag an item onto the bench, or press <b>Place on bench</b>. The clamp holds one ball at a time.</p>
       <ul class="lb-items" id="shelf"></ul>
     </aside>
 
@@ -47,10 +57,20 @@
 
     <section class="panel lb-measure" aria-labelledby="measure-title">
       <div class="panel-heading"><h3 id="measure-title">Measure and record</h3><span>02</span></div>
+      <fieldset class="lb-timer-pick" id="timer-pick" hidden><legend>Record the time from</legend>
+        <label><input type="radio" name="timer" value="watch"> Hand stopwatch</label>
+        <label><input type="radio" name="timer" value="gate"> Electronic timer</label>
+      </fieldset>
       <div class="lb-watch" id="watch" aria-disabled="true">
+        <div class="lb-watch-label">Hand stopwatch</div>
         <div class="lb-watch-face"><output id="watch-display" aria-live="off">0.00</output><small>s</small></div>
         <div class="lb-watch-btns"><button type="button" id="watch-toggle" class="lb-big" disabled aria-pressed="false">Start</button><button type="button" id="watch-reset" disabled>Reset</button></div>
-        <p class="help">You are the timer: press <b>Start</b> (or the <kbd>Space</kbd> bar) when the ball is released and <b>Stop</b> when it hits the pad.</p>
+        <p class="help">You are the timer: press <b>Start</b> (or the <kbd>Space</kbd> bar) on “Drop!” and <b>Stop</b> when the ball hits the pad.</p>
+      </div>
+      <div class="lb-gate" id="gate" hidden>
+        <div class="lb-watch-label">Electronic timer</div>
+        <div class="lb-watch-face lb-gate-face"><output id="gate-display" aria-live="polite">0.000</output><small>s</small></div>
+        <p class="help">Starts when the clamp releases the ball and stops when the ball hits the pad. Reads to the millisecond.</p>
       </div>
       <div class="lb-record">
         <label for="h-read">Height you read (m)</label>
@@ -62,11 +82,12 @@
   </div>
 
   <section class="panel lb-notebook" aria-labelledby="nb-title">
-    <div class="panel-heading"><h3 id="nb-title">Lab notebook</h3><span id="progress" class="status" role="status">0 of 3 heights done</span></div>
+    <div class="panel-heading"><h3 id="nb-title">Lab notebook <span id="nb-where" class="lb-nb-where"></span></h3><span id="progress" class="status" role="status">0 of 3 heights done</span></div>
+    <div class="lb-combo" id="combo-row" hidden><label for="combo">Analyse</label><select id="combo" class="vf-select"></select><span class="help">Each fit uses one ball with one timer: mixing them would mix different experiments.</span></div>
     <div class="lb-nb-grid">
-      <div class="lb-table-wrap"><table class="lb-table" id="trials"><caption>Trials (a deleted trial stays in the notebook, crossed out)</caption><thead><tr><th scope="col">#</th><th scope="col">Object</th><th scope="col">Timer</th><th scope="col">h (m)</th><th scope="col">t (s)</th><th scope="col"><span class="sr-only">Delete</span></th></tr></thead><tbody id="trial-rows"></tbody></table><p id="no-trials" class="help lb-pad">No trials yet.</p></div>
+      <div class="lb-table-wrap"><table class="lb-table" id="trials"><caption>Trials (a deleted trial stays in the notebook, crossed out)</caption><thead><tr><th scope="col">#</th><th scope="col">Ball</th><th scope="col">Timer</th><th scope="col">h (m)</th><th scope="col">t (s)</th><th scope="col"><span class="sr-only">Delete</span></th></tr></thead><tbody id="trial-rows"></tbody></table><p id="no-trials" class="help lb-pad">No trials yet.</p></div>
       <div>
-        <table class="lb-table" id="groups"><caption>By height</caption><thead><tr><th scope="col">h (m)</th><th scope="col">n</th><th scope="col">mean t (s)</th><th scope="col">SD (s)</th><th scope="col">SE (s)</th><th scope="col">g = 2h/t̄² (m/s²)</th></tr></thead><tbody id="group-rows"></tbody></table>
+        <table class="lb-table" id="groups"><caption id="groups-caption">By height</caption><thead><tr><th scope="col">h (m)</th><th scope="col">n</th><th scope="col">mean t (s)</th><th scope="col">SD (s)</th><th scope="col">SE (s)</th><th scope="col">g = 2h/t̄² (m/s²)</th></tr></thead><tbody id="group-rows"></tbody></table>
         <details class="lb-explain" id="explain-stats" hidden><summary>What do mean, SD and SE mean?</summary><div id="explain-stats-body"></div></details>
         <div class="transport lb-left"><button type="button" id="csv">⬇ Download notebook (.csv)</button><button type="button" id="clear-nb">Clear notebook</button></div>
       </div>
@@ -90,12 +111,13 @@
       <div class="lb-result">
         <p class="help">Report the value and uncertainty you believe, to sensible significant figures. You may use the fit, or your own analysis.</p>
         <div class="lb-result-row"><label>g = <input id="r-g" type="number" step="0.01" inputmode="decimal"></label><span>±</span><label><span class="sr-only">uncertainty</span><input id="r-dg" type="number" step="0.01" min="0" inputmode="decimal"></label><span>m/s²</span></div>
-        <button type="button" id="check" class="primary">Compare with Earth’s g</button>
+        <div class="transport lb-left"><button type="button" id="check" class="primary">Compare with Earth’s g</button><button type="button" id="reveal" hidden>Reveal my planet’s g</button></div>
         <p id="result-msg" class="feedback" role="status" hidden></p>
+        <form id="explain-q" class="lb-question" hidden><fieldset><legend id="q-text"></legend><div id="q-choices" class="lb-choices"></div></fieldset><button type="submit">Check my answer</button><p id="q-feedback" class="lb-q-feedback" role="status"></p></form>
         <details class="lb-explain" open><summary>How to report a result</summary><div id="explain-report"></div></details>
       </div>
     </section>
   </div>
-  <p class="lab-footnote">Practice mode: Earth, g = 9.81 m/s², no air resistance on the steel ball (its effect over 2 m is below 0.1 %). The fall is exact; the only errors are your timing and your height readings, just as in a real lab. Nothing is saved or sent.</p>
+  <p class="lab-footnote" id="footnote"></p>
 </main><footer>Interactive Physics Lab<span>Lab Bench · Lab 1</span></footer>
 </body></html>

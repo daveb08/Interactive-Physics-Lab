@@ -88,3 +88,33 @@ test('notebook: grouping by height, deleting keeps the row, progress toward 3 he
   assert.equal(analyse(b.slice(0, 5)).error.length > 0, true);   // one height: no line yet
   b = deleteTrial(b, 3); assert.equal(b[2].deleted, false);       // undo
 });
+
+test('mystery planets: deterministic per ID and code, ID typing does not matter, g spread over 3–20 with all three airs', async () => {
+  const { planetFor, normaliseId, hash32 } = await import('../js/core/lab-noise.js');
+  const a = planetFor('AB12-345'), b = planetFor('ab 12 345'), c = planetFor('AB12-345', 'quiz-2');
+  assert.deepEqual(a, b); assert.notEqual(a.g, c.g);
+  assert.equal(normaliseId(' Jo-Smith_7 '), 'josmith7'); assert.equal(hash32('a'), hash32('a'));
+  assert.throws(() => planetFor('  '), RangeError);
+  const gs = [], airs = new Set();
+  for (let i = 0; i < 600; i++) { const p = planetFor(`student${i}`); gs.push(p.g); airs.add(p.air); assert.ok(p.g >= 3 && p.g <= 20); assert.ok(Math.abs(p.g * 100 - Math.round(p.g * 100)) < 1e-9); }
+  assert.deepEqual([...airs].sort(), ['earth', 'none', 'thin']);
+  const thirds = [gs.filter(g => g < 8.67).length, gs.filter(g => g >= 8.67 && g < 14.33).length, gs.filter(g => g >= 14.33).length];
+  for (const n of thirds) assert.ok(n > 150 && n < 250, `uneven spread ${thirds}`);
+});
+
+test('notebook combinations: one fit per ball-and-timer, progress counted per combination', async () => {
+  const { combos, comboKey } = await import('../modules/lab-bench/notebook-model.js');
+  let b = [];
+  for (const h of [0.5, 1, 1.5]) for (let i = 0; i < 5; i++) {
+    b = addTrial(b, { object: 'Steel ball', timer: 'Electronic timer', h, t: Math.sqrt(2 * h / 9.81) });
+    b = addTrial(b, { object: 'Ping-pong ball', timer: 'Electronic timer', h, t: fallTime({ g: 9.81, ball: BALLS.pingpong, rho: AIR.earth }, h) });
+  }
+  b = addTrial(b, { object: 'Steel ball', timer: 'Hand stopwatch', h: 1, t: 0.4 });
+  const cs = combos(b);
+  assert.equal(cs.length, 3); assert.equal(cs.at(-1).n, 1);
+  const steel = 'Steel ball · Electronic timer', pp = 'Ping-pong ball · Electronic timer';
+  near(analyse(b, steel).g, 9.81, 1e-9);
+  const gpp = analyse(b, pp).g; assert.ok(gpp < 9.6 && gpp > 8.5, `ping-pong g ${gpp}`);   // drag makes g come out low
+  assert.equal(progress(b, steel).done, true); assert.equal(progress(b, 'Steel ball · Hand stopwatch').done, false);
+  assert.equal(comboKey(b[0]), steel);
+});

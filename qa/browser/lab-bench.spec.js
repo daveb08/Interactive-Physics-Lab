@@ -1,3 +1,4 @@
+import {planetFor as _pf} from '../../js/core/lab-noise.js';
 import {test,expect,frozen,evidence,layout} from './helpers.js';
 const route='/modules/lab-bench/freefall.html';
 const loupeH=async page=>Number((await page.locator('#loupe').getAttribute('aria-label')).match(/at ([\d.]+) metres/)[1]);
@@ -60,4 +61,75 @@ test('Lab 1 guards: no drop before setup, record needs a reading and a time, cla
  const clamp=page.getByRole('button',{name:/^Release clamp/});
  for(let i=0;i<50;i++)await clamp.press('PageUp');expect(await loupeH(page)).toBeLessThanOrEqual(2.005);
  for(let i=0;i<50;i++)await clamp.press('PageDown');expect(await loupeH(page)).toBeGreaterThanOrEqual(.2);
+});
+
+// ---------- Stage 2: electronic timer, ping-pong ball, mystery planets, explain question ----------
+const planetFor=_pf;
+const fall=(g,h)=>Math.sqrt(2*h/g);
+async function setup(page,items){for(const n of items)await page.getByRole('button',{name:new RegExp(`^(Place on bench|Swap into the clamp): ${n.replace(/[()]/g,'\\$&')}$`)}).click();}
+async function gateDrops(page,heights,perHeight,g){
+ const clamp=page.getByRole('button',{name:/^Release clamp/});
+ for(const [key,n] of heights){
+  for(let i=0;i<n;i++)await clamp.press(key);
+  const h=await loupeH(page);
+  for(let i=0;i<perHeight;i++){
+   await page.getByLabel('Height you read (m)').fill(h.toFixed(3));
+   await page.getByRole('button',{name:/Drop the ball/}).click();
+   await page.clock.runFor(2100);await page.clock.runFor(Math.round(fall(g,h)*1300)+400);
+   await expect(page.locator('#gate-display')).not.toHaveText('0.000');
+   await page.getByRole('button',{name:/Record trial/}).click();
+  }
+ }
+}
+test('Stage 2: the electronic timer times every drop itself and the fit recovers Earth’s g to 1 %',async({page},info)=>{
+ await frozen(page,route);await page.evaluate(()=>{try{localStorage.clear();}catch{}});await page.reload();
+ await setup(page,['Steel ball','Measuring stick (2 m)','Electronic timer']);
+ await expect(page.locator('#checklist li.done')).toHaveCount(3);
+ await expect(page.locator('#watch')).toBeHidden();await expect(page.locator('#gate')).toBeVisible();
+ await gateDrops(page,[['PageDown',8],['PageUp',8],['PageUp',8]],5,9.81);
+ await expect(page.locator('#progress')).toContainText('✓ 3 heights');
+ const g=Number((await page.locator('#f-g').innerText()).split(' ')[0]);
+ expect(Math.abs(g-9.81)/9.81).toBeLessThan(.01);
+ await expect(page.locator('#q-text')).toContainText('What now limits your result most');
+ await page.getByRole('radio',{name:/How precisely I read the drop height/}).check();
+ await page.getByRole('button',{name:'Check my answer'}).click();await expect(page.locator('#q-feedback')).toContainText('✓');
+ await evidence(page,info,'stage2-gate-earth');
+});
+test('Stage 2: in Earth’s air the ping-pong ball gives g too low, and the explain question asks about drag',async({page})=>{
+ await frozen(page,route);await page.evaluate(()=>{try{localStorage.clear();}catch{}});await page.reload();
+ await setup(page,['Ping-pong ball','Measuring stick (2 m)','Electronic timer']);
+ await gateDrops(page,[['PageUp',8],['PageUp',2]],3,9.81);
+ const g=Number((await page.locator('#f-g').innerText()).split(' ')[0]);
+ expect(g).toBeLessThan(9.6);expect(g).toBeGreaterThan(8);
+ await expect(page.locator('#q-text')).toContainText('ping-pong ball gives a value of g that is too low');
+ await page.getByRole('radio',{name:/Lighter objects fall more slowly/}).check();await page.getByRole('button',{name:'Check my answer'}).click();
+ await expect(page.locator('#q-feedback')).toContainText('vacuum');
+ // swapping balls keeps both data sets apart: the combination selector appears
+ await setup(page,['Steel ball']);await gateDrops(page,[['PageDown',4]],2,9.81);
+ await expect(page.locator('#combo-row')).toBeVisible();await expect(page.locator('#combo option')).toHaveCount(2);
+});
+test('Stage 2: a student ID gives the same hidden planet every time, its own notebook, and a reveal after submitting',async({page},info)=>{
+ await frozen(page,route);await page.evaluate(()=>{try{localStorage.clear();}catch{}});await page.reload();
+ const planet=planetFor('QA-Student 01');
+ await page.getByRole('button',{name:'Mystery planet'}).click();
+ await expect(page.getByRole('button',{name:/Drop the ball/})).toBeDisabled();
+ await page.getByLabel('Your student ID').fill('QA-Student 01');await page.getByRole('button',{name:'Go to my planet'}).click();
+ await expect(page.locator('#planet-status')).toContainText(planet.name);
+ expect(await page.locator('body').innerText()).not.toContain(planet.g.toFixed(2));   // the planet's g is never shown before the reveal
+ await setup(page,['Steel ball','Measuring stick (2 m)','Electronic timer']);
+ await gateDrops(page,[['PageDown',8],['PageUp',12]],3,planet.g);
+ const g=Number((await page.locator('#f-g').innerText()).split(' ')[0]);
+ expect(Math.abs(g-planet.g)/planet.g).toBeLessThan(.02);
+ await page.locator('#r-g').fill(g.toFixed(2));await page.locator('#r-dg').fill((planet.g*.03).toFixed(2));
+ await page.getByRole('button',{name:'Submit my result'}).click();
+ await expect(page.locator('#result-msg')).toContainText('Result recorded');
+ await page.getByRole('button',{name:/Reveal my planet/}).click();
+ await expect(page.locator('#result-msg')).toContainText(planet.g.toFixed(2));
+ await expect(page.locator('#result-msg')).toContainText('inside your range');
+ await evidence(page,info,'stage2-planet');
+ // same ID after a reload: same planet and its notebook; Earth keeps its own (empty) notebook
+ await page.reload();await expect(page.locator('#planet-status')).toContainText(planet.name);
+ await expect(page.locator('#trial-rows tr')).toHaveCount(6);
+ await page.getByRole('button',{name:'Earth (practice)'}).click();await expect(page.locator('#trial-rows tr')).toHaveCount(0);
+ expect((await layout(page)).overflow).toBe(false);
 });

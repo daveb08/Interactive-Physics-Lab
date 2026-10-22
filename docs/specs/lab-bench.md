@@ -1,7 +1,7 @@
 # Spec: Module 07 — Lab Bench (virtual measurement labs)
 
 Decisions by Dave Bennett, 2026-10-22.
-**Status:** Stage 1 built (practice mode, Earth). Stages 2 and 3 to come. Each stage is its own branch and PR,
+**Status:** Stages 1 and 2 built (Earth practice and ungraded mystery planets). Stage 3 (grading) to come. Each stage is its own branch and PR,
 browser-verified before merging, because merges go live in Canvas.
 
 ## Purpose
@@ -142,9 +142,33 @@ reading the source. This is the accepted trade-off.
 
 | Stage | Contents | Can be used in class? |
 |---|---|---|
-| 1 | Lab Bench section and card; bench, stand, metre stick, steel ball, hand stopwatch; notebook; h vs t² graph and fit; practice mode (Earth) | Yes, ungraded |
-| 2 | Electronic timer, ping-pong ball, air drag, mystery planet from student ID, systematic-error questions | Yes, ungraded |
+| 1 ✅ | Lab Bench section and card; bench, stand, 2 m measuring stick, steel ball, hand stopwatch; notebook; t² against h graph and fit; practice mode (Earth) | Yes, ungraded |
+| 2 ✅ | Electronic timer, ping-pong ball, air drag, mystery planet from student ID, systematic-error questions; larger text on the Lab Bench pages | Yes, ungraded |
 | 3 | Rubric, completion code, assignment links, instructor grading page | Yes, graded |
+
+## Stage 2 as built (2026-10-22)
+
+- **Electronic timer.** Placing it starts the clock as the clamp's magnet releases the ball and stops it at the impact
+  sensor: true fall time ± 0.5 ms, shown to 1 ms. It times every drop by itself, so the stopwatch is optional. With both on
+  the bench, students choose which one each trial is recorded from.
+- **Ping-pong ball.** The clamp holds one ball at a time (placing the other swaps them). Its fall uses the exact
+  quadratic-drag solution; in Earth's air it measurably slows (g from a fit comes out several percent low).
+- **Earth has air.** Practice mode now uses Earth's air density (1.2 kg/m³): negligible for the steel ball (< 0.1 % over 2 m),
+  clear for the ping-pong ball.
+- **Mystery planet.** The student types an ID; `js/core/lab-noise.js` hashes ID + assignment code (`practice` until Stage 3,
+  or `?a=` in the URL) into g (3–20 m/s², to 0.01) and an air of none, thin (0.02 kg/m³) or Earth-like, one third each.
+  The ID is normalised (case, spaces and dashes ignored). The planet's g is never shown until the student submits a result;
+  being practice, they may then reveal it. Stage 3 keeps it hidden.
+- **One notebook per place.** Earth and each planet (ID + code) keep separate notebooks in the browser. Stage 1 Earth
+  notebooks carry over.
+- **One fit per combination.** Trials record ball and timer; the notebook's per-height table, the graph, the fit and the
+  progress count use one ball-and-timer combination at a time, chosen from a menu when there is more than one. Mixing
+  them would mix different experiments.
+- **Explain your result.** One multiple-choice question, chosen from the combination analysed: stopwatch data → what limits
+  hand timing (reaction time); electronic timer with the ping-pong ball in Earth-like air → why g comes out low (drag);
+  otherwise → what limits the result now (the height reading). Each wrong answer has its own feedback. Ungraded until Stage 3.
+- **Larger text** on the Lab Bench pages: body 15 px, help and captions 13.5 px, tables 14.5 px, stick and graph labels
+  enlarged; nothing under 12.5 px.
 
 ## Tests
 

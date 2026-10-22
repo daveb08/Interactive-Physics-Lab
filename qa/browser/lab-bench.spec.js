@@ -139,3 +139,63 @@ test('Stage 2: a student ID gives the same hidden planet every time, its own not
  await page.getByRole('button',{name:'Earth (practice)'}).click();await expect(page.locator('#trial-rows tr')).toHaveCount(0);
  expect((await layout(page)).overflow).toBe(false);
 });
+
+// ---------- Stage 3: graded assignments ----------
+test('Stage 3: an instructor makes a link, a student completes it with g hidden and gets a code, and the code grades 4 / 4',async({page},info)=>{
+ await frozen(page,'/modules/lab-bench/instructor.html');
+ await page.getByLabel('Assignment code').fill('QA-Lab1');await page.getByRole('button',{name:'Make the link'}).click();
+ const link=await page.locator('#made-link').innerText(), key=await page.locator('#made-key').innerText();
+ expect(link).toContain('freefall.html?a=qa-lab1');expect(link).not.toContain(key);
+ const u=new URL(link);
+ await frozen(page,u.pathname+u.search);await page.evaluate(()=>{try{localStorage.clear();}catch{}});await page.reload();
+ await expect(page.locator('#graded-banner')).toContainText('Graded assignment');
+ await page.getByLabel('Your student ID').fill('QA 777');await page.getByRole('button',{name:'Go to my planet'}).click();
+ const planet=planetFor('QA 777','qa-lab1');
+ expect(await page.locator('body').innerText()).not.toContain(planet.g.toFixed(2));
+ await setup(page,['Steel ball','Measuring stick (2 m)','Electronic timer']);
+ await gateDrops(page,[['PageDown',12],['PageUp',10],['PageUp',10]],5,planet.g);
+ const [gv,,dv]=(await page.locator('#f-g').innerText()).split(' ');
+ await page.locator('#r-g').fill(gv);await page.locator('#r-dg').fill((Number(dv)*1.5).toPrecision(2));
+ await page.getByRole('button',{name:'Submit my result'}).click();
+ await expect(page.locator('#result-msg')).toContainText('Answer the “Explain your result” question');
+ await page.getByRole('radio',{name:/How precisely I read the drop height/}).check();await page.getByRole('button',{name:'Check my answer'}).click();
+ await expect(page.locator('#q-first')).toContainText('recorded for grading');
+ await page.getByRole('button',{name:'Submit my result'}).click();
+ await expect(page.locator('#result-msg')).toContainText('Submitted');
+ await expect(page.getByRole('button',{name:/Reveal/})).toBeHidden();
+ const code=await page.locator('#completion-code').innerText();expect(code).toMatch(/^LB1-/);
+ // (the student's own numbers may match g closely; what must never appear is the page stating the planet's g)
+ expect(await page.locator('body').innerText()).not.toMatch(/planet’s g is|Planet [A-Z0-9]{4} has/);
+ await evidence(page,info,'stage3-student-code');
+ expect((await layout(page)).overflow).toBe(false);
+ // the code survives a reload
+ await page.reload();await expect(page.locator('#completion-code')).toHaveText(code);
+ // grading: the key is required; an edited code is refused
+ await frozen(page,'/modules/lab-bench/instructor.html');
+ await page.getByLabel('Student link for the assignment').fill(link);await page.getByLabel('Grading key').fill('wrong-key-10');
+ await page.getByLabel('Completion codes',{exact:true}).fill(`Ann,${code}\nBen,${code.slice(0,-4)}AAAA`);
+ await page.getByRole('button',{name:'Grade',exact:true}).click();await expect(page.locator('#g-msg')).toContainText('does not match');
+ await page.getByLabel('Grading key').fill(key);await page.getByRole('button',{name:'Grade',exact:true}).click();
+ await expect(page.locator('#g-msg')).toContainText('1 student graded');
+ await expect(page.locator('#grade-rows tr').first()).toContainText('4 / 4');
+ await expect(page.locator('#grade-rows tr').nth(1)).toContainText('Refused');
+ await expect(page.getByRole('button',{name:/Download grades/})).toBeEnabled();
+ await evidence(page,info,'stage3-grading');
+ expect((await layout(page)).overflow).toBe(false);
+});
+test('Stage 3: graded submission before the minimum asks for confirmation, and the method check then fails',async({page})=>{
+ await frozen(page,'/modules/lab-bench/freefall.html?a=qa-lab1b&n=3x5');await page.evaluate(()=>{try{localStorage.clear();}catch{}});await page.reload();
+ await page.getByLabel('Your student ID').fill('QA 778');await page.getByRole('button',{name:'Go to my planet'}).click();
+ const planet=planetFor('QA 778','qa-lab1b');
+ await setup(page,['Steel ball','Measuring stick (2 m)','Electronic timer']);
+ await gateDrops(page,[['PageDown',8],['PageUp',12]],2,planet.g);
+ await page.locator('#r-g').fill(planet.g.toFixed(2));await page.locator('#r-dg').fill('0.5');
+ await page.getByRole('radio',{name:/How precisely I read the drop height/}).check();await page.getByRole('button',{name:'Check my answer'}).click();
+ await page.getByRole('button',{name:'Submit my result'}).click();
+ await expect(page.locator('#result-msg')).toContainText('Not finished');
+ await page.getByRole('button',{name:'Submit anyway'}).click();
+ const code=await page.locator('#completion-code').innerText();
+ const {decodeSubmission,grade,parseAssignment}=await import('../../modules/lab-bench/grading.js');
+ const r=grade(decodeSubmission(code).sub,parseAssignment('?a=qa-lab1b'));
+ expect(r.checks.find(c=>c.id==='method').pass).toBe(false);
+});

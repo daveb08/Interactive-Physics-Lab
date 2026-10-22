@@ -5,7 +5,7 @@ export const routes = [
   '/modules/variable-forces/index.html', '/modules/circular-motion/index.html',
   '/modules/circular-motion/uniform.html', '/modules/electromagnetism/index.html',
   '/modules/electromagnetism/coulomb.html', '/modules/electromagnetism/solve.html', '/modules/electromagnetism/build.html',
-  '/modules/lab-bench/index.html', '/modules/lab-bench/freefall.html',
+  '/modules/lab-bench/index.html', '/modules/lab-bench/freefall.html', '/modules/lab-bench/instructor.html',
 ];
 export const labs = [
   { id:'first', path:routes[2], activities:['I1','I2','I3'], answers:['B','B','B'], time:'#time' },

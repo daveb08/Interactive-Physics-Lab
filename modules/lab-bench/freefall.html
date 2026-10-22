@@ -11,6 +11,7 @@
     <h2 id="brief-title">Your assignment</h2>
     <div>
       <p>Determine g, the acceleration due to gravity, and report it with an uncertainty. Measure at <strong>3 or more heights</strong>, with <strong>5 or more drops at each</strong>, using one ball and one timer.</p>
+      <p id="graded-banner" class="lb-graded" role="note" hidden></p>
       <div class="e1-group lb-mode"><span class="lb-label" id="mode-label">Where are you?</span>
         <div class="lb-seg" role="group" aria-labelledby="mode-label"><button type="button" data-mode="earth" aria-pressed="true">Earth (practice)</button><button type="button" data-mode="planet" aria-pressed="false">Mystery planet</button></div></div>
       <form id="planet-form" class="lb-planet" hidden>
@@ -39,9 +40,9 @@
       <div class="lb-scene-wrap">
         <div class="lb-scene" id="drop-zone"><svg id="bench" viewBox="0 0 420 640" role="group" aria-label="Lab bench with a stand and release clamp"></svg><div id="countdown" class="lb-countdown" aria-live="assertive"></div></div>
         <div class="lb-loupe-wrap" id="loupe-wrap" hidden>
-          <p class="lb-loupe-title">Measuring stick at the bottom of the ball</p>
-          <svg id="loupe" viewBox="0 0 200 260" role="img"></svg>
-          <p class="help">Read the height from the pad to the <b>bottom</b> of the ball, to the nearest millimetre.</p>
+          <p class="lb-loupe-title">Magnified stick at the bottom of the ball <span class="lb-loupe-cm">(numbers in cm)</span></p>
+          <svg id="loupe" viewBox="0 0 240 360" role="img"></svg>
+          <p class="help">Each small mark is 1 mm. Read the height from the pad to the <b>bottom</b> of the ball, to the nearest millimetre.</p>
         </div>
       </div>
       <div class="lb-height-ctl" id="height-ctl">
@@ -114,7 +115,12 @@
         <div class="lb-result-row"><label>g = <input id="r-g" type="number" step="0.01" inputmode="decimal"></label><span>±</span><label><span class="sr-only">uncertainty</span><input id="r-dg" type="number" step="0.01" min="0" inputmode="decimal"></label><span>m/s²</span></div>
         <div class="transport lb-left"><button type="button" id="check" class="primary">Compare with Earth’s g</button><button type="button" id="reveal" hidden>Reveal my planet’s g</button></div>
         <p id="result-msg" class="feedback" role="status" hidden></p>
-        <form id="explain-q" class="lb-question" hidden><fieldset><legend id="q-text"></legend><div id="q-choices" class="lb-choices"></div></fieldset><button type="submit">Check my answer</button><p id="q-feedback" class="lb-q-feedback" role="status"></p></form>
+        <div id="completion" class="lb-completion" hidden>
+          <p><b>Your completion code.</b> Copy it and paste it into the Canvas assignment.</p>
+          <div class="lb-code-row"><code id="completion-code" tabindex="0"></code><button type="button" id="copy-code" class="primary">Copy code</button></div>
+          <p class="help" id="copy-msg" role="status">You can submit again after more work: paste the newest code. Your instructor grades the last code you paste.</p>
+        </div>
+        <form id="explain-q" class="lb-question" hidden><fieldset><legend id="q-text"></legend><div id="q-choices" class="lb-choices"></div></fieldset><p id="q-first" class="lb-first-note" hidden></p><button type="submit">Check my answer</button><p id="q-feedback" class="lb-q-feedback" role="status"></p></form>
         <details class="lb-explain" open><summary>How to report a result</summary><div id="explain-report"></div></details>
       </div>
     </section>

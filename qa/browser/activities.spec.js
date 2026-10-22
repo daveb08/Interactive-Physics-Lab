@@ -22,7 +22,7 @@ for(const [id,p] of Object.entries(PROBLEMS))test(`Solve it ${id} sorting, wrong
  await page.getByRole('button',{name:/Check knowns/}).click();await expect(page.locator('#q-summary')).toContainText(/flagged|still/);
  await evidence(page,info,'incorrect-sort');
  await page.getByRole('button',{name:`Move to knowns: ${first.text}`,exact:true}).click();
- for(const q of p.quantities.filter(q=>q.id!==first.id&&q.role!=='none'))await page.getByRole('button',{name:`Add to ${q.role==='known'?'knowns':'unknowns'}: ${q.text}`,exact:true}).click();
+ for(const q of p.quantities.filter(q=>q.id!==first.id&&q.role!=='none'))await page.getByRole('button',{name:`${q.role==='known'?'+ Known':'+ Unknown'}: ${q.text}`,exact:true}).click();
  await page.getByRole('button',{name:/Check knowns/}).click();await expect(page.locator('#q-summary')).toContainText('Step 1 complete');
  const wrong=p.blocks.find(b=>!b.correct);await page.getByRole('button',{name:`${wrong.text}. Add to solution.`,exact:true}).click();
  await page.getByRole('button',{name:/Check & run/}).click();await advance(page,250);

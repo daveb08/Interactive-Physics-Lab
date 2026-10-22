@@ -161,9 +161,12 @@ function chip(id, zone) {
   // Accessible names contain the visible words (speech input): "+ Known: m = 4.0 kg"; icon buttons hide the icon and use words (QA-06).
   const btn = (text, aria, fn, icon = false) => {
     const b = document.createElement('button'); b.type = 'button'; b.title = aria;
-    const vis = document.createElement('span'); vis.textContent = text; if (icon) vis.setAttribute('aria-hidden', 'true');
-    const sr = document.createElement('span'); sr.className = 'sr-only'; sr.textContent = icon ? `${aria}: ${q.text}` : `: ${q.text}`;
-    b.append(vis, sr); b.addEventListener('click', fn); wrap.append(b);
+    if (icon) {
+      const vis = document.createElement('span'); vis.textContent = text; vis.setAttribute('aria-hidden', 'true');
+      const sr = document.createElement('span'); sr.className = 'sr-only'; sr.textContent = `${aria}: ${q.text}`;
+      b.append(vis, sr);
+    } else { b.textContent = text; b.setAttribute('aria-label', `${text}: ${q.text}`); }
+    b.addEventListener('click', fn); wrap.append(b);
   };
   if (!zone) {
     btn('+ Known', 'Add to knowns', () => place(id, 'known'));

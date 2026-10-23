@@ -2,16 +2,16 @@
 .es-run{grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr)}
 .es-run .e1-scene svg{max-height:430px}
 .fv-ghost{stroke:#ba622e;stroke-width:3;stroke-dasharray:7 5}
-.fv-ghost-t{fill:#ba622e;font-size:12px}
+.fv-ghost-t{fill:#ba622e;font-size:calc(14px * var(--ts, 1))}
 .es-ghost-q{fill:none;stroke:#ba622e;stroke-width:2.5;stroke-dasharray:5 4}
-.es-ghost-label{font-size:11px;font-weight:600;fill:#9a4a1b;text-anchor:middle;paint-order:stroke;stroke:#fbfcfa;stroke-width:4px}
-.es-cmp-empty{margin:16px 20px 20px;font-size:12px}
+.es-ghost-label{font-size:12.5px;font-weight:600;fill:#9a4a1b;text-anchor:middle;paint-order:stroke;stroke:#fbfcfa;stroke-width:4px}
+.es-cmp-empty{margin:16px 20px 20px;font-size:calc(14px * var(--ts, 1))}
 .es-run .solve-compare{margin:16px 20px 20px}
-.es-run .run-message{margin:10px 20px 18px;font-size:12.5px;line-height:1.6;min-height:40px}
+.es-run .run-message{margin:10px 20px 18px;font-size:calc(14px * var(--ts, 1));line-height:1.6;min-height:40px}
 .key-true{color:#1f6b5e}
 .law-nav a[href="solve.html"]{margin-left:auto}
 @media(max-width:1200px){.es-run{grid-template-columns:1fr}}
-@media(max-width:760px){.law-nav a[href="solve.html"]{margin-left:0}.fv-ghost-t{font-size:19px}.es-ghost-label{font-size:17px}}
+@media(max-width:760px){.law-nav a[href="solve.html"]{margin-left:0}.fv-ghost-t{font-size:calc(19px * var(--ts, 1))}.es-ghost-label{font-size:17px}}
 .es-ghost-fixed{stroke:#c7a089;stroke-dasharray:3 3}
 .es-ghost-sign{font:700 13px Arial,sans-serif;fill:#c7a089;text-anchor:middle}
 .es-ghost-line{stroke:#e3cbbb;stroke-width:2;stroke-dasharray:2 5}

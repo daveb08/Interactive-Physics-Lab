@@ -1,3 +1,4 @@
+import { initGraphResizer } from '../../js/components/column-resizer.js';
 import { SimulationClock } from '../../js/core/clock.js';
 import { createDragModel, DRAG_DEFAULTS } from '../../js/core/drag-physics.js';
 import { createOscillatorModel, OSC_DEFAULTS, criticalDamping } from '../../js/core/oscillator-physics.js';
@@ -390,3 +391,5 @@ $('reflection-form').addEventListener('submit', e => {
 
 setScenario('drag');
 rebuild();
+
+initGraphResizer(document.querySelector('.workspace'), document.querySelector('.graphs'));

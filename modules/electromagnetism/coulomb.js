@@ -1,3 +1,4 @@
+import { initGraphResizer } from '../../js/components/column-resizer.js';
 import { SimulationClock } from '../../js/core/clock.js';
 import { STEP } from '../../js/core/physics.js';
 import { K, MICRO, E_CHARGE } from '../../js/core/em-constants.js';
@@ -401,3 +402,5 @@ const params = new URLSearchParams(location.search);
 if (params.get('activity') && ACTIVITIES[params.get('activity')]) { state.activity = params.get('activity'); setExperience('guided'); }
 else { rescale(); render(); }
 export { C3_ZERO_X };
+
+initGraphResizer(document.querySelector('.workspace'), document.querySelector('.graphs'));

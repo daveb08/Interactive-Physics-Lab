@@ -1,3 +1,4 @@
+import { initGraphResizer } from '../../js/components/column-resizer.js';
 import { SimulationClock } from '../../js/core/clock.js';
 import { STEP } from '../../js/core/physics.js';
 import { CIRCLE_DEFAULTS, TABLE_RADIUS, circleQuantities, createCircularRun, sampleAt, sampleGrid } from '../../js/core/circular-physics.js';
@@ -230,3 +231,5 @@ document.addEventListener('keydown', e => { if (e.key === 'c' && !e.target.close
 const params = new URLSearchParams(location.search);
 if (params.get('activity') && ACTIVITIES[params.get('activity')]) { state.activity = params.get('activity'); setExperience('guided'); }
 else rebuild();
+
+initGraphResizer(document.querySelector('.workspace'), document.querySelector('.graphs'));

@@ -41,7 +41,7 @@ export class MotionGraph {
     svg.append(curve(samples, activeColor, dashes[references.length]));
     for (const event of events) {
       svg.append(el('path', {d:`M${x(event.t)} 30V120`, stroke:'#707b73', 'stroke-width':1, 'stroke-dasharray':'2 3', fill:'none'}));
-      svg.append(el('text', {x:Math.max(56,Math.min(300,x(event.t)+4)),y:28,class:'graph-tick'}, `${event.label.startsWith('Stop') ? 'Stop' : event.label} ${event.t.toFixed(2)} s`));
+      svg.append(el('text', {x:Math.max(58,Math.min(290,x(event.t)+4)),y:46,class:'graph-tick graph-event'}, `${event.label.startsWith('Stop') ? 'Stop' : event.label} ${event.t.toFixed(2)} s`));
     }
     const last = samples.at(-1);
     svg.append(el('circle', { cx: x(last.t), cy: y(last[key]), r: 3, fill: activeColor }));

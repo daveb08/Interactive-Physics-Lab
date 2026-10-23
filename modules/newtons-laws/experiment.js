@@ -3,6 +3,9 @@ import { SimulationClock } from '../../js/core/clock.js';
 import { CartView } from '../../js/components/cart.js';
 import { MotionGraph } from '../../js/components/graph.js';
 import { GuidedActivity } from './guided-activity.js';
+import { initGraphResizer } from '../../js/components/column-resizer.js';
+import { cartForces, describeForces } from '../../js/core/force-diagram.js';
+import { OnObjectForces, FreeBodyDiagram } from '../../js/components/force-display.js';
 
 const $ = id => document.getElementById(id);
 const firstLaw = document.body.dataset.law === 'first';
@@ -25,6 +28,11 @@ const guided = new GuidedActivity(() => reset(), choice => { prediction = choice
   render();
 });
 const cart = new CartView($('cart-scene'));
+initGraphResizer(document.querySelector('.workspace'), document.querySelector('.graphs'));
+const onObject = new OnObjectForces($('cart-scene'), $('cart-scene').querySelector('#cart'));
+const fbd = new FreeBodyDiagram($('fbd'));
+// Guided experiments ask for a prediction first; showing the forces earlier would give the answer away.
+const forcesAvailable = () => experience === 'free' || !!prediction || started;
 const graphs = [
   new MotionGraph($('position-graph'), 'x', 'Position', 'm', '#287b71'),
   new MotionGraph($('velocity-graph'), 'v', 'Velocity', 'm/s', '#3c6cb2'),
@@ -60,7 +68,8 @@ function render() {
     $('applied-now').value = format(balance.appliedForce);
     $('pulse-phase').textContent = run.state.t < run.removeForceAt ? 'During pulse: net force determines how velocity changes.' : run.frictionEnabled ? 'Pulse ended: friction may still change velocity until rest.' : 'Pulse ended: zero acceleration; velocity stays constant.';
   }
-  $('force-legend').hidden = !run.frictionEnabled;
+  renderForces();
+  $('force-legend').hidden = !run.frictionEnabled || ($('show-forces-object').checked && forcesAvailable());
   for (const [id, value] of [['normal-force',balance.normal],['max-static',balance.maxStatic],['friction-force',balance.friction],['net-force',balance.netForce]]) $(id).value = reveal ? format(value) : '—';
   $('motion-state').textContent = reveal ? balance.motion : 'Observe after starting';
   $('friction-regime').textContent = reveal ? balance.regime : '—';
@@ -76,6 +85,19 @@ function render() {
   });
   $('start').disabled = (!prediction && !pulseExploration()) || clock.running || run.done;
   $('pause').disabled = !clock.running;
+}
+
+function renderForces() {
+  const available = forcesAvailable();
+  for (const id of ['show-forces-object', 'show-fbd']) $(id).disabled = !available;
+  const onCart = available && $('show-forces-object').checked, diagram = available && $('show-fbd').checked;
+  $('show-force-values').disabled = !(onCart || diagram);
+  $('force-options-note').textContent = available ? '' : 'Save your prediction to show the forces.';
+  const data = cartForces(run);
+  const showValues = $('show-force-values').checked;
+  onObject.render(data, { visible: onCart, showValues });
+  $('fbd-panel').hidden = !diagram;
+  if (diagram) fbd.render(data, { showValues, description: describeForces(data) });
 }
 
 function updateQuestion() {
@@ -211,6 +233,7 @@ $('pause').addEventListener('click', () => {
   render();
 });
 $('reset').addEventListener('click', reset);
+for (const id of ['show-forces-object', 'show-fbd', 'show-force-values']) $(id).addEventListener('change', render);
 if (firstLaw) $('force-duration').addEventListener('input', reset);
 for (const id of ['mass', 'force', 'velocity']) $(id).addEventListener('input', reset);
 $('friction-enabled').addEventListener('change', reset);

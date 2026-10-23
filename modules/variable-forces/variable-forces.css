@@ -1,26 +1,26 @@
 .experiment-heading{flex-wrap:wrap}
 .vf-guided{padding:22px 24px;margin-bottom:18px;display:grid;gap:8px}
-.vf-guided select,.vf-select{font:inherit;font-size:12px;padding:8px;border:1px solid var(--line);border-radius:6px;background:white;color:var(--ink);max-width:100%}
-.vf-guided h2{font-size:20px;margin-top:6px}.vf-guided h3{margin-top:6px}
-.vf-guided legend{font-weight:600;margin-bottom:10px;font-size:13px}
-#guided-prediction-status{font-size:11px;margin-top:8px}
+.vf-guided select,.vf-select{font:inherit;font-size:calc(14px * var(--ts, 1));padding:8px;border:1px solid var(--line);border-radius:6px;background:white;color:var(--ink);max-width:100%}
+.vf-guided h2{font-size:calc(20px * var(--ts, 1));margin-top:6px}.vf-guided h3{margin-top:6px}
+.vf-guided legend{font-weight:600;margin-bottom:10px;font-size:calc(14.5px * var(--ts, 1))}
+#guided-prediction-status{font-size:calc(13.5px * var(--ts, 1));margin-top:8px}
 .controls .control select{width:100%;margin-top:10px}
-.vf-small{font-size:11px;padding:8px 12px}
+.vf-small{font-size:calc(13.5px * var(--ts, 1));padding:8px 12px}
 #osc-settings .vf-small{margin:0 0 18px}
-.equation strong{font-size:20px}
-.vf-params{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;margin:0 16px 12px;font-size:11px;color:var(--muted)}
+.equation strong{font-size:calc(20px * var(--ts, 1))}
+.vf-params{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;margin:0 16px 12px;font-size:calc(13.5px * var(--ts, 1));color:var(--muted)}
 .vf-params div{display:flex;gap:5px}.vf-params dd{margin:0;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
-.drag-arrow{stroke:#7851a9;stroke-width:3;fill:none}.drag-label{font-size:12px;fill:#5e3e8a;text-anchor:middle;font-weight:600}
-.spring-arrow{stroke:#236d62;stroke-width:3;fill:none}.spring-label{font-size:12px;fill:#1c574e;text-anchor:middle;font-weight:600}
-.force-label{font-size:12px}
+.drag-arrow{stroke:#7851a9;stroke-width:3;fill:none}.drag-label{font-size:13.5px;fill:#5e3e8a;text-anchor:middle;font-weight:600}
+.spring-arrow{stroke:#236d62;stroke-width:3;fill:none}.spring-label{font-size:13.5px;fill:#1c574e;text-anchor:middle;font-weight:600}
+.force-label{font-size:13.5px}
 .streak{stroke:#9fb3a7;stroke-width:2;stroke-linecap:round}
 .spring-coil{fill:none;stroke:#5d6f66;stroke-width:2.5;stroke-linejoin:round}
 .damper-body{fill:#e8eee8;stroke:#6d8175;stroke-width:1.5}.damper-rod{stroke:#5d6f66;stroke-width:2.5;fill:none}
-.vf-energy{margin:0 20px 14px}.vf-energy-title{font-size:11px;margin-bottom:6px}
+.vf-energy{margin:0 20px 14px}.vf-energy-title{font-size:calc(13.5px * var(--ts, 1));margin-bottom:6px}
 .vf-bar{display:flex;height:14px;border-radius:4px;overflow:hidden;background:#edf0ec}
 .vf-bar span{display:block;height:100%}.vf-bar .ke,.ke-key{background:#3c6cb2;color:#3c6cb2}.vf-bar .pe,.pe-key{background:#236d62;color:#236d62}.vf-bar .lost,.lost-key{background:#b65b25;color:#b65b25}
 .ke-key,.pe-key,.lost-key{background:none}
-.vf-energy-key{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:10px;margin-top:6px}.vf-energy-key output{color:var(--ink);font-variant-numeric:tabular-nums}
+.vf-energy-key{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:calc(13px * var(--ts, 1));margin-top:6px}.vf-energy-key output{color:var(--ink);font-variant-numeric:tabular-nums}
 .calc-area{fill:#236d62;opacity:.14}
 .calc-tangent{stroke:#ba622e;stroke-width:2;stroke-dasharray:5 3;fill:none}
 .calc-point{fill:#ba622e;stroke:white;stroke-width:1.5}
@@ -28,23 +28,23 @@
 .calc-marker{stroke:#8a978e;stroke-width:1;stroke-dasharray:2 3;fill:none}
 .vf-tools{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
 .vf-body{padding:16px 20px 20px;display:grid;gap:10px;align-content:start}
-.vf-toggle{font-size:11px;display:flex;align-items:center;gap:6px}.vf-toggle input{accent-color:var(--teal)}
-.vf-eq{font:15px Georgia,serif;color:var(--ink);overflow-wrap:anywhere}
-.vf-scrub-label{font-size:12px;font-weight:550;display:flex;justify-content:space-between}
+.vf-toggle{font-size:calc(13.5px * var(--ts, 1));display:flex;align-items:center;gap:6px}.vf-toggle input{accent-color:var(--teal)}
+.vf-eq{font:calc(16px * var(--ts, 1)) Georgia,serif;color:var(--ink);overflow-wrap:anywhere}
+.vf-scrub-label{font-size:calc(14px * var(--ts, 1));font-weight:550;display:flex;justify-content:space-between}
 .vf-scrub{width:100%;accent-color:#ba622e}
-.vf-table{border-collapse:collapse;font-size:12px;width:100%;font-variant-numeric:tabular-nums}
+.vf-table{border-collapse:collapse;font-size:calc(14px * var(--ts, 1));width:100%;font-variant-numeric:tabular-nums}
 .vf-table th{text-align:left;font-weight:500;color:var(--muted);padding:6px 8px 6px 0}.vf-table td{padding:6px 8px;border-top:1px solid #edf0ec}.vf-table tr:first-child td{border-top:0}
 .vf-table output{color:var(--ink);font-weight:600}
-#method-fields{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px}#method-fields legend{font-size:12px;font-weight:600;margin-bottom:8px;width:100%}
+#method-fields{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:calc(14px * var(--ts, 1))}#method-fields legend{font-size:calc(14px * var(--ts, 1));font-weight:600;margin-bottom:8px;width:100%}
 #method-fields input{accent-color:var(--teal)}
 .m-euler{color:#c24c2a;font-weight:600}.m-semi{color:#7851a9;font-weight:600}.m-rk4{color:#8c630e;font-weight:600}
-.vf-inline{font-size:12px;display:flex;align-items:center;gap:8px}
+.vf-inline{font-size:calc(14px * var(--ts, 1));display:flex;align-items:center;gap:8px}
 .vf-numeric svg{width:100%;max-width:520px;display:block;margin:0 auto}
 .vf-results{margin-top:18px;padding:22px 26px;display:grid;gap:12px}
-.vf-results h3{margin-top:4px}.vf-results p{font-size:12px;line-height:1.7}
+.vf-results h3{margin-top:4px}.vf-results p{font-size:calc(14px * var(--ts, 1));line-height:1.7}
 .reflection textarea{width:100%;font:inherit;padding:10px;border:1px solid #bfcfc4;border-radius:6px;margin:8px 0}
 .vf-verdict-wrong{border-left-color:#b65b25!important;background:#fbf1ea!important}
-code{font-size:11px}
+code{font-size:calc(13.5px * var(--ts, 1))}
 @media(max-width:1200px){.vf-tools{grid-template-columns:1fr}}
 @media(max-width:760px){
   .experiment-heading .mode-switch{width:100%}

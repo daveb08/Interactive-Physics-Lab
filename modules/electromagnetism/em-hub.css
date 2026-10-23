@@ -1,8 +1,8 @@
 /* Electromagnetism hub: topic cards reuse the catalog card styles from css/styles.css. */
 .em-hub{max-width:1280px}
-.em-tier-note{font-size:13px;line-height:1.75;max-width:760px;padding:15px 18px;border-left:3px solid var(--teal);background:#edf4ec;border-radius:4px}
+.em-tier-note{font-size:calc(14.5px * var(--ts, 1));line-height:1.75;max-width:760px;padding:15px 18px;border-left:3px solid var(--teal);background:#edf4ec;border-radius:4px}
 .em-tier-note strong{color:var(--ink);font-weight:600}
 .em-unit .catalog-heading{margin:44px 0 18px}
 .em-hub .module-card{min-height:260px}
-.em-hub .module-art{font-size:28px;height:90px;white-space:nowrap}
-@media(max-width:760px){.em-unit .catalog-heading{margin-top:32px}.em-hub .module-art{font-size:24px}}
+.em-hub .module-art{font-size:calc(28px * var(--ts, 1));height:90px;white-space:nowrap}
+@media(max-width:760px){.em-unit .catalog-heading{margin-top:32px}.em-hub .module-art{font-size:calc(24px * var(--ts, 1))}}

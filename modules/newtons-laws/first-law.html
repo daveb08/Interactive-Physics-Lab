@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Newton’s First Law · Interactive Physics Lab</title><link rel="stylesheet" href="../../css/styles.css"><script type="module" src="experiment.js"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Newton’s First Law · Interactive Physics Lab</title><link rel="stylesheet" href="../../css/styles.css"><script type="module" src="experiment.js"></script><script src="../../js/text-size.js"></script></head>
 <body data-law="first">
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header"><a class="brand" href="../../index.html"><span class="brand-icon" aria-hidden="true">↗</span> Interactive Physics Lab</a><a class="back-link" href="../../index.html">← All modules</a></header>
@@ -34,9 +34,18 @@
     </aside>
     <section class="panel simulation" aria-labelledby="simulation-title"><div class="panel-heading"><h3 id="simulation-title">The cart experiment</h3><span class="status" id="run-status" role="status">Ready</span></div>
       <div class="scene"><svg id="cart-scene" viewBox="0 0 780 290" role="img" aria-label="Cart on a horizontal track"></svg></div>
+      <div class="force-views">
+        <fieldset id="force-options" class="force-options"><legend>Show forces</legend>
+          <label><input type="checkbox" id="show-forces-object"> On the cart</label>
+          <label><input type="checkbox" id="show-fbd"> Free-body diagram</label>
+          <label><input type="checkbox" id="show-force-values"> Values on arrows</label>
+          <p id="force-options-note" class="help" role="status"></p>
+        </fieldset>
+        <figure id="fbd-panel" class="fbd-panel" hidden><svg id="fbd" viewBox="0 0 360 240" role="img" aria-label="Free-body diagram of the cart"></svg><figcaption>Free-body diagram: the cart drawn as a dot. Arrow lengths share one scale. The dashed F<sub>net</sub> is the sum of the forces, not an extra force.</figcaption></figure>
+      </div>
       <div id="force-legend" class="force-legend" hidden><span class="applied-key">→ Applied force</span><span class="friction-key">→ Friction force</span><span class="net-key">→ Net force</span><p>Horizontal arrows show signed forces on a shared scale. Zero force has no arrow.</p></div>
       <div class="readouts"><div><span>Time</span><strong><output id="time">0.00</output> <small>s</small></strong></div><div><span>Position</span><strong><output id="position">0.00</output> <small>m</small></strong></div><div><span>Velocity</span><strong><output id="speed">0.00</output> <small>m/s</small></strong></div><div><span>Acceleration</span><strong><output id="acceleration">3.00</output> <small>m/s²</small></strong></div></div>
-      <div id="force-readouts" class="force-readouts" hidden><p>Applied force now: <output id="applied-now">0</output> N</p><p id="pulse-phase"></p><dl><div><dt>Normal force N</dt><dd><output id="normal-force"></output> N</dd></div><div><dt>Max. static friction μsN</dt><dd><output id="max-static"></output> N</dd></div><div><dt>Actual friction force</dt><dd><output id="friction-force"></output> N</dd></div><div><dt>Net force</dt><dd><output id="net-force"></output> N</dd></div></dl><p>Motion: <strong id="motion-state"></strong> · Friction regime: <strong id="friction-regime"></strong></p><p id="motion-events" role="status"></p></div>
+      <div id="force-readouts" class="force-readouts" hidden><p>Applied force now: <output id="applied-now">0</output> N</p><p id="pulse-phase"></p><dl><div><dt>Normal force F<sub>N</sub></dt><dd><output id="normal-force"></output> N</dd></div><div><dt>Max. static friction μ<sub>s</sub>F<sub>N</sub></dt><dd><output id="max-static"></output> N</dd></div><div><dt>Actual friction force</dt><dd><output id="friction-force"></output> N</dd></div><div><dt>Net force</dt><dd><output id="net-force"></output> N</dd></div></dl><p>Motion: <strong id="motion-state"></strong> · Friction regime: <strong id="friction-regime"></strong></p><p id="motion-events" role="status"></p></div>
       <div class="transport"><button id="start" class="primary">▶ Start experiment</button><button id="pause" disabled>Pause</button><button id="reset">↺ Reset</button><button id="next-run" hidden>Prepare Run 2</button></div>
       <p id="run-message" class="run-message" role="status">Make a prediction below, then start your experiment.</p>
       <div class="track-note"><strong>Model boundaries</strong><p id="track-description">The track spans −50 to +50 m. Each run ends at 6 s or at the first outward boundary crossing. The final velocity is retained; no collision is modeled.</p></div>

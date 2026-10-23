@@ -70,3 +70,49 @@ test('guided experiments keep forces hidden until a prediction is saved',async({
  await page.locator('#show-fbd').check();
  await expect(page.locator('#fbd-panel')).toBeVisible();
 });
+
+test('free-body arrows all start at the dot, and cart arrows sit behind the mass label',async({page})=>{
+ await open(page,SECOND);
+ await page.getByLabel('Enable Friction').check();
+ await page.locator('#show-fbd').check();await page.locator('#show-forces-object').check();
+ const starts=await page.locator('#fbd .fd-arrow:not(.fd-net)').evaluateAll(ps=>ps.map(p=>p.getAttribute('d').match(/^M([\d.-]+) ([\d.-]+)/).slice(1).join(',')));
+ expect(new Set(starts)).toEqual(new Set(['180,128']));
+ // Arrows are drawn before the cart body, so the mass written on it stays on top.
+ const order=await page.locator('#cart').evaluate(g=>[...g.children].map(c=>c.getAttribute('class')||c.id));
+ expect(order.indexOf('forces-on-object fd-arrows')).toBeLessThan(order.indexOf('cart-shape'));
+ await expect(page.locator('#cart-mass')).toHaveText('2 kg');
+});
+
+test('demo mode hides answers until the run starts; acceleration can be predicted',async({page})=>{
+ await page.clock.install();
+ await open(page,SECOND);
+ await expect(page.locator('#acceleration')).toHaveText('3.00');
+ await page.getByLabel(/Demo mode/).check();
+ await expect(page.locator('#acceleration')).toHaveText('—');
+ await expect(page.locator('#speed')).toHaveText('—');
+ await expect(page.locator('#equation-detail')).toBeHidden();
+ await expect(page.locator('#velocity-graph')).toBeHidden();
+ await expect(page.locator('#show-fbd')).toBeDisabled();
+ await page.getByRole('button',{name:'Predict acceleration',exact:true}).click();
+ await expect(page.locator('#question')).toContainText('What will its acceleration be');
+ await page.getByRole('radio',{name:/Acceleration is positive/}).check();
+ await page.getByRole('button',{name:'Save prediction',exact:true}).click();
+ await page.locator('#start').click();
+ await page.clock.runFor(7000);
+ await expect(page.locator('#acceleration')).toHaveText('3.00');
+ await expect(page.locator('#feedback')).toContainText('Prediction confirmed');
+ await expect(page.locator('#feedback')).toContainText('positive, pointing right');
+});
+
+test('acceleration graph labels never overlap',async({page})=>{
+ await page.clock.install();
+ await open(page,SECOND);
+ await page.getByLabel('Enable Friction').check();
+ await page.getByRole('radio',{name:'Velocity increases',exact:true}).check();
+ await page.getByRole('button',{name:'Save prediction',exact:true}).click();
+ await page.locator('#start').click();await page.clock.runFor(7000);
+ for(const id of ['position','velocity','acceleration']){
+  const boxes=await page.locator(`#${id}-graph text[text-anchor="end"].graph-tick`).evaluateAll(ts=>ts.filter(t=>!t.classList.contains('graph-event')&&!t.classList.contains('graph-series')).map(t=>{const b=t.getBoundingClientRect();return [b.top,b.bottom];}).sort((a,b)=>a[0]-b[0]));
+  for(let i=1;i<boxes.length;i++)expect(boxes[i][0],`${id} tick ${i}`).toBeGreaterThanOrEqual(boxes[i-1][1]-0.5);
+ }
+});

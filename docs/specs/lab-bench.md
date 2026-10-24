@@ -240,8 +240,15 @@ The page never states g. Files: `projectile.html/.js/.css`, `projectile-model.js
   (frames, t_mid, Δt, Δx, Δy, vx, vy), so it is clear a velocity belongs to an interval, plotted at its middle time.
   The student works out the first 3 vx and 3 vy (Δx/Δt, Δy/Δt); checked within 2 % or 0.02 m/s, with the working
   shown when wrong. Then the page fills the rest and the vx–t and vy–t graphs appear. Marks that do not move (frames
-  before launch) are flagged so the student removes them.
-- **Fit.** For x–t, y–t, vx–t and vy–t the student chooses line or parabola and presses Fit; coefficients with ± are shown.
+  before launch) are flagged so the student leaves them out or removes them.
+- **Leaving points out.** Each Positions row has a frame-number button (shows that frame in the video; marking it
+  again puts it back in the fit) and a "fit" checkbox. Unticking asks for a one-line reason (at least 3 characters),
+  kept with the launch (`excluded: { frame: reason }`). The row stays in the table, struck through, with the reason
+  beneath; its point stays on the x–t and y–t graphs as a hollow circle; the fit says "fitted n of N points". Velocities
+  are taken between neighbouring points still in the fit (Δt then spans two frames). The points minimum counts only
+  points in the fit. The CSV export has `in_fit` and `reason_left_out` columns.
+- **Fit.** For x–t, y–t, vx–t and vy–t the student chooses line or parabola; choosing fits straight away (the Fit button
+  refits), so the menu, curve and coefficients always agree. Coefficients with ± are shown.
   g comes from −2C (parabola) or −slope (vy line), worked out by the student. Optional "your g" per launch.
 - **Parallax trap** (assignment option `px=1`, off by default): the stick can stand on the front edge of the bench,
   0.45 m nearer the camera, and starts there. Its scale makes lengths, and g, 2.55/3 ≈ 0.85 of the truth.
@@ -252,7 +259,9 @@ The page never states g. Files: `projectile.html/.js/.css`, `projectile-model.js
   vx line, vy line), from at least two settings; explanation: first answer right (parallax question with the trap, otherwise
   "why does vy scatter more").
 - **Completion code:** the short format with lab number 2: flags (answer, stick place), g, δg, per launch (angle, spring,
-  fps, points, models right, analysed), ID, checksum. The instructor page makes and grades Lab 1 and Lab 2 links.
+  fps, points in the fit, models right, analysed, and the number of points left out), ID, checksum. Bit 7 of a launch's
+  settings byte says a "left out" count byte follows, so codes made before this still decode (0 left out). The grading
+  table's notes show "n left out" per launch; the grades CSV has a `points_left_out` column. The instructor page makes and grades Lab 1 and Lab 2 links.
 - **Not yet:** touch-friendly aiming (marking an 8 px ball on a phone is fiddly; a tablet or computer is better); Lab 3
   (landing-point prediction, including the rolling-ball ramp).
 

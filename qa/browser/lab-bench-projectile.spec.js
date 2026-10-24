@@ -3,6 +3,7 @@ import {STICK_PLACES,MUZZLE,project} from '../../js/core/projectile.js';
 import {planetFor} from '../../js/core/lab-noise.js';
 
 const ROUTE='/modules/lab-bench/projectile.html';
+const MINP=10;
 test.slow();   // each launch is marked frame by frame
 
 /** Click a point of the 800 × 560 video frame (scrolls the frame into view first). */
@@ -36,6 +37,14 @@ async function track(page){
  }
 }
 /** Work out the first three vx and vy values from the velocity table (Δx, Δy, Δt), as a student would. */
+/** Leave the given row of the Positions table out of the fit, with a reason. */
+async function leaveOut(page,row,reason){
+ const tr=page.locator('#data-rows tr:not(.pj-out-note)').nth(row),frame=(await tr.locator('.pj-go').innerText()).trim();
+ await tr.locator('.pj-use').uncheck();
+ await page.locator('#out-reason').fill(reason);await page.getByRole('button',{name:'Leave it out'}).click();
+ await expect(page.locator('#data-rows tr.pj-out-note')).toContainText(`Frame ${frame} left out: ${reason}`);
+ return frame;
+}
 async function handVy(page){
  const rows=page.locator('#vel-rows tr');
  const num=s=>Number(s.replace('−','-'));
@@ -50,7 +59,7 @@ async function handVy(page){
 }
 async function fitAll(page){
  for(const [key,model] of [['x','line'],['y','parabola'],['vx','line'],['vy','line']]){
-  await page.locator(`.pj-model[data-key="${key}"]`).selectOption(model);await page.locator(`.pj-fit[data-key="${key}"]`).click();
+  await page.locator(`.pj-model[data-key="${key}"]`).selectOption(model);   // choosing the model fits straight away
   await expect(page.locator(`#c-${key}`)).toContainText('A =');
  }
  const c=await page.locator('#c-y').innerText();
@@ -74,7 +83,36 @@ test('Lab 2 practice: fire, calibrate, mark, work out vy, fit, and get Earth’s
  await handVy(page);
  // a fit needs a model choice
  await page.locator('.pj-fit[data-key="x"]').click();await expect(page.locator('#c-x')).toContainText('Choose a model first');
- const r1=await fitAll(page);
+ let r1=await fitAll(page);
+ // the menu and the fit always agree: switching the model refits without pressing Fit
+ await page.locator('.pj-model[data-key="y"]').selectOption('line');
+ await expect(page.locator('#c-y')).toContainText('y = A + B t');await expect(page.locator('#c-y')).not.toContainText('C =');
+ await page.locator('.pj-model[data-key="y"]').selectOption('parabola');await expect(page.locator('#c-y')).toContainText('C =');
+ // leaving a mark out of the fit: a reason is required, the row is struck through, the point goes hollow
+ const n0=Number((await page.locator('#data-count').innerText()).split(' ')[0]);
+ const tr=page.locator('#data-rows tr').nth(5);
+ await tr.locator('.pj-use').uncheck();
+ await page.getByRole('button',{name:'Leave it out'}).click();
+ await expect(page.locator('#out-msg')).toContainText('Write a short reason first');
+ await page.getByRole('button',{name:'Keep it'}).click();
+ await expect(page.locator('#out-reason')).toHaveCount(0);await expect(tr.locator('.pj-use')).toBeChecked();
+ const frame=await leaveOut(page,5,'ball blurred');
+ await expect(page.locator('#data-rows tr.pj-out')).toHaveCount(1);
+ await expect(page.locator('#data-count')).toContainText(`${n0-1} points in the fit · 1 left out`);
+ await expect(page.locator('#c-y')).toContainText(`fitted ${n0-1} of ${n0} points`);
+ await expect(page.locator('#g-y circle.xy-hollow')).toHaveCount(1);
+ await expect(page.locator('#launch-rows tr').first()).toContainText('(1 left out)');
+ // the frame-number button shows that frame in the video
+ await page.locator('#data-rows tr.pj-out .pj-go').click();
+ await expect(page.locator('#frame-label')).toContainText(`Frame ${frame} of`);
+ await expect(page.locator('#frame-label')).toContainText('left out of the fit');
+ // the velocities skip it
+ await expect(page.locator('#vel-rows')).toContainText(`${Number(frame)-1} → ${Number(frame)+1}`);
+ // put it back
+ await page.locator('#data-rows tr.pj-out .pj-use').click();
+ await expect(page.locator('#data-rows tr.pj-out')).toHaveCount(0);
+ await expect(page.locator('#c-y')).toContainText(`(fitted ${n0} points)`);
+ r1=await fitAll(page);
  expect(Math.abs(r1.g-9.81)/9.81).toBeLessThan(0.03);
  expect(await page.locator('.pj-graphs').innerText()).not.toMatch(/\bg\s*=/);   // the page never states g from the fits
  // second launch: the calibration carries over because the camera and stick have not moved
@@ -120,6 +158,7 @@ test('Lab 2 graded: instructor makes a link with the parallax trap, the student 
   await track(page);
   const n=Number((await page.locator('#data-count').innerText()).split(' ')[0]);
   if(n<10){await page.getByRole('button',{name:/Delete launch/}).last().click();await page.getByRole('button',{name:/Delete launch/}).last().click();continue;}
+  if(fired===0&&n>=MINP+1)await leaveOut(page,n-1,'ball partly off the frame');
   await handVy(page);results.push(await fitAll(page));fired++;
  }
  expect(fired).toBe(2);
@@ -133,7 +172,9 @@ test('Lab 2 graded: instructor makes a link with the parallax trap, the student 
  await expect(page.locator('#result-msg')).toContainText('Submitted');
  const code=await page.locator('#completion-code').innerText();
  expect(code).toMatch(/^LB-/);expect(code.length).toBeLessThan(70);
- expect(await page.locator('body').innerText()).not.toContain(planet.g.toFixed(2));
+ // The page never states the planet's g. (The student's own fits and tables can land on it by chance: that is their measurement.)
+ const pageText=await page.evaluate(()=>{const b=document.body.cloneNode(true);b.querySelectorAll('.pj-graphs,#data-table,#vel-table,#launch-rows').forEach(e=>e.remove());return b.textContent;});
+ expect(pageText).not.toContain(planet.g.toFixed(2));
  await evidence(page,info,'lab2-graded-student');
  // grading: choose the saved assignment, paste the code
  await open(page,'/modules/lab-bench/instructor.html');
@@ -144,6 +185,7 @@ test('Lab 2 graded: instructor makes a link with the parallax trap, the student 
  await expect(page.locator('#g-msg')).toContainText('1 student graded');
  await expect(page.locator('#grade-rows tr').first()).toContainText('4 / 4');
  await expect(page.locator('#grade-rows tr').first()).toContainText('stick in the flight plane');
+ await expect(page.locator('#grade-rows tr').first()).toContainText('1 left out');
  await evidence(page,info,'lab2-grading');
  expect((await layout(page)).overflow).toBe(false);
 });

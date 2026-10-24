@@ -49,7 +49,9 @@ export function idealG(planet, launches) {
 /* ---------- completion codes ---------- */
 const ANSWERS = ['', 'a', 'b', 'c', 'd'];
 /**
- * sub = { code, id, g, dg, answer, stick: 'plane'|'front', launches: [{ angle, spring, fps, n, modelsOk, analysed }] }
+ * sub = { code, id, g, dg, answer, stick: 'plane'|'front', launches: [{ angle, spring, fps, n, excluded, modelsOk, analysed }] }
+ * n counts the points in the fit; excluded counts the marks the student left out (bit 7 of the settings byte says a count byte
+ * follows, so codes made before points could be left out still decode, with excluded = 0).
  */
 export function encodeProjectile(sub) {
   const out = [(FORMAT << 4) | LAB_PROJECTILE];
@@ -59,8 +61,10 @@ export function encodeProjectile(sub) {
   const ls = sub.launches.slice(0, 12); out.push(ls.length);
   for (const l of ls) {
     out.push(Math.max(0, Math.min(90, Math.round(l.angle))));
-    out.push((Math.max(1, Math.min(8, l.spring)) - 1) | (Math.max(0, FPS.indexOf(l.fps)) << 3) | (l.modelsOk ? 32 : 0) | (l.analysed ? 64 : 0));
+    const ex = Math.max(0, Math.min(255, Math.round(l.excluded || 0)));
+    out.push((Math.max(1, Math.min(8, l.spring)) - 1) | (Math.max(0, FPS.indexOf(l.fps)) << 3) | (l.modelsOk ? 32 : 0) | (l.analysed ? 64 : 0) | (ex ? 128 : 0));
     out.push(Math.min(255, Math.round(l.n)));
+    if (ex) out.push(ex);
   }
   const id = new TextEncoder().encode(normaliseId(sub.id)).slice(0, 255);
   out.push(id.length, ...id);
@@ -79,8 +83,8 @@ export function decodeProjectile(text, expectCode) {
     const fp = (r.byte() << 8) | r.byte(), flags = r.byte();
     const g = r.varint() / 1000, dg = r.varint() / 1000, nl = r.byte(), launches = [];
     for (let k = 0; k < nl; k++) {
-      const angle = r.byte(), b = r.byte(), n = r.byte();
-      launches.push({ angle, spring: (b & 7) + 1, fps: FPS[(b >> 3) & 3], modelsOk: !!(b & 32), analysed: !!(b & 64), n });
+      const angle = r.byte(), b = r.byte(), n = r.byte(), excluded = b & 128 ? r.byte() : 0;
+      launches.push({ angle, spring: (b & 7) + 1, fps: FPS[(b >> 3) & 3], modelsOk: !!(b & 32), analysed: !!(b & 64), n, excluded });
     }
     const len = r.byte(), idBytes = []; for (let k = 0; k < len; k++) idBytes.push(r.byte());
     const body = bytes.slice(0, r.offset), chk = (r.byte() << 16) | (r.byte() << 8) | r.byte();
@@ -133,13 +137,13 @@ export function gradeProjectileBatch(text, a) {
   return rows;
 }
 /** A short description of a submission for the grading table's notes column. */
-export const notesFor2 = sub => `${sub.launches.length} ${sub.launches.length === 1 ? 'launch' : 'launches'} (${sub.launches.map(l => `${l.angle}°, spring ${l.spring}, ${l.n} pts`).join('; ')}); stick ${sub.stick === 'front' ? 'on the front edge' : 'in the flight plane'}`;
+export const notesFor2 = sub => `${sub.launches.length} ${sub.launches.length === 1 ? 'launch' : 'launches'} (${sub.launches.map(l => `${l.angle}°, spring ${l.spring}, ${l.n} pts${l.excluded ? `, ${l.excluded} left out` : ''}`).join('; ')}); stick ${sub.stick === 'front' ? 'on the front edge' : 'in the flight plane'}`;
 export function gradesCsv2(rows) {
-  const head = 'student_id,score,out_of,value,uncertainty,method,explanation,reported_g,reported_dg,true_g,launches,stick,notes';
+  const head = 'student_id,score,out_of,value,uncertainty,method,explanation,reported_g,reported_dg,true_g,launches,points_left_out,stick,notes';
   const q = s => `"${String(s ?? '').replace(/"/g, '""')}"`;
   const lines = rows.filter(r => r.result && !r.replaced).map(r => {
     const c = Object.fromEntries(r.result.checks.map(x => [x.id, x.pass ? 1 : 0]));
-    return [q(r.sub.id), r.result.score, r.result.max, c.value, c.uncertainty, c.method, c.explanation, r.sub.g, r.sub.dg, r.result.G, r.sub.launches.length, r.sub.stick, q(r.flags.join('; '))].join(',');
+    return [q(r.sub.id), r.result.score, r.result.max, c.value, c.uncertainty, c.method, c.explanation, r.sub.g, r.sub.dg, r.result.G, r.sub.launches.length, r.sub.launches.reduce((t, l) => t + (l.excluded || 0), 0), r.sub.stick, q(r.flags.join('; '))].join(',');
   });
   return [head, ...lines].join('\n') + '\n';
 }

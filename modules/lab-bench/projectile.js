@@ -10,7 +10,7 @@ import { planetFor, normaliseId, PRACTICE_CODE, rng, hash32 } from '../../js/cor
 import { AIR } from '../../js/core/freefall-drag.js';
 import { XYPlot } from '../../js/components/xy-plot.js';
 import { downloadCsv } from '../../js/components/csv-export.js';
-import { points, shown, velPoints, handStatus, fitGraph, summary, progress as progressOf, scaleOf, calibrated, HAND_VY, MIN_DEFAULT, MODELS } from './projectile-model.js';
+import { points, allPoints, setExcluded, reasonOk, excludedCount, shown, velPoints, handStatus, fitGraph, summary, progress as progressOf, scaleOf, calibrated, HAND_VY, MIN_DEFAULT, MODELS } from './projectile-model.js';
 import { parseProjectileAssignment, encodeProjectile, questionFor2, CORRECT2, idealG } from './grading-projectile.js';
 import { assignmentPlanet } from './grading.js';
 
@@ -30,7 +30,7 @@ const store = {
   get: k => { try { return localStorage.getItem(k); } catch { return null; } },
   set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
 };
-const state = { mode: 'earth', planet: null, launches: [], cur: -1, tool: 'scale', frame: 0, cursor: { u: 400, v: 280 }, firing: false, submitted: null, revealed: false };
+const state = { mode: 'earth', planet: null, launches: [], cur: -1, pendingOut: null, pendingFor: null, tool: 'scale', frame: 0, cursor: { u: 400, v: 280 }, firing: false, submitted: null, revealed: false };
 const env = () => (state.mode === 'planet' && state.planet ? state.planet : EARTH);
 const bookKey = () => (state.mode === 'planet' && state.planet ? `ipl-lab2-planet-${state.planet.id}-${state.planet.code}` : 'ipl-lab2-earth');
 const launch = () => state.launches[state.cur] ?? null;
@@ -78,7 +78,7 @@ function renderMode() {
   $('nb-where').textContent = planet ? (p ? `· ${p.name}` : '') : '· Earth';
   $('need-launches').textContent = MIN.launches; $('need-points').textContent = MIN.points;
   $('graded-banner').hidden = !ASG;
-  if (ASG) $('graded-banner').innerHTML = `<b>Graded assignment “${ASG.code}”.</b> Choose <b>Mystery planet</b> and enter your student ID: your planet’s g stays hidden. Make at least <b>${MIN.launches} launches</b> with different settings, track <b>${MIN.points}+ frames</b> of each, fit all three graphs, answer the question (your first answer counts), then submit to get a completion code for Canvas.`;
+  if (ASG) $('graded-banner').innerHTML = `<b>Graded assignment “${ASG.code}”.</b> Choose <b>Mystery planet</b> and enter your student ID: your planet’s g stays hidden. Make at least <b>${MIN.launches} launches</b> with different settings, track <b>${MIN.points}+ frames</b> of each (in the fit), fit all four graphs, answer the question (your first answer counts), then submit to get a completion code for Canvas.`;
   $('stick-fields').hidden = !ASG?.parallax; $('stick-fixed').hidden = !!ASG?.parallax;
   $('footnote').textContent = planet && ASG
     ? `Graded assignment “${ASG.code}”. Your planet comes from your student ID and this assignment. Your notebook stays in this browser; only the completion code you paste into Canvas is graded. Use the same student ID you use in Canvas.`
@@ -169,7 +169,7 @@ function overlay(l) {
   const f = video(l).frames[state.frame];
   for (const [n, c] of Object.entries(l.clicks)) {
     const here = +n === f?.n;
-    m += `<path d="M${c.u - 4} ${c.v - 4}L${c.u + 4} ${c.v + 4}M${c.u - 4} ${c.v + 4}L${c.u + 4} ${c.v - 4}" class="pj-mark${here ? ' pj-mark-here' : ''}"/>`;
+    m += `<path d="M${c.u - 4} ${c.v - 4}L${c.u + 4} ${c.v + 4}M${c.u - 4} ${c.v + 4}L${c.u + 4} ${c.v - 4}" class="pj-mark${here ? ' pj-mark-here' : ''}${l.excluded?.[n] != null ? ' pj-mark-out' : ''}"/>`;
   }
   if (!Number.isFinite(s) && l.cal?.a && !l.cal.b) m += '';
   return m;
@@ -189,7 +189,7 @@ function drawFrame() {
   $('frame').innerHTML = m;
   $('loupe').innerHTML = `${base}${overlay(l)}<path d="M${c.u - 3} ${c.v}H${c.u + 3}M${c.u} ${c.v - 3}V${c.v + 3}" class="pj-loupe-cross"/>`;
   $('loupe').setAttribute('viewBox', `${c.u - 15} ${c.v - 15} 30 30`);
-  $('frame-label').textContent = `Frame ${f.n} of ${v.frames.length - 1} · t = ${f.t.toFixed(4)} s${l.clicks[f.n] ? ' · marked' : ''}`;
+  $('frame-label').textContent = `Frame ${f.n} of ${v.frames.length - 1} · t = ${f.t.toFixed(4)} s${l.clicks[f.n] ? (l.excluded?.[f.n] != null ? ' · marked, left out of the fit' : ' · marked') : ''}`;
   $('frame').setAttribute('aria-label', `Launch ${l.id}, frame ${f.n}, t = ${f.t.toFixed(4)} seconds. Cross-hair at ${Math.round(c.u)}, ${Math.round(c.v)} pixels. ${TOOL_HELP[state.tool](l)}`);
 }
 
@@ -210,7 +210,8 @@ function applyTool(at) {
   else if (state.tool === 'origin') { l.origin = p; pickTool('track'); }
   else {
     if (!calibrated(l)) return renderVideo();
-    l.clicks[video(l).frames[state.frame].n] = p;
+    const n = video(l).frames[state.frame].n;
+    l.clicks[n] = p; setExcluded(l, n, null);   // a fresh mark goes back into the fit
     if ($('auto-next').checked) stepFrame(1, false);
   }
   save(); renderAll();
@@ -235,10 +236,19 @@ function stepFrame(d, render = true) {
   state.frame = clamp(state.frame + d, 0, video(l).frames.length - 1);
   if (render) renderVideo();
 }
+/** Show a marked frame in the video, ready to mark it again. */
+function goToFrame(n) {
+  const l = launch(); if (!l) return;
+  const i = video(l).frames.findIndex(f => f.n === n); if (i < 0) return;
+  state.frame = i; if (calibrated(l)) pickTool('track');
+  renderVideo();
+  $('video-title').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  $('frame').focus({ preventScroll: true });
+}
 $('prev-frame').addEventListener('click', () => stepFrame(-1));
 $('next-frame').addEventListener('click', () => stepFrame(1));
 $('first-frame').addEventListener('click', () => { state.frame = 0; renderVideo(); });
-$('unmark').addEventListener('click', () => { const l = launch(); if (!l) return; delete l.clicks[video(l).frames[state.frame].n]; save(); renderAll(); });
+$('unmark').addEventListener('click', () => { const l = launch(); if (!l) return; const n = video(l).frames[state.frame].n; delete l.clicks[n]; setExcluded(l, n, null); save(); renderAll(); });
 
 function renderVideo() {
   const l = launch();
@@ -253,21 +263,55 @@ function renderVideo() {
 
 /* ---------- 3. data table and hand-worked vy ---------- */
 function renderData() {
-  const l = launch(), pts = l ? points(l) : [], vs = velPoints(pts), hs = l ? handStatus(l) : { marks: [], done: false };
-  $('data-count').textContent = `${pts.length} ${pts.length === 1 ? 'point' : 'points'}`;
+  const l = launch(), all = l ? allPoints(l) : [], pts = all.filter(p => !p.out), vs = velPoints(pts), hs = l ? handStatus(l) : { marks: [], done: false };
+  const nOut = all.length - pts.length;
+  $('data-count').textContent = `${pts.length} ${pts.length === 1 ? 'point' : 'points'}${nOut ? ` in the fit · ${nOut} left out` : ''}`;
+  if (state.pendingFor !== l?.id) state.pendingOut = null;
+  if (state.pendingOut != null && !all.some(p => p.n === state.pendingOut && !p.out)) state.pendingOut = null;
   // Two marks in the same place usually mean frames before launch: a ball sitting in the launcher bends the fit.
   const still = vs.filter(v => Math.abs(v.dx) < 0.002 && Math.abs(v.dy) < 0.002).map(v => `${v.from.n}→${v.to.n}`);
-  $('data-help').textContent = !l ? 'Fire a launch, calibrate the video, then mark the ball: each mark adds a row.'
+  $('data-help').innerHTML = !l ? 'Fire a launch, calibrate the video, then mark the ball: each mark adds a row.'
     : !calibrated(l) ? 'Set the scale and the origin to turn your marks into metres.'
     : pts.length < HAND_VY + 1 ? `Mark the ball on at least ${HAND_VY + 1} frames to work out the velocities.`
-    : still.length ? `The ball did not move between frames ${still.join(', ')}: it had probably not left the launcher yet. Remove those marks (step to the frame, then “Remove this frame’s mark”) so only the flight is fitted.`
+    : still.length ? `The ball did not move between frames ${still.join(', ')}: it had probably not left the launcher yet. Leave those marks out of the fit (untick <b>fit</b>) or remove them, so only the flight is fitted.`
     : hs.done ? 'Positions above; velocities for every interval below.' : `Now work out the first ${HAND_VY} velocities in the velocity table.`;
   $('data-help').classList.toggle('lb-bad-text', !!(l && still.length));
-  $('data-rows').replaceChildren(...pts.map(p => {
-    const s = shown(p), tr = document.createElement('tr');
-    for (const v of [p.n, s.t.toFixed(4), minus(s.x.toFixed(3)), minus(s.y.toFixed(3))]) { const td = document.createElement('td'); td.textContent = v; tr.append(td); }
-    return tr;
+  $('data-rows').replaceChildren(...all.flatMap(p => {
+    const s = shown(p), tr = document.createElement('tr'), rows = [tr];
+    const go = Object.assign(document.createElement('button'), { type: 'button', className: 'pj-go', textContent: p.n });
+    go.setAttribute('aria-label', `Go to frame ${p.n} in the video`);
+    go.addEventListener('click', () => goToFrame(p.n));
+    const tdn = document.createElement('td'); tdn.append(go); tr.append(tdn);
+    for (const v of [s.t.toFixed(4), minus(s.x.toFixed(3)), minus(s.y.toFixed(3))]) { const td = document.createElement('td'); td.textContent = v; tr.append(td); }
+    const box = Object.assign(document.createElement('input'), { type: 'checkbox', className: 'pj-use', checked: !p.out && state.pendingOut !== p.n });
+    box.setAttribute('aria-label', `Use frame ${p.n} in the fits`);
+    box.addEventListener('change', () => {
+      if (box.checked) { if (p.out) { setExcluded(l, p.n, null); save(); } state.pendingOut = null; renderAll(); }
+      else { state.pendingOut = p.n; state.pendingFor = l.id; renderData(); $('out-reason')?.focus(); }
+    });
+    const tdc = document.createElement('td'); tdc.append(box); tr.append(tdc);
+    if (p.out) {
+      tr.className = 'pj-out';
+      const note = document.createElement('tr'), td = document.createElement('td');
+      note.className = 'pj-out-note'; td.colSpan = 5; td.textContent = `Frame ${p.n} left out: ${p.reason}`; note.append(td); rows.push(note);
+    } else if (state.pendingOut === p.n) {
+      const ask = document.createElement('tr'), td = document.createElement('td');
+      ask.className = 'pj-out-ask'; td.colSpan = 5;
+      td.innerHTML = `<form id="out-form"><label for="out-reason">Why leave frame ${p.n} out of the fit?</label>
+        <input id="out-reason" type="text" maxlength="120" autocomplete="off" placeholder="e.g. ball blurred, clicked the wrong spot">
+        <span class="pj-out-btns"><button type="submit">Leave it out</button> <button type="button" id="out-cancel">Keep it</button></span>
+        <span id="out-msg" class="help lb-bad-text" role="status"></span></form>`;
+      ask.append(td); rows.push(ask);
+    }
+    return rows;
   }));
+  $('out-form')?.addEventListener('submit', e => {
+    e.preventDefault();
+    const r = $('out-reason').value;
+    if (!reasonOk(r)) { $('out-msg').textContent = 'Write a short reason first: a lab notebook records why a reading was left out.'; $('out-reason').focus(); return; }
+    setExcluded(l, state.pendingOut, r); state.pendingOut = null; save(); renderAll();
+  });
+  $('out-cancel')?.addEventListener('click', () => { state.pendingOut = null; renderData(); });
   const cell = (i, key, arrKey, value) => {
     const td = document.createElement('td');
     if (i < HAND_VY) {
@@ -302,8 +346,9 @@ $('check-hand').addEventListener('click', () => {
   renderAll();
 });
 $('csv').addEventListener('click', () => {
-  const rows = [['launch', 'angle_deg', 'spring', 'fps', 'frame', 't_s', 'x_m', 'y_m']];
-  for (const l of state.launches) for (const p of points(l).map(shown)) rows.push([l.id, l.angle, l.spring, l.fps, p.n, p.t, p.x, p.y]);
+  const q = v => `"${String(v).replace(/"/g, '""')}"`;
+  const rows = [['launch', 'angle_deg', 'spring', 'fps', 'frame', 't_s', 'x_m', 'y_m', 'in_fit', 'reason_left_out']];
+  for (const l of state.launches) for (const p of allPoints(l).map(shown)) rows.push([l.id, l.angle, l.spring, l.fps, p.n, p.t, p.x, p.y, p.out ? 0 : 1, p.out ? q(p.reason) : '']);
   downloadCsv(rows.map(r => r.join(',')).join('\n') + '\n', `lab2-${state.mode === 'planet' && state.planet ? state.planet.name.replace(/\s+/g, '-') : 'earth'}.csv`);
 });
 
@@ -317,25 +362,34 @@ const plots = {
 const UNITS = { x: ['m', 'm/s', 'm/s²'], y: ['m', 'm/s', 'm/s²'], vx: ['m/s', 'm/s²', 'm/s³'], vy: ['m/s', 'm/s²', 'm/s³'] };
 const span = (vals, pad = 0.1) => { const lo = Math.min(...vals), hi = Math.max(...vals), d = (hi - lo) || 1; return [lo - d * pad, hi + d * pad]; };
 function renderGraphs() {
-  const l = launch(), pts = l ? points(l) : [], hs = l ? handStatus(l) : { done: false };
+  const l = launch(), all = l ? allPoints(l) : [], pts = all.filter(p => !p.out), outs = all.filter(p => p.out), hs = l ? handStatus(l) : { done: false };
   const vel = hs.done ? velPoints(pts) : [];
   const data = { x: pts.map(p => [p.t, p.x]), y: pts.map(p => [p.t, p.y]), vx: vel.map(v => [v.t, v.vx]), vy: vel.map(v => [v.t, v.vy]) };
+  // Left-out marks stay on the position graphs as hollow circles, so the student can see what the fit ignores.
+  const hollow = { x: outs.map(p => [p.t, p.x]), y: outs.map(p => [p.t, p.y]), vx: [], vy: [] };
   for (const key of ['x', 'y', 'vx', 'vy']) {
     const d = data[key], fit = l ? fitGraph(l, key) : null;
-    const xs = d.length ? span(d.map(p => p[0]), 0.05) : [0, 1], ys = d.length ? span([...d.map(p => p[1]), 0]) : [0, 1];
+    const h = d.length ? hollow[key] : [], both = [...d, ...h];
+    const xs = d.length ? span(both.map(p => p[0]), 0.05) : [0, 1], ys = d.length ? span([...both.map(p => p[1]), 0]) : [0, 1];
     const series = [];
     if (fit) { const line = []; for (let i = 0; i <= 60; i++) { const t = xs[0] + (xs[1] - xs[0]) * i / 60; line.push([t, fit.A + fit.B * t + (fit.C ?? 0) * t * t]); } series.push({ points: line, color: '#1f6b5e', width: 2.2, legend: MODELS[fit.model].toLowerCase() }); }
-    plots[key].render({ x: xs, y: ys, series, markers: d.map(([a, b]) => ({ x: a, y: b, color: '#c27b22', r: 3.6 })), note: d.length ? '' : (key === 'vy' || key === 'vx') && pts.length ? 'check your v_x and v_y values first' : 'no points yet' });
-    $(`g-${key}`).setAttribute('aria-label', `${plots[key].title}: ${d.length} points.${fit ? ` ${MODELS[fit.model]} fitted.` : ''}`);
+    plots[key].render({ x: xs, y: ys, series, markers: [...d.map(([a, b]) => ({ x: a, y: b, color: '#c27b22', r: 3.6 })), ...h.map(([a, b]) => ({ x: a, y: b, color: '#c27b22', r: 4.2, hollow: true }))], note: d.length ? '' : (key === 'vy' || key === 'vx') && pts.length ? 'check your v_x and v_y values first' : 'no points yet' });
+    $(`g-${key}`).setAttribute('aria-label', `${plots[key].title}: ${d.length} points${h.length ? `, ${h.length} left out (hollow)` : ''}.${fit ? ` ${MODELS[fit.model]} fitted.` : ''}`);
     const sel = document.querySelector(`.pj-model[data-key="${key}"]`), btn = document.querySelector(`.pj-fit[data-key="${key}"]`);
-    if (l && document.activeElement !== sel) sel.value = l.models?.[key] || sel.value;
+    if (l && document.activeElement !== sel) sel.value = l.models?.[key] || '';   // the menu always shows the fitted model
     btn.disabled = !l || !d.length;
     const u = UNITS[key], out = $(`c-${key}`);
     if (!fit) { out.textContent = l?.models?.[key] && d.length ? `Not enough points for a ${MODELS[l.models[key]].toLowerCase()} yet.` : ''; continue; }
     const name = { x: 'x', y: 'y', vx: 'v_x', vy: 'v_y' }[key];
-    out.innerHTML = `<b>${name} = A + B t${fit.model === 'parabola' ? ' + C t²' : ''}</b> (${fit.n} points)<br>A = ${pm(fit.A, fit.ASE)} ${u[0]}<br>B = ${pm(fit.B, fit.BSE)} ${u[1]}${fit.model === 'parabola' ? `<br>C = ${pm(fit.C, fit.CSE)} ${u[2]}` : ''}`;
+    out.innerHTML = `<b>${name} = A + B t${fit.model === 'parabola' ? ' + C t²' : ''}</b> (fitted ${fit.n}${h.length ? ` of ${fit.n + h.length}` : ''} points)<br>A = ${pm(fit.A, fit.ASE)} ${u[0]}<br>B = ${pm(fit.B, fit.BSE)} ${u[1]}${fit.model === 'parabola' ? `<br>C = ${pm(fit.C, fit.CSE)} ${u[2]}` : ''}`;
   }
 }
+// Changing the model refits straight away, so the menu, the curve and the coefficients always agree.
+for (const sel of document.querySelectorAll('.pj-model')) sel.addEventListener('change', () => {
+  const l = launch(), key = sel.dataset.key;
+  if (!l || !sel.value) return;
+  l.models = { ...l.models, [key]: sel.value }; save(); renderAll();
+});
 for (const btn of document.querySelectorAll('.pj-fit')) btn.addEventListener('click', () => {
   const l = launch(), key = btn.dataset.key, model = document.querySelector(`.pj-model[data-key="${key}"]`).value;
   if (!l) return;
@@ -352,7 +406,7 @@ function renderNotebook() {
     const l = state.launches[i], tr = document.createElement('tr');
     if (i === state.cur) tr.className = 'pj-current';
     const fits = ['x', 'y', 'vx', 'vy'].map(k => `${{ vx: 'v_x', vy: 'v_y' }[k] || k}: ${l.models?.[k] ? MODELS[l.models[k]].toLowerCase() : '–'}`).join(' · ');
-    for (const v of [s.id, `${s.angle}°`, s.spring, s.fps, s.n, s.calibrated ? '✓' : '–', fits]) { const td = document.createElement('td'); td.textContent = v; tr.append(td); }
+    for (const v of [s.id, `${s.angle}°`, s.spring, s.fps, s.excluded ? `${s.n} (${s.excluded} left out)` : s.n, s.calibrated ? '✓' : '–', fits]) { const td = document.createElement('td'); td.textContent = v; tr.append(td); }
     const tdg = document.createElement('td'), inp = Object.assign(document.createElement('input'), { type: 'number', step: 'any', inputMode: 'decimal', className: 'pj-my-g', value: l.myG ?? '' });
     inp.setAttribute('aria-label', `Your g from launch ${l.id}, m/s²`);
     inp.addEventListener('change', () => { l.myG = inp.value; save(); });
@@ -443,7 +497,7 @@ $('check').addEventListener('click', () => {
   const analysed = pr.sums.filter(s => s.analysed), ideal = idealG(env(), analysed.map(s => ({ angle: s.angle, spring: s.spring, fps: s.fps })));
   if (state.mode === 'planet' && ASG) {
     if (!state.planet) return bad('Enter your student ID to go to your planet first.');
-    if (!analysed.length) return bad('Analyse a launch first: calibrate, mark the ball, and fit all three graphs.');
+    if (!analysed.length) return bad('Analyse a launch first: calibrate, mark the ball, and fit all four graphs.');
     const answer = firstAnswers()[qid()];
     if (!answer) { $('explain-q').scrollIntoView({ block: 'center' }); return bad('Answer the “Explain your result” question first; your first answer is part of your grade.'); }
     const btn = $('check');
@@ -454,7 +508,7 @@ $('check').addEventListener('click', () => {
     }
     delete btn.dataset.armed;
     const code = encodeProjectile({ code: ASG.code, id: state.planet.id, g, dg: d, answer, stick: analysed.some(s => s.stick === 'front') ? 'front' : 'plane',
-      launches: pr.sums.map(s => ({ angle: s.angle, spring: s.spring, fps: s.fps, n: s.n, modelsOk: s.modelsOk, analysed: s.analysed })) });
+      launches: pr.sums.map(s => ({ angle: s.angle, spring: s.spring, fps: s.fps, n: s.n, excluded: s.excluded, modelsOk: s.modelsOk, analysed: s.analysed })) });
     state.submitted = { g, d, code }; store.set(`${bookKey()}-code`, code);
     box.textContent = `Submitted: g = ${g} ± ${d} m/s² on ${state.planet.name}. Copy your completion code below into Canvas. Your planet’s g stays hidden; your instructor grades the result.`;
     renderMode(); $('completion-code').focus(); return;

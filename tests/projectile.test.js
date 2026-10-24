@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { flight, frames, project, pxPerM, parallaxFactor, inView, STICK_PLACES, MUZZLE, SPRING, CAMERA } from '../js/core/projectile.js';
 import { quadraticFit } from '../js/core/fit.js';
-import { scaleOf, points, vyPoints, velPoints, handStatus, fitGraph, summary, progress, handOk } from '../modules/lab-bench/projectile-model.js';
-import { parseProjectileAssignment, projectileQuery, encodeProjectile, decodeProjectile, gradeProjectile, gradeProjectileBatch, idealG, questionFor2 } from '../modules/lab-bench/grading-projectile.js';
+import { scaleOf, points, allPoints, setExcluded, excludedCount, vyPoints, velPoints, handStatus, fitGraph, summary, progress, handOk } from '../modules/lab-bench/projectile-model.js';
+import { parseProjectileAssignment, projectileQuery, encodeProjectile, decodeProjectile, gradeProjectile, gradeProjectileBatch, idealG, questionFor2, notesFor2, gradesCsv2 } from '../modules/lab-bench/grading-projectile.js';
 import { encodeSubmission } from '../modules/lab-bench/grading.js';
 import { assignmentPlanet } from '../modules/lab-bench/grading.js';
 
@@ -90,7 +90,7 @@ test('Lab 2 assignment links round trip; the parallax question goes with the tra
   assert.equal(parseProjectileAssignment('?a=practice'), null);
 });
 
-const sub = { code: 'phy-lab2', id: 'Ann 7', g: 12.34, dg: 0.21, answer: 'a', stick: 'plane', launches: [{ angle: 45, spring: 3, fps: 30, n: 18, modelsOk: true, analysed: true }, { angle: 60, spring: 4, fps: 60, n: 40, modelsOk: true, analysed: true }] };
+const sub = { code: 'phy-lab2', id: 'Ann 7', g: 12.34, dg: 0.21, answer: 'a', stick: 'plane', launches: [{ angle: 45, spring: 3, fps: 30, n: 18, excluded: 0, modelsOk: true, analysed: true }, { angle: 60, spring: 4, fps: 60, n: 40, excluded: 2, modelsOk: true, analysed: true }] };
 
 test('Lab 2 completion codes: short, round trip, edits and other labs refused', () => {
   const c = encodeProjectile(sub);
@@ -102,6 +102,45 @@ test('Lab 2 completion codes: short, round trip, edits and other labs refused', 
   assert.match(decodeProjectile(c, 'other').error, /different assignment/);
   const lab1 = encodeSubmission({ code: 'phy-lab2', id: 'x', g: 9.8, dg: 0.1, timer: 'gate', ball: 'steel', heights: [[500, 5]], answer: 'a' });
   assert.match(decodeProjectile(lab1, 'phy-lab2').error, /Lab 1 code/);
+});
+
+test('Lab 2 codes record the points left out; codes made before that still decode with none left out', () => {
+  const d = decodeProjectile(encodeProjectile(sub), 'phy-lab2').sub;
+  assert.deepEqual(d.launches.map(l => l.excluded), [0, 2]);
+  assert.match(notesFor2(d), /40 pts, 2 left out/);
+  assert.doesNotMatch(notesFor2(d).split(';')[0], /left out/);
+  // An older code: the same bytes with no count byte and bit 7 clear.
+  const old = encodeProjectile({ ...sub, launches: sub.launches.map(l => ({ ...l, excluded: 0 })) });
+  assert.deepEqual(decodeProjectile(old, 'phy-lab2').sub.launches.map(l => l.excluded), [0, 0]);
+  assert.equal(encodeProjectile(sub).length - old.length <= 2, true, 'one extra byte');
+  const rows = gradeProjectileBatch(`Ann,${encodeProjectile(sub)}`, A);
+  assert.match(gradesCsv2(rows), /points_left_out/);
+  assert.match(gradesCsv2(rows).split('\n')[1], /,2,plane,/);
+});
+
+test('leaving points out: needs a reason, fits and velocities skip them, re-including restores the fit', () => {
+  const l = perfectLaunch({ g: 9.81, rho: 0 }, { angle: 45, spring: 4, fps: 30 });
+  l.models = { x: 'line', y: 'parabola', vx: 'line', vy: 'line' };
+  const frames = Object.keys(l.clicks).map(Number).sort((a, b) => a - b), bad = frames[6];
+  l.clicks[bad] = { u: l.clicks[bad].u + 25, v: l.clicks[bad].v - 25 };   // a badly misplaced mark
+  const before = -2 * fitGraph(l, 'y').C;
+  assert.equal(setExcluded(l, bad, ''), false, 'a reason is required');
+  assert.equal(setExcluded(l, bad, 'ok'), false, 'too short');
+  assert.equal(setExcluded(l, 999, 'no such mark'), false);
+  assert.equal(setExcluded(l, bad, 'clicked the wrong spot'), true);
+  assert.equal(excludedCount(l), 1);
+  assert.equal(allPoints(l).length, frames.length); assert.equal(points(l).length, frames.length - 1);
+  assert.equal(allPoints(l).find(p => p.n === bad).reason, 'clicked the wrong spot');
+  const after = -2 * fitGraph(l, 'y').C;
+  assert.ok(Math.abs(after - 9.81) < Math.abs(before - 9.81), `${before} → ${after}`);
+  close(after, 9.81, 0.05, 'g without the bad mark');
+  assert.equal(fitGraph(l, 'y').n, frames.length - 1);
+  // the velocity interval spans the gap: two frames
+  const v = velPoints(points(l)).find(q => q.from.n === frames[5]);
+  assert.equal(v.to.n, frames[7]); close(v.dt, 2 / 30, 1e-12, 'Δt over the gap');
+  assert.equal(summary(l).n, frames.length - 1); assert.equal(summary(l).excluded, 1);
+  setExcluded(l, bad, null);
+  assert.equal(excludedCount(l), 0); close(-2 * fitGraph(l, 'y').C, before, 1e-9, 'back in the fit');
 });
 
 test('Lab 2 rubric: value, uncertainty against the ideal, method, explanation', () => {

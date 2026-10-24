@@ -7,7 +7,8 @@
  *     origin: {u, v} | null,                      // the origin, clicked by the student (x right, y up)
  *     clicks: { [frame]: {u, v} },                // the ball's centre, clicked on each frame the student chose
  *     hand: [vy1, vy2, vy3], handX: [vx1, vx2, vx3], // the first three vy and vx values, worked out by hand
- *     models: { x, y, vy } ('line'|'parabola'),   // the model the student chose for each graph
+ *     models: { x, y, vx, vy } ('line'|'parabola'), // the model the student chose for each graph
+ *     excluded: { [frame]: reason },               // marks kept in the table but left out of the fits, with the student's reason
  *     note }
  * Nothing here knows the true g: every number comes from the student's clicks.
  */
@@ -26,13 +27,29 @@ export function scaleOf(cal, length = 1) {
 }
 export const calibrated = l => Number.isFinite(scaleOf(l.cal)) && !!l.origin;
 
-/** The tracked points in metres, from the student's own calibration and origin (y up). Sorted by frame. */
-export function points(l) {
+/** Every marked point in metres, from the student's own calibration and origin (y up), sorted by frame.
+ *  Points the student left out of the fit carry `out: true` and their `reason`. */
+export function allPoints(l) {
   const s = scaleOf(l.cal);
   if (!calibrated(l)) return [];
-  return Object.entries(l.clicks || {}).map(([n, c]) => ({ n: +n, t: +n / l.fps, x: (c.u - l.origin.u) * s, y: (l.origin.v - c.v) * s }))
-    .sort((a, b) => a.n - b.n);
+  return Object.entries(l.clicks || {}).map(([n, c]) => {
+    const reason = l.excluded?.[n];
+    return { n: +n, t: +n / l.fps, x: (c.u - l.origin.u) * s, y: (l.origin.v - c.v) * s, out: reason != null, reason: reason ?? '' };
+  }).sort((a, b) => a.n - b.n);
 }
+/** The points used in the fits (and for the velocities): every mark the student has not left out. */
+export const points = l => allPoints(l).filter(p => !p.out);
+/** A reason is needed to leave a point out: at least a few characters. */
+export const MIN_REASON = 3;
+export const reasonOk = r => String(r ?? '').trim().length >= MIN_REASON;
+/** Leave a marked frame out of the fit (needs a reason), or put it back (reason null). Returns false if refused. */
+export function setExcluded(l, n, reason) {
+  if (reason == null) { if (l.excluded) delete l.excluded[n]; return true; }
+  if (!reasonOk(reason) || !l.clicks?.[n]) return false;
+  l.excluded = { ...(l.excluded || {}), [n]: String(reason).trim().slice(0, 120) };
+  return true;
+}
+export const excludedCount = l => Object.keys(l.excluded || {}).filter(n => l.clicks?.[n]).length;
 /** Rounded as shown in the data table (the student works from these). */
 export const shown = p => ({ ...p, t: +p.t.toFixed(4), x: +p.x.toFixed(3), y: +p.y.toFixed(3) });
 
@@ -75,13 +92,13 @@ export function fitGraph(l, key) {
 export function summary(l) {
   const pts = points(l), fits = { x: fitGraph(l, 'x'), y: fitGraph(l, 'y'), vx: fitGraph(l, 'vx'), vy: fitGraph(l, 'vy') };
   const modelsOk = Object.entries(CORRECT_MODELS).every(([k, m]) => l.models?.[k] === m);
-  return { id: l.id, angle: l.angle, spring: l.spring, fps: l.fps, stick: l.stick, n: pts.length, calibrated: calibrated(l), hand: handStatus(l).done, fits, modelsOk,
+  return { id: l.id, angle: l.angle, spring: l.spring, fps: l.fps, stick: l.stick, n: pts.length, excluded: excludedCount(l), calibrated: calibrated(l), hand: handStatus(l).done, fits, modelsOk,
     analysed: !!(fits.x && fits.y && fits.vx && fits.vy) };
 }
 
 /**
  * Progress against the assignment: at least `launches` analysed launches with `points` points each, from at least two
- * different launches (angle or spring), with the three graphs fitted.
+ * different launches (angle or spring), with the four graphs fitted.
  */
 export function progress(launches, min = MIN_DEFAULT) {
   const sums = launches.map(summary), good = sums.filter(s => s.analysed && s.n >= min.points);

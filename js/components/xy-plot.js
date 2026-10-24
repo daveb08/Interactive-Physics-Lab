@@ -12,7 +12,7 @@ export class XYPlot {
     Object.assign(this, { svg, title, xLabel, yLabel, w: width, h: height, L: 48, R: 14, T: 26, B: 34 });
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
   }
-  /** { x: [lo, hi], y: [lo, hi], series: [{ points: [[x, y]], color, dash, width, legend }], markers: [{ x, y, color, label, r, ey }] } (ey: optional ± error bar in y units) */
+  /** { x: [lo, hi], y: [lo, hi], series: [{ points: [[x, y]], color, dash, width, legend }], markers: [{ x, y, color, label, r, ey, hollow }] } (ey: optional ± error bar in y units; hollow: an open circle) */
   render({ x, y, series = [], markers = [], note = '' }) {
     const { L, R, T, B, w, h } = this, X = v => L + (v - x[0]) / (x[1] - x[0]) * (w - L - R), Y = v => h - B - (v - y[0]) / (y[1] - y[0]) * (h - T - B);
     const inY = v => Math.min(h - B, Math.max(T, Y(v)));
@@ -28,7 +28,7 @@ export class XYPlot {
     let ly = T + 10;   // legend: stacked at the top right, inside the plot area
     for (const se of series) if (se.legend) { const lx = w - R - 8 - se.legend.length * 5.4; s += `<rect x="${lx - 24}" y="${ly - 8}" width="${se.legend.length * 5.4 + 30}" height="15" class="xy-legend-bg"/><line x1="${lx - 20}" x2="${lx - 4}" y1="${ly}" y2="${ly}" stroke="${se.color}" stroke-width="2.4" ${se.dash ? `stroke-dasharray="${se.dash}"` : ''}/><text x="${lx}" y="${ly + 3.5}" class="xy-legend">${se.legend}</text>`; ly += 16; }
     for (const m of markers) if (m.ey > 0 && m.x >= x[0] && m.x <= x[1]) { const X1 = X(m.x).toFixed(1), a = inY(m.y - m.ey), b = inY(m.y + m.ey); s += `<path d="M${X1} ${a}V${b}M${+X1 - 4} ${a}h8M${+X1 - 4} ${b}h8" stroke="${m.color}" stroke-width="1.4" fill="none"/>`; }   // optional ± error bar
-    for (const m of markers) if (m.x >= x[0] && m.x <= x[1]) s += `<circle cx="${X(m.x)}" cy="${inY(m.y)}" r="${m.r ?? 4.5}" fill="${m.color}" stroke="white" stroke-width="1.5"/>${m.label ? `<text x="${X(m.x) + 7}" y="${inY(m.y) - 7}" class="xy-mlabel" fill="${m.color}">${m.label}</text>` : ''}`;
+    for (const m of markers) if (m.x >= x[0] && m.x <= x[1]) s += `<circle cx="${X(m.x)}" cy="${inY(m.y)}" r="${m.r ?? 4.5}" ${m.hollow ? `fill="white" stroke="${m.color}" stroke-width="2" class="xy-hollow"` : `fill="${m.color}" stroke="white" stroke-width="1.5"`}/>${m.label ? `<text x="${X(m.x) + 7}" y="${inY(m.y) - 7}" class="xy-mlabel" fill="${m.color}">${m.label}</text>` : ''}`;
     this.svg.innerHTML = s;
   }
 }

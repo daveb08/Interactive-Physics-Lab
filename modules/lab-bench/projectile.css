@@ -62,3 +62,14 @@
 .pj-vel .pj-vel-wrap{max-height:none;padding:0 4px}
 .pj-vel .pj-hand{max-width:900px}
 .pj-vel #vel-table td,.pj-vel #vel-table th{text-align:right}
+.pj-mark-out{stroke:#8a8f94;stroke-dasharray:2 2}
+.pj-go{padding:2px 8px;min-width:2.6em;font-variant-numeric:tabular-nums}
+#data-table td:last-child,#data-table th:last-child{text-align:center}
+.pj-use{width:18px;height:18px;accent-color:var(--teal);cursor:pointer}
+#data-table tr.pj-out td{color:#6b7177;text-decoration:line-through;background:#f3f3f1}
+#data-table tr.pj-out td:first-child,#data-table tr.pj-out td:last-child{text-decoration:none}
+#data-table tr.pj-out-note td{color:#5c4a1e;background:#f8f2e2;font-size:calc(13px * var(--ts, 1));text-align:left;padding-top:3px}
+#data-table tr.pj-out-ask td{background:#fbf5ea;text-align:left}
+#out-form{display:flex;flex-direction:column;gap:6px;padding:4px 0}
+#out-form label{font-weight:650;font-size:calc(14px * var(--ts, 1))}
+#out-reason{padding:5px 8px;border:1px solid #bfcfc4;border-radius:5px;font:inherit;width:100%;box-sizing:border-box}

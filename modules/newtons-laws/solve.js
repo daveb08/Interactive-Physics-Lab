@@ -1,3 +1,4 @@
+import { initGraphResizer } from '../../js/components/column-resizer.js';
 import { SimulationClock } from '../../js/core/clock.js';
 import { createRun, stepRun, sampleAt } from '../../js/core/physics.js';
 import { CartView } from '../../js/components/cart.js';
@@ -453,3 +454,6 @@ function showCompare() {
 document.addEventListener('visibilitychange', () => { if (document.hidden) clock.pause(); });
 loadProblem(state.id);
 loadFromHash();
+
+// Wider (and taller) Run-it graphs: drag the graph panel's left edge or use its − / + buttons.
+initGraphResizer(document.querySelector('.solve-workspace'), document.querySelector('.graphs'), { controls: 0, gaps: 18 });

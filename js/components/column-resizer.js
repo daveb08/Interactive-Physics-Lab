@@ -20,11 +20,15 @@ export function maxGraphWidth(workspaceWidth, { controls = 245, simulationMin = 
   return Math.max(MIN, Math.floor(workspaceWidth - controls - simulationMin - gaps));
 }
 
-export function clampGraphWidth(width, workspaceWidth) {
-  return Math.round(Math.min(Math.max(width, MIN), maxGraphWidth(workspaceWidth)));
+export function clampGraphWidth(width, workspaceWidth, layout) {
+  return Math.round(Math.min(Math.max(width, MIN), maxGraphWidth(workspaceWidth, layout)));
 }
 
-export function initGraphResizer(workspace, panel) {
+/**
+ * layout: the fixed space beside the graphs. The default is the three-column lab (controls 245 px + two gaps);
+ * Solve it has no controls column ({ controls: 0, gaps: 18 }).
+ */
+export function initGraphResizer(workspace, panel, layout = {}) {
   if (!workspace || !panel) return null;
   workspace.classList.add('resizable-graphs');
   const read = () => { try { return Number(localStorage.getItem(KEY)) || null; } catch { return null; } };
@@ -52,9 +56,9 @@ export function initGraphResizer(workspace, panel) {
 
   function apply(next, { store = false } = {}) {
     if (!wide.matches) { workspace.style.removeProperty('--graph-col'); return; }
-    width = clampGraphWidth(next, workspace.clientWidth);
+    width = clampGraphWidth(next, workspace.clientWidth, layout);
     workspace.style.setProperty('--graph-col', `${width}px`);
-    const max = maxGraphWidth(workspace.clientWidth);
+    const max = maxGraphWidth(workspace.clientWidth, layout);
     handle.setAttribute('aria-valuemin', String(MIN));
     handle.setAttribute('aria-valuemax', String(max));
     handle.setAttribute('aria-valuenow', String(width));

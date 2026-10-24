@@ -294,6 +294,9 @@ for (const [id, next] of [['free-exploration', 'free'], ['guided-experiments', '
     if (firstLaw) $('force-duration').value = freeSettings.pulseDuration;
   }
   experience = next;
+  // Demo mode only applies to Free Exploration; Guided Experiments already hide the answers until the run.
+  const demoToggle = $('hide-answers')?.closest('label');
+  if (demoToggle) demoToggle.hidden = next !== 'free';
   $('free-exploration').setAttribute('aria-pressed', String(next === 'free'));
   $('guided-experiments').setAttribute('aria-pressed', String(next === 'guided'));
   $('guided-intro').hidden = next !== 'guided';

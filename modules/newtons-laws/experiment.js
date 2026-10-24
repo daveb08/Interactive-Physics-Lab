@@ -27,12 +27,24 @@ const guided = new GuidedActivity(() => reset(), choice => { prediction = choice
   $('run-message').textContent = `Previous runs are recorded below. Start Run ${number} to continue the comparison.`;
   render();
 });
-const cart = new CartView($('cart-scene'));
+// A larger cart on the First and Second Law pages (Solve it keeps the original size for its figures).
+const CART_SCALE = 1.6;
+const cart = new CartView($('cart-scene'), { scale: CART_SCALE });
 initGraphResizer(document.querySelector('.workspace'), document.querySelector('.graphs'));
-const onObject = new OnObjectForces($('cart-scene'), $('cart-scene').querySelector('#cart'));
+const onObject = new OnObjectForces($('cart-scene'), $('cart-scene').querySelector('#cart'), { scale: CART_SCALE });
 const fbd = new FreeBodyDiagram($('fbd'));
 // Guided experiments ask for a prediction first; showing the forces earlier would give the answer away.
-const forcesAvailable = () => experience === 'free' || !!prediction || started;
+// Demo mode: in Free Exploration, keep readouts, graphs and forces hidden until the run starts,
+// as Guided Experiments already does, so an in-class prediction is not given away.
+const demoMode = () => !!$('hide-answers')?.checked;
+const forcesAvailable = () => (experience === 'free' && !demoMode()) || !!prediction || started;
+// What the conceptual prediction is about. "Velocity increases" and "acceleration is positive" are the same
+// signed statement, so the radio values (increase / same / decrease) and the checking stay unchanged.
+let predictWhat = 'velocity';
+const CHOICES = {
+  velocity: { increase: 'Velocity increases', same: 'Velocity stays constant', decrease: 'Velocity decreases' },
+  acceleration: { increase: 'Acceleration is positive (points right, +x)', same: 'Acceleration is zero', decrease: 'Acceleration is negative (points left, −x)' },
+};
 const graphs = [
   new MotionGraph($('position-graph'), 'x', 'Position', 'm', '#287b71'),
   new MotionGraph($('velocity-graph'), 'v', 'Velocity', 'm/s', '#3c6cb2'),
@@ -53,7 +65,7 @@ const clock = new SimulationClock(() => {
 }, render);
 
 function render() {
-  const reveal = experience === 'free' || started;
+  const reveal = (experience === 'free' && !demoMode()) || started;
   const balance = forceBalance(run);
   cart.render({ ...run, force: balance.appliedForce }, { reveal });
   if (run.removeForceAt != null && !pulseExploration()) {
@@ -62,7 +74,7 @@ function render() {
   }
   $('time').value = format(run.state.t);
   $('position').value = format(run.state.x);
-  $('speed').value = format(run.state.v);
+  $('speed').value = reveal || experience === 'guided' ? format(run.state.v) : '—';
   $('force-readouts').hidden = !run.frictionEnabled && !pulseExploration();
   if (firstLaw) {
     $('applied-now').value = format(balance.appliedForce);
@@ -108,10 +120,12 @@ function updateQuestion() {
   const t = predictionTarget(run);
   $('target-time').textContent = format(t, 3);
   $('question').textContent = mode === 'conceptual'
-    ? `A ${run.mass} kg cart starts with velocity ${signed(run.initial.v)} m/s under a constant horizontal force of ${signed(run.force)} N. How will its signed velocity change over time? Increasing means more positive; decreasing means more negative.`
+    ? (predictWhat === 'acceleration'
+      ? `A ${run.mass} kg cart starts with velocity ${signed(run.initial.v)} m/s under a constant horizontal force of ${signed(run.force)} N. What will its acceleration be: positive (pointing right), zero, or negative (pointing left)?`
+      : `A ${run.mass} kg cart starts with velocity ${signed(run.initial.v)} m/s under a constant horizontal force of ${signed(run.force)} N. How will its signed velocity change over time? Increasing means more positive; decreasing means more negative.`)
     : `A ${run.mass} kg cart starts at ${signed(run.initial.v)} m/s with a net force of ${signed(run.force)} N. Predict its acceleration and velocity at t = ${format(t, 3)} s${t < 3 ? ' (the track boundary)' : ''}. The calculation uses the exact target time; the label is rounded.`;
   $('acceleration-prompt').textContent = run.frictionEnabled ? 'Initial acceleration (m/s²)' : 'Acceleration (m/s²)';
-  if (run.frictionEnabled) $('question').textContent = `A ${run.mass} kg cart starts at ${signed(run.initial.v)} m/s with applied force ${signed(run.force)} N, μs = ${run.muS.toFixed(2)} and μk = ${run.muK.toFixed(2)}. ${mode === 'conceptual' ? 'How does its signed velocity initially change? A later stop can change the acceleration.' : `Predict its initial acceleration and velocity at ${format(t,3)} s. Reevaluate friction if velocity reaches zero.`}`;
+  if (run.frictionEnabled) $('question').textContent = `A ${run.mass} kg cart starts at ${signed(run.initial.v)} m/s with applied force ${signed(run.force)} N, μs = ${run.muS.toFixed(2)} and μk = ${run.muK.toFixed(2)}. ${mode === 'conceptual' ? (predictWhat === 'acceleration' ? 'What is its initial acceleration: positive, zero, or negative? A later stop can change the acceleration.' : 'How does its signed velocity initially change? A later stop can change the acceleration.') : `Predict its initial acceleration and velocity at ${format(t,3)} s. Reevaluate friction if velocity reaches zero.`}`;
 }
 
 function reset() {
@@ -183,7 +197,7 @@ function feedback() {
     const events = run.events.filter(e => e.t <= run.state.t).map(e => `${e.label} at ${format(e.t,3)} s`).join('; ');
     const actual = run.initialA > 0 ? 'increase' : run.initialA < 0 ? 'decrease' : 'same';
     box.textContent = mode === 'conceptual'
-      ? `${prediction.choice === actual ? 'Prediction confirmed.' : 'Compare your prediction with the initial change in velocity.'} Initial acceleration is ${format(run.initialA,3)} m/s². At ${format(run.state.t)} s, velocity is ${format(run.state.v)} m/s and acceleration is ${format(run.a,3)} m/s². `
+      ? `${prediction.choice === actual ? 'Prediction confirmed.' : predictWhat === 'acceleration' ? 'Compare your prediction with the initial acceleration.' : 'Compare your prediction with the initial change in velocity.'} Initial acceleration is ${format(run.initialA,3)} m/s². At ${format(run.state.t)} s, velocity is ${format(run.state.v)} m/s and acceleration is ${format(run.a,3)} m/s². `
       : `Initial acceleration = ${format(result.a,3)} m/s² (${result.correctA ? 'within tolerance' : `your prediction: ${prediction.a} m/s²`}); velocity at ${format(result.time,3)} s = ${format(result.v,3)} m/s (${result.correctV ? 'within tolerance' : `your prediction: ${prediction.v} m/s`}). `;
     box.textContent += `While sliding, friction opposes velocity and has magnitude μkN. At rest, static friction balances applied force up to μsN; it need not equal μsN. Acceleration is (applied force + signed friction) / mass. Apply constant-acceleration kinematics separately between events. ${events}`;
     return;
@@ -191,7 +205,8 @@ function feedback() {
   if (mode === 'conceptual') {
     const actual = run.a > 0 ? 'increase' : run.a < 0 ? 'decrease' : 'same';
     const correct = prediction.choice === actual;
-    box.textContent = `${correct ? 'Prediction confirmed.' : 'Compare your prediction with the observation.'} ${run.a === 0
+    const accelerationNote = predictWhat === 'acceleration' ? `The acceleration is ${format(run.a)} m/s²${run.a ? ` (${run.a > 0 ? 'positive, pointing right' : 'negative, pointing left'})` : ''}, from a = Fnet / m. ` : '';
+    box.textContent = `${correct ? 'Prediction confirmed.' : 'Compare your prediction with the observation.'} ${accelerationNote}${run.a === 0
       ? `Zero net force means zero acceleration. Velocity remains ${format(run.initial.v)} m/s; a moving cart does not need a force to keep moving.`
       : `The signed velocity ${run.a > 0 ? 'increases' : 'decreases'} by ${format(Math.abs(run.a))} m/s each second because a = Fnet / m = ${format(run.a)} m/s². ${run.initial.v * run.a < 0 ? 'The cart first slows down, then reverses direction if the run lasts long enough.' : 'Force determines the change in velocity, rather than velocity itself.'}`} At t = ${format(run.state.t)} s, v = ${format(run.state.v)} m/s. On the graphs, velocity has slope a and position has slope v.`;
   } else {
@@ -234,6 +249,23 @@ $('pause').addEventListener('click', () => {
 });
 $('reset').addEventListener('click', reset);
 for (const id of ['show-forces-object', 'show-fbd', 'show-force-values']) $(id).addEventListener('change', render);
+$('hide-answers')?.addEventListener('change', render);
+function setTarget(next) {
+  if (next === predictWhat || started) return;
+  predictWhat = next;
+  for (const t of ['velocity', 'acceleration']) $(`target-${t}`).setAttribute('aria-pressed', String(t === predictWhat));
+  document.querySelectorAll('[name="prediction"]').forEach(input => {
+    input.checked = false;
+    const text = input.parentElement.querySelector('.choice-text');
+    if (text) text.textContent = CHOICES[predictWhat][input.value];
+  });
+  prediction = null;
+  $('prediction-status').textContent = 'Choose an answer to unlock the experiment.';
+  $('feedback').hidden = true;
+  updateQuestion();
+  render();
+}
+for (const t of ['velocity', 'acceleration']) $(`target-${t}`)?.addEventListener('click', () => setTarget(t));
 if (firstLaw) $('force-duration').addEventListener('input', reset);
 for (const id of ['mass', 'force', 'velocity']) $(id).addEventListener('input', reset);
 $('friction-enabled').addEventListener('change', reset);

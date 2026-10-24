@@ -59,3 +59,14 @@
 .fd-backdrop{fill:#f7f9f4;fill-opacity:.9}
 .graph-event{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
 @media(max-width:440px){.catalog h1{font-size:calc(38px * var(--ts, 1))}}
+
+/* Motion graphs are drawn 1 unit = 1 screen pixel, so their text follows the A / A+ / A++ control */
+.motion-graph .graph-unit{font-size:calc(16px * var(--ts, 1))}.motion-graph .graph-tick{font-size:calc(15px * var(--ts, 1))}
+/* Larger cart scene text and the position pointer under the cart's centre */
+#cart-scene .ticks text{font-size:16px}#cart-scene .scene-note{font-size:14.5px}
+.cart-pointer{fill:#236d62}
+/* Demo mode switch and the predict-velocity / predict-acceleration choice */
+.demo-toggle{display:flex;align-items:flex-start;gap:9px;margin:0 20px 18px;font-size:calc(13.5px * var(--ts, 1));line-height:1.45;cursor:pointer;color:var(--ink)}
+.demo-toggle input{accent-color:var(--teal);width:18px;height:18px;margin:1px 0 0;flex:none}
+.predict-target{display:inline-flex;margin-bottom:12px}
+.predict-target button{font-size:calc(13.5px * var(--ts, 1))}

@@ -1,8 +1,11 @@
 import { TRACK, forceBalance } from '../core/physics.js';
 
 export class CartView {
-  constructor(svg) {
+  /** scale > 1 draws a larger cart (wheels stay on the rail); force arrows above it move up to match. */
+  constructor(svg, { scale = 1 } = {}) {
     this.svg = svg;
+    this.scale = scale;
+    this.lift = Math.round((scale - 1) * (203 - 158));   // how far the cart top rises
     const ticks = Array.from({ length: 11 }, (_, i) => {
       const x = 70 + i * 64;
       return `<path d="M${x} 207v9"/><text x="${x}" y="239">${i * 10 - 50}</text>`;
@@ -13,7 +16,7 @@ export class CartView {
       <g class="ticks">${ticks}</g><path d="M390 65V200" class="origin"/>
       <path d="M70 178v25M710 178v25" class="limit"/>
       <text x="390" y="269" class="scene-note axis-note">Position x (m) · origin at center · positive to the right →</text>
-      <g id="cart"><rect x="-24" y="158" width="48" height="32" rx="6" class="cart-body"/><path d="M-16 166H16" class="cart-highlight"/><circle cx="-14" cy="195" r="7" class="wheel"/><circle cx="14" cy="195" r="7" class="wheel"/><text id="cart-mass" y="180" class="cart-mass"></text><path id="force-arrow" class="force-arrow" marker-end="url(#force-tip)"/><text id="force-label" y="120" class="force-label"></text><g id="extra-forces"><path id="friction-arrow" class="friction-arrow" marker-end="url(#friction-tip)"/><text id="friction-label" class="friction-label" y="105"></text><path id="net-arrow" class="net-arrow" marker-end="url(#net-tip)"/><text id="net-label" class="net-label" y="135"></text></g></g>`;
+      <g id="cart">${scale > 1 ? '<path class="cart-pointer" d="M0 208l-6 10h12z"/>' : ''}<g class="cart-shape"${scale === 1 ? '' : ` transform="translate(0 203) scale(${scale}) translate(0 -203)"`}><rect x="-24" y="158" width="48" height="32" rx="6" class="cart-body"/><path d="M-16 166H16" class="cart-highlight"/><circle cx="-14" cy="195" r="7" class="wheel"/><circle cx="14" cy="195" r="7" class="wheel"/><text id="cart-mass" y="180" class="cart-mass"></text></g><path id="force-arrow" class="force-arrow" marker-end="url(#force-tip)"/><text id="force-label" class="force-label"></text><g id="extra-forces"><path id="friction-arrow" class="friction-arrow" marker-end="url(#friction-tip)"/><text id="friction-label" class="friction-label"></text><path id="net-arrow" class="net-arrow" marker-end="url(#net-tip)"/><text id="net-label" class="net-label"></text></g></g>`;
     this.cart = svg.querySelector('#cart');
     this.arrow = svg.querySelector('#force-arrow');
     this.label = svg.querySelector('#force-label');
@@ -45,11 +48,12 @@ export class CartView {
     this.cart.setAttribute('transform', `translate(${px} 0)`);
     // Capped so large forces (e.g. 350 N in applied problems) stay on screen; ≤ 20 N is unchanged.
     const length = Math.sign(run.force) * Math.min(22 + Math.abs(run.force) * 2, 140);
-    this.arrow.setAttribute('d', `M0 137h${length}`);
+    const up = this.lift;
+    this.arrow.setAttribute('d', `M0 ${137 - up}h${length}`);
     this.arrow.style.display = run.force === 0 ? 'none' : '';
     this.label.textContent = `${run.force > 0 ? '+' : ''}${run.force} N`;
     this.label.setAttribute('x', '0');
-    this.label.setAttribute('y', '120');
+    this.label.setAttribute('y', String(120 - up));
     this.svg.querySelector('#extra-forces').style.display = run.frictionEnabled && reveal ? '' : 'none';
     const label = this.svg.querySelector('#surface-label');
     if (run.frictionEnabled) label.innerHTML = 'HORIZONTAL TRACK · DRY FRICTION · f = μF<tspan dy="3" font-size="0.8em">N</tspan>';
@@ -57,13 +61,15 @@ export class CartView {
     if (run.frictionEnabled) {
       const balance = forceBalance(run);
       const scale = 60 / Math.max(20, Math.abs(run.force), Math.abs(balance.friction), Math.abs(balance.netForce));
-      this.arrow.setAttribute('d', `M0 85h${run.force * scale}`);
-      this.label.setAttribute('y', '75');
-      for (const [id, value, y] of [['friction',balance.friction,115],['net',balance.netForce,145]]) {
+      this.arrow.setAttribute('d', `M0 ${85 - up}h${run.force * scale}`);
+      this.label.setAttribute('y', String(75 - up));
+      for (const [id, value, y] of [['friction',balance.friction,115 - up],['net',balance.netForce,145 - up]]) {
         const arrow = this.svg.querySelector(`#${id}-arrow`);
         arrow.setAttribute('d', `M0 ${y}h${value * scale}`);
         arrow.style.display = value === 0 ? 'none' : '';
-        this.svg.querySelector(`#${id}-label`).textContent = `${value > 0 ? '+' : ''}${value.toFixed(2)} N`;
+        const text = this.svg.querySelector(`#${id}-label`);
+        text.setAttribute('y', String(y - 10));
+        text.textContent = `${value > 0 ? '+' : ''}${value.toFixed(2)} N`;
       }
     }
     this.mass.textContent = `${run.mass} kg`;

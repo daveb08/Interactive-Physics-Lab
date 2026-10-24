@@ -52,3 +52,21 @@ test('graph column width is clamped to leave a usable simulation column', () => 
   assert.equal(clampGraphWidth(5000, 1376), maxGraphWidth(1376));
   assert.equal(clampGraphWidth(400, 1376), 400);
 });
+
+import { niceTicks, graphSize } from '../js/components/graph.js';
+
+test('graph ticks are round numbers, include zero, and respect the label limit', () => {
+  const crowded = niceTicks(-0.5, 0.56, 4);   // a tiny acceleration range used to give 0.0, 0.0, 0.1
+  assert.ok(crowded.ticks.length <= 4);
+  assert.ok(crowded.ticks.includes(0));
+  assert.equal(new Set(crowded.ticks.map(t => t.toFixed(crowded.decimals))).size, crowded.ticks.length, 'labels are distinct');
+  assert.deepEqual(niceTicks(0, 6, 4).ticks, [0, 2, 4, 6]);
+  const quarter = niceTicks(-1, 1, 9);
+  assert.equal(quarter.step, 0.25); assert.equal(quarter.decimals, 2);
+});
+
+test('graphs grow taller as their column widens, within limits', () => {
+  assert.equal(graphSize(336).H, 175);
+  assert.ok(graphSize(600).H > graphSize(400).H);
+  assert.equal(graphSize(2000).H, 330);
+});

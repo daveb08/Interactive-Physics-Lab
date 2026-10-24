@@ -1,6 +1,7 @@
 /** Lab Bench instructor page: make a graded assignment link, then grade pasted completion codes (grading.js). */
 import { parseAssignment, assignmentQuery, normaliseCode, makeKey, keyCheck, gradeBatch, gradesCsv } from './grading.js';
 import { downloadCsv } from '../../js/components/csv-export.js';
+import { store, mergeAssignments, parseBackup, backupText, labForLink } from './saved-assignments.js';
 
 const $ = id => document.getElementById(id);
 const labUrl = query => new URL(`freefall.html?${query}`, location.href).href;
@@ -19,12 +20,72 @@ $('make-form').addEventListener('submit', e => {
   $('made').hidden = false;
   // ready to grade later: fill part 2 as well
   $('g-link').value = link; $('g-key').value = key;
+  const settings = `within ${a.tolGate} % (timer) / ${a.tolWatch} % (stopwatch); δg ≤ ${a.maxRel} %; ${a.heights} × ${a.trials} drops; ${a.air === 'none' ? 'no air' : 'mixed air'}`;
+  const saved = saveAssignments(mergeAssignments(saved_, [{ code: a.code, lab: labForLink(link).id, link, key, settings, created: new Date().toISOString() }]));
+  $('copy-link-msg').textContent += saved ? ' Saved in “Your saved assignments” below.' : ' This browser could not save it: write the grading key down.';
+  renderSaved(); $('g-saved').value = `${labForLink(link).id}|${a.code}`;
 });
 $('m-code').addEventListener('input', () => $('m-code').setCustomValidity(''));
 $('copy-link').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText($('made-link').textContent); $('copy-link-msg').textContent = 'Link copied. Post it in Canvas.'; }
   catch { getSelection().selectAllChildren($('made-link')); $('copy-link-msg').textContent = 'Selected: press Ctrl+C (or ⌘C) to copy.'; }
 });
+
+/* ---------- saved assignments ---------- */
+let saved_ = store.load();
+const canSave = store.available();
+function saveAssignments(list) { saved_ = list; return store.save(list); }
+const fmtDate = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); };
+function savedMsg(text) { $('saved-msg').textContent = text; }
+function renderSaved() {
+  $('saved-empty').hidden = saved_.length > 0;
+  $('saved-table').hidden = !saved_.length;
+  $('saved-download').disabled = !saved_.length;
+  if (!canSave) $('saved-note').textContent = 'This browser is not letting the page save anything (a private window, or storage is blocked), so links are not remembered here. Write each grading key down, or load a backup each time.';
+  $('saved-rows').replaceChildren(...saved_.map(r => {
+    const tr = document.createElement('tr'), id = `${r.lab}|${r.code}`;
+    for (const text of [r.code, labForLink(r.link).name, fmtDate(r.created), r.key || '—', r.settings]) { const td = document.createElement('td'); td.textContent = text; tr.append(td); }
+    tr.firstChild.className = 'lb-saved-code';
+    const td = document.createElement('td'); td.className = 'lb-saved-actions';
+    const btn = (label, aria, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.setAttribute('aria-label', `${aria} ${r.code}`); b.addEventListener('click', fn); td.append(b); return b; };
+    btn('Grade', 'Grade', () => { $('g-saved').value = id; fillFromSaved(); $('grade-title').scrollIntoView({ block: 'start', behavior: 'smooth' }); $('g-codes').focus({ preventScroll: true }); });
+    btn('Copy link', 'Copy the student link for', async () => {
+      try { await navigator.clipboard.writeText(r.link); savedMsg(`Student link for “${r.code}” copied.`); } catch { savedMsg(`Student link for “${r.code}”: ${r.link}`); }
+    });
+    const rm = btn('Remove', 'Remove', () => {
+      if (!rm.dataset.armed) { rm.dataset.armed = '1'; rm.textContent = 'Confirm remove'; setTimeout(() => { delete rm.dataset.armed; rm.textContent = 'Remove'; }, 5000); return; }
+      saveAssignments(saved_.filter(x => `${x.lab}|${x.code}` !== id)); renderSaved();
+      savedMsg(`Removed “${r.code}” from this browser. (Students' links still work; you need its grading key to grade it.)`);
+    });
+    tr.append(td); return tr;
+  }));
+  const sel = $('g-saved'), keep = sel.value;
+  sel.replaceChildren(new Option('Choose one, or paste the link and key below', ''), ...saved_.map(r => new Option(`${r.code} · ${labForLink(r.link).name}${r.created ? ` · ${fmtDate(r.created)}` : ''}`, `${r.lab}|${r.code}`)));
+  sel.value = saved_.some(r => `${r.lab}|${r.code}` === keep) ? keep : '';
+  sel.closest('label').hidden = !saved_.length;
+}
+function fillFromSaved() {
+  const r = saved_.find(x => `${x.lab}|${x.code}` === $('g-saved').value);
+  if (!r) return;
+  $('g-link').value = r.link; $('g-key').value = r.key;
+}
+$('g-saved').addEventListener('change', fillFromSaved);
+$('saved-download').addEventListener('click', () => {
+  const blob = new Blob([backupText(saved_)], { type: 'application/json' }), a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = `lab-bench-assignments-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  savedMsg(`Backup downloaded (${saved_.length} ${saved_.length === 1 ? 'assignment' : 'assignments'}). It contains the grading keys, so keep it private.`);
+});
+$('saved-load').addEventListener('change', async e => {
+  const file = e.target.files?.[0]; e.target.value = '';
+  if (!file) return;
+  try {
+    const incoming = parseBackup(await file.text()), before = saved_.length;
+    const ok = saveAssignments(mergeAssignments(saved_, incoming)); renderSaved();
+    savedMsg(`Loaded ${incoming.length} ${incoming.length === 1 ? 'assignment' : 'assignments'} (${saved_.length - before} new).${ok ? '' : ' This browser could not keep them after you leave the page.'}`);
+  } catch (err) { savedMsg(err.message); }
+});
+renderSaved();
 
 /* ---------- 2. grade ---------- */
 let lastRows = [], lastCode = '';
@@ -37,7 +98,7 @@ $('grade-form').addEventListener('submit', e => {
   if (!a) return msg('That is not an assignment link: paste the student link you posted in Canvas (it contains “?a=”).');
   if (a.keyCheck && keyCheck($('g-key').value) !== a.keyCheck) return msg('The grading key does not match this assignment link. Use the key shown when the link was made.');
   const rows = gradeBatch($('g-codes').value, a);
-  if (!rows.length) return msg('No completion codes found. Codes start with “LB1-”.');
+  if (!rows.length) return msg('No completion codes found. Codes start with “LB-” (or “LB1-” for older codes).');
   lastRows = rows; lastCode = a.code;
   const graded = rows.filter(r => r.result && !r.replaced), bad = rows.filter(r => r.error).length;
   const mean = graded.length ? graded.reduce((s, r) => s + r.result.score, 0) / graded.length : 0;

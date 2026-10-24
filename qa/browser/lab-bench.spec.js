@@ -109,6 +109,7 @@ test('Stage 2: in Earth’s air the ping-pong ball gives g too low, and the expl
  await expect(page.locator('#combo-row')).toBeVisible();await expect(page.locator('#combo option')).toHaveCount(2);
 });
 test('Stage 2: a student ID gives the same hidden planet every time, its own notebook, and a reveal after submitting',async({page},info)=>{
+ test.slow();   // about 30 s alone; it timed out at 60 s when the full suite runs two workers
  await frozen(page,route);await page.evaluate(()=>{try{localStorage.clear();}catch{}});await page.reload();
  const planet=planetFor('QA-Student 01');
  await page.getByRole('button',{name:'Mystery planet'}).click();
@@ -163,7 +164,7 @@ test('Stage 3: an instructor makes a link, a student completes it with g hidden 
  await page.getByRole('button',{name:'Submit my result'}).click();
  await expect(page.locator('#result-msg')).toContainText('Submitted');
  await expect(page.getByRole('button',{name:/Reveal/})).toBeHidden();
- const code=await page.locator('#completion-code').innerText();expect(code).toMatch(/^LB1-/);
+ const code=await page.locator('#completion-code').innerText();expect(code).toMatch(/^LB-/);expect(code.length).toBeLessThan(60);
  // (the student's own numbers may match g closely; what must never appear is the page stating the planet's g)
  expect(await page.locator('body').innerText()).not.toMatch(/planet’s g is|Planet [A-Z0-9]{4} has/);
  await evidence(page,info,'stage3-student-code');
@@ -198,4 +199,29 @@ test('Stage 3: graded submission before the minimum asks for confirmation, and t
  const {decodeSubmission,grade,parseAssignment}=await import('../../modules/lab-bench/grading.js');
  const r=grade(decodeSubmission(code).sub,parseAssignment('?a=qa-lab1b'));
  expect(r.checks.find(c=>c.id==='method').pass).toBe(false);
+});
+test('Saved assignments: a made link is remembered, fills the grading form after a reload, and can be backed up and removed',async({page})=>{
+ await frozen(page,'/modules/lab-bench/instructor.html');await page.evaluate(()=>{try{localStorage.clear();}catch{}});await page.reload();
+ await expect(page.locator('#saved-empty')).toBeVisible();
+ await page.getByLabel('Assignment code').fill('QA-Saved1');await page.getByRole('button',{name:'Make the link'}).click();
+ const link=await page.locator('#made-link').innerText(), key=await page.locator('#made-key').innerText();
+ await expect(page.locator('#copy-link-msg')).toContainText('Saved');
+ await page.reload();
+ await expect(page.locator('#saved-rows tr')).toHaveCount(1);
+ await expect(page.locator('#saved-rows tr').first()).toContainText('qa-saved1');
+ await expect(page.locator('#saved-rows tr').first()).toContainText(key);
+ await expect(page.getByLabel('Student link for the assignment')).toHaveValue('');
+ await page.getByRole('button',{name:'Grade qa-saved1'}).click();
+ await expect(page.getByLabel('Student link for the assignment')).toHaveValue(link);
+ await expect(page.getByLabel('Grading key')).toHaveValue(key);
+ const download=page.waitForEvent('download');await page.getByRole('button',{name:/Download backup/}).click();
+ const file=await (await download).path();
+ await page.getByRole('button',{name:'Remove qa-saved1'}).click();await page.getByRole('button',{name:'Remove qa-saved1'}).click();
+ await expect(page.locator('#saved-empty')).toBeVisible();
+ await page.locator('#saved-load').setInputFiles(file);
+ await expect(page.locator('#saved-msg')).toContainText('Loaded 1 assignment');
+ await expect(page.locator('#saved-rows tr')).toHaveCount(1);
+ await page.locator('#g-saved').selectOption({index:1});
+ await expect(page.getByLabel('Grading key')).toHaveValue(key);
+ expect((await layout(page)).overflow).toBe(false);
 });

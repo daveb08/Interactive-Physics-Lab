@@ -31,18 +31,34 @@ test('grading key: the link carries only a check value', () => {
 
 const sub = { code: 'phy1201-f26', id: 'Jo Smith-7', g: 9.8, dg: 0.05, timer: 'gate', ball: 'steel', heights: [[400, 5], [1000, 5], [1800, 5]], answer: 'a' };
 
-test('completion codes: round trip, any edit fails the checksum, damaged codes are explained', () => {
+test('completion codes: short, round trip, any edit fails the checksum, damaged codes are explained', () => {
   const c = encodeSubmission(sub);
-  assert.match(c, /^LB1-[A-Za-z0-9_-]+$/);
-  const d = decodeSubmission(c); assert.equal(d.ok, true);
+  assert.match(c, /^LB-[A-Za-z0-9_-]+$/);
+  assert.ok(c.length <= 50, `code is ${c.length} characters`);
+  const d = decodeSubmission(c, sub.code); assert.equal(d.ok, true);
   assert.deepEqual(d.sub, { ...sub, id: 'josmith7' });
-  assert.equal(decodeSubmission(c.slice(0, -6)).ok, false);
+  assert.equal(decodeSubmission(c.slice(0, -6), sub.code).ok, false);
   assert.equal(decodeSubmission('hello').error, 'not a Lab Bench completion code');
-  // change the reported g inside the code: the checksum catches it
-  const body = Buffer.from(c.slice(4), 'base64url').toString().replace('|9.8|', '|9.81|');
-  const forged = decodeSubmission('LB1-' + Buffer.from(body).toString('base64url'));
+  // change one byte inside the code: the checksum catches it
+  const bytes = Buffer.from(c.slice(3), 'base64url'); bytes[5] ^= 1;
+  const forged = decodeSubmission('LB-' + bytes.toString('base64url'), sub.code);
+  assert.equal(forged.ok, false); assert.match(forged.error, /edited|damaged/);
+  // a code made for another assignment is named as such
+  assert.match(decodeSubmission(c, 'other-assignment').error, /different assignment/);
+  assert.equal(decodeSubmission(` ${c.slice(0, 20)}\n ${c.slice(20)} `, sub.code).ok, true);   // wrapped by a text box
+  // tiny uncertainties are never rounded to zero
+  assert.equal(decodeSubmission(encodeSubmission({ ...sub, dg: 0.0002 }), sub.code).sub.dg, 0.001);
+});
+
+test('older LB1- codes (first format) still decode and grade', () => {
+  const b64 = s => Buffer.from(s).toString('base64url');
+  const { hash32 } = { hash32: str => { let h = 0x811c9dc5; for (const ch of String(str)) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return h >>> 0; } };
+  const payload = ['1', 'phy1201-f26', 'josmith7', 9.8, 0.05, 'gate', 'steel', '400:5;1000:5;1800:5', 'a'].join('|');
+  const old = 'LB1-' + b64(`${payload}|${hash32(`ipl-lab-bench-1·g|${payload}`).toString(36).padStart(7, '0')}`);
+  const d = decodeSubmission(old); assert.equal(d.ok, true); assert.equal(d.sub.code, 'phy1201-f26'); assert.equal(d.sub.g, 9.8);
+  const rows = gradeBatch(`Jo,${old}`, A); assert.equal(rows.length, 1); assert.ok(rows[0].result);
+  const forged = decodeSubmission('LB1-' + b64(`${payload.replace('|9.8|', '|9.81|')}|xxxxxxx`));
   assert.equal(forged.ok, false); assert.match(forged.error, /edited/);
-  assert.equal(decodeSubmission(` ${c.slice(0, 30)}\n ${c.slice(30)} `).ok, true);   // wrapped by a text box
 });
 
 test('rubric: each check passes and fails at its boundary', () => {
@@ -75,7 +91,7 @@ test('batch grading: codes found inside any pasted text, later codes replace ear
   assert.equal(rows.length, 6);
   assert.equal(rows[0].replaced, true); assert.equal(rows[2].replaced, undefined);
   assert.match(rows[1].flags[0], /same data as cat/); assert.match(rows[3].flags[0], /same data as ben/);
-  assert.match(rows[4].error, /assignment “other”/); assert.ok(rows[5].error);
+  assert.match(rows[4].error, /different assignment/); assert.ok(rows[5].error);
   const csv = gradesCsv(rows).trim().split('\n');
   assert.equal(csv.length, 4);   // header + ann (latest), ben, cat
   assert.match(csv[0], /^student_id,score,out_of,value/);

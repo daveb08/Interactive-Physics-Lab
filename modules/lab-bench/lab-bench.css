@@ -172,3 +172,25 @@ kbd{font:calc(12px * var(--ts, 1)) Consolas,monospace;border:1px solid #c7d0cb;b
 .lb-grades tr.lb-replaced td:last-child{text-decoration:none}
 @media(max-width:900px){.lb-inst-form{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.lb-inst-form{grid-template-columns:1fr}}
+/* Saved assignments (instructor page) */
+.lb-saved td{vertical-align:middle}.lb-saved-code{font-weight:650;font-family:Consolas,monospace}
+.lb-saved-actions{white-space:nowrap}.lb-saved-actions button{margin:2px 4px 2px 0;padding:6px 10px}
+.lb-file-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid #cdd8d1;background:#fff;padding:10px 17px;border-radius:7px;font-weight:600;cursor:pointer}
+.lb-file-btn input{position:absolute;width:1px;height:1px;opacity:0}
+.lb-file-btn:focus-within{outline:3px solid #ba622e;outline-offset:4px}
+.lb-pad{padding-left:20px;padding-right:20px}
+.lb-saved th,.lb-saved td{text-align:left}
+.lb-saved td:nth-child(4){white-space:nowrap;font-family:Consolas,monospace}
+.lb-saved td:nth-child(5){color:var(--muted);font-size:calc(13px * var(--ts, 1))}
+/* Narrow screens: each saved assignment becomes a small card */
+@media(max-width:760px){
+  .lb-saved thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  .lb-saved,.lb-saved tbody,.lb-saved tr,.lb-saved td{display:block;width:100%}
+  .lb-saved tr{border-bottom:1px solid var(--line);padding:10px 4px}
+  .lb-saved td{border:0;padding:3px 8px}
+  .lb-saved td:nth-child(2)::before{content:"Lab: ";color:var(--muted)}
+  .lb-saved td:nth-child(3)::before{content:"Made: ";color:var(--muted)}
+  .lb-saved td:nth-child(4)::before{content:"Grading key: ";color:var(--muted);font-family:Inter,"Segoe UI",Arial,sans-serif}
+  .lb-saved-actions{white-space:normal}
+}
+.lb-saved-wrap{max-height:none}

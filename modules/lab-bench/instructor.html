@@ -21,16 +21,27 @@
     </form>
     <div id="made" class="lb-made" hidden>
       <p class="lb-key-line"><span>Your grading key</span> <strong id="made-key"></strong></p>
-      <p class="help lb-key-help">Write this down or keep it with your course notes. You need it, with the student link, to grade. Students never see it.</p>
+      <p class="help lb-key-help">Saved in <b>Your saved assignments</b> below, in this browser. To be safe, also keep it with your course notes or download a backup: you need it, with the student link, to grade. Students never see it.</p>
       <p><b>Student link</b>: post this in Canvas.</p>
       <div class="lb-code-row"><code id="made-link" tabindex="0"></code><button type="button" id="copy-link">Copy link</button><a id="open-link" class="lb-btn-link" target="_blank" rel="noopener">Try it</a></div>
       <p class="help" id="copy-link-msg" role="status"></p>
     </div>
   </section>
 
+  <section class="panel lb-inst-panel" aria-labelledby="saved-title" id="saved-panel">
+    <div class="panel-heading"><h2 id="saved-title">Your saved assignments</h2><span>THIS BROWSER</span></div>
+    <p class="help lb-pad" id="saved-note">Every link you make is saved here, in this browser on this computer, with its grading key. Choose <b>Grade</b> to fill in the grading form below. To use the list on another computer, download a backup and load it there.</p>
+    <p id="saved-empty" class="lb-pad">No saved assignments yet. Make a link above and it will appear here.</p>
+    <div class="lb-table-wrap lb-saved-wrap"><table class="lb-table lb-saved" id="saved-table" hidden><caption class="sr-only">Saved assignments</caption>
+      <thead><tr><th scope="col">Assignment</th><th scope="col">Lab</th><th scope="col">Made</th><th scope="col">Grading key</th><th scope="col">Settings</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+      <tbody id="saved-rows"></tbody></table></div>
+    <div class="transport lb-left lb-pad"><button type="button" id="saved-download">⬇ Download backup (.json)</button><label class="lb-file-btn"><input type="file" id="saved-load" accept=".json,application/json"> ⬆ Load backup (.json)</label></div>
+    <p id="saved-msg" class="help lb-pad" role="status"></p>
+  </section>
   <section class="panel lb-inst-panel" aria-labelledby="grade-title">
     <div class="panel-heading"><h2 id="grade-title">2 · Grade completion codes</h2><span>02</span></div>
     <form id="grade-form" class="lb-inst-form">
+      <label class="lb-wide">Saved assignment <select id="g-saved" class="vf-select"><option value="">Choose one, or paste the link and key below</option></select></label>
       <label class="lb-wide">Student link for the assignment <input id="g-link" required autocomplete="off" placeholder="…/freefall.html?a=…"></label>
       <label class="lb-wide">Grading key <input id="g-key" autocomplete="off" placeholder="e.g. amber-orbit-42"></label>
       <label class="lb-wide">Completion codes <textarea id="g-codes" rows="7" placeholder="Paste the codes: one per line, or a whole Canvas export. Anything that is not a code is ignored."></textarea></label>

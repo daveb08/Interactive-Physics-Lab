@@ -206,10 +206,15 @@ reading the source. This is the accepted trade-off.
 - **Students do not see their rubric results.** (Change from the original plan, which showed a message per check.)
   Showing them would let a student resubmit until the value check passed, which turns the lab into guessing g. The
   Earth practice and the practice planet still give full feedback, including a reveal.
-- **Completion code**: `LB1-` + base64url of `version|code|id|g|δg|timer|ball|heights mm:n;…|first answer|checksum`
-  (about 110 characters). The checksum is FNV-1a with a key in `grading.js`: it stops casual editing, not a determined
-  student reading the source, as accepted. Refused codes: edited (checksum), damaged in copying, or made for another
-  assignment. Identical data under two IDs is flagged.
+- **Completion code** (short format, 2026-10): `LB-` + base64url of a compact binary record: format/lab byte,
+  a 16-bit fingerprint of the assignment code, flags (timer, ball, first answer), g and δg to 0.001 (varints), the
+  heights (mm, drops), the student ID, and a 24-bit checksum that also covers the assignment code. About 40–55
+  characters (the first format was about 110). The checksum stops casual editing, not a determined student reading
+  the source, as accepted. Refused codes: edited (checksum), damaged in copying, or made for another assignment.
+  Identical data under two IDs is flagged. Older `LB1-` codes (text format) still decode and grade.
+- **Saved assignments** (instructor page): every link made is remembered in that browser (assignment code, lab,
+  student link, grading key, settings, date). Choosing one fills the grading form. A JSON backup of the list can be
+  downloaded and loaded on another computer. Nothing is sent anywhere.
 - **Rubric recomputed on the grading page** (`grading.js`, pure and unit-tested): the planet from ID + code, the
   drag-corrected ideal value from the student's own heights and ball, and the question from timer, ball and air.
 - **Larger measuring-stick zoom**: 3 cm of stick at about 12 px per mm (was about 8 cm at 3 px per mm), centimetre

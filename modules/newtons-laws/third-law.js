@@ -18,7 +18,7 @@ const fbd=new FbdActivity(()=>{if(clock.running)$('pause').click();});
 for(const id of ['fbd-cart','force-choices','build-form','fbd-reveal','fbd-retry']) $(id).addEventListener(['build-form'].includes(id)?'submit':['fbd-cart','force-choices'].includes(id)?'change':'click',()=>render());
 function render(){
  const r=session.run,s=r.state,reveal=mode==='free'||session.started;
- $('view-note').textContent=`View: ±${view.render(r,reveal,fbd.state.revealed).toFixed(1)} m. Physical boundaries remain ±50 m; carts are drawn 1 m wide.`;
+ $('view-note').textContent=`View: ±${view.render(r,reveal,fbd.state.revealed).toFixed(1)} m. Physical boundaries remain ±50 m; carts are drawn at one fixed size, so they are not to scale when the view is zoomed out.`;
  fbd.render(r);
  $('time').textContent=`${s.t.toFixed(3)} s`;
  $('contact').textContent=s.interacting?'Interacting · spring compressed':'Separated · interaction ended';

@@ -25,3 +25,11 @@
  .third-diagrams .fbd-grid,.third-diagrams .choices{grid-template-columns:1fr}
 }
 .third-workspace>.controls{align-self:start}.third-diagrams button[type=submit]{background:var(--teal);color:white}.third-diagrams button:focus-visible,.third-graphs summary:focus-visible,.fbd-learning summary:focus-visible{outline:3px solid #ba622e;outline-offset:3px}
+/* Choosing which cart's free-body diagram to build: a radio button above each diagram */
+.fbd-grid{border:0;margin:0;min-width:0}
+.fbd-pick{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fbd-choice{display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid var(--line);border-radius:7px;font-size:calc(14px * var(--ts, 1));cursor:pointer;background:#fff}
+.fbd-choice input{accent-color:var(--teal);width:18px;height:18px;margin:0}
+.fbd-choice:has(input:checked){border-color:var(--teal);background:#f0f6ef;font-weight:600}
+.fbd-pick svg{cursor:pointer;border:2px solid transparent;border-radius:8px}
+.fbd-pick svg.selected-cart{border-color:var(--teal)}

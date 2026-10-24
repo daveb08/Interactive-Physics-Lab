@@ -1,10 +1,13 @@
-/** Lab Bench instructor page: make a graded assignment link, then grade pasted completion codes (grading.js). */
+/** Lab Bench instructor page: make a graded assignment link (Lab 1 or Lab 2), then grade pasted completion codes (grading.js, grading-projectile.js). */
 import { parseAssignment, assignmentQuery, normaliseCode, makeKey, keyCheck, gradeBatch, gradesCsv } from './grading.js';
 import { downloadCsv } from '../../js/components/csv-export.js';
 import { store, mergeAssignments, parseBackup, backupText, labForLink } from './saved-assignments.js';
+import { parseProjectileAssignment, projectileQuery, gradeProjectileBatch, gradesCsv2, notesFor2 } from './grading-projectile.js';
 
 const $ = id => document.getElementById(id);
-const labUrl = query => new URL(`freefall.html?${query}`, location.href).href;
+const labUrl = (query, page = 'freefall.html') => new URL(`${page}?${query}`, location.href).href;
+const chosenLab = () => document.querySelector('[name=m-lab]:checked')?.value || 'freefall';
+for (const r of document.querySelectorAll('[name=m-lab]')) r.addEventListener('change', () => { $('lab1-fields').hidden = chosenLab() !== 'freefall'; $('lab2-fields').hidden = chosenLab() !== 'projectile'; });
 
 /* ---------- 1. make a link ---------- */
 $('make-form').addEventListener('submit', e => {
@@ -13,14 +16,21 @@ $('make-form').addEventListener('submit', e => {
   if (!code || code === 'practice') { $('m-code').setCustomValidity('Use letters, numbers and dashes (not "practice").'); $('m-code').reportValidity(); return; }
   $('m-code').setCustomValidity('');
   const key = makeKey();
-  const a = parseAssignment(`?${new URLSearchParams({ a: code, t: `${$('m-tg').value},${$('m-tw').value}`, u: $('m-u').value, n: `${$('m-h').value}x${$('m-n').value}`, air: $('m-air').value, k: keyCheck(key) })}`);
-  const link = labUrl(assignmentQuery(a));
+  let a, link, settings;
+  if (chosenLab() === 'projectile') {
+    a = parseProjectileAssignment(`?${new URLSearchParams({ a: code, t: $('m2-t').value, u: $('m2-u').value, n: `${$('m2-l').value}x${$('m2-p').value}`, px: $('m2-px').checked ? '1' : '0', air: 'any', k: keyCheck(key) })}`);
+    link = labUrl(projectileQuery(a), 'projectile.html');
+    settings = `within ${a.tol} %; δg ≤ ${a.maxRel} %; ${a.launches} launches × ${a.points} points; parallax trap ${a.parallax ? 'on' : 'off'}`;
+  } else {
+    a = parseAssignment(`?${new URLSearchParams({ a: code, t: `${$('m-tg').value},${$('m-tw').value}`, u: $('m-u').value, n: `${$('m-h').value}x${$('m-n').value}`, air: $('m-air').value, k: keyCheck(key) })}`);
+    link = labUrl(assignmentQuery(a));
+    settings = `within ${a.tolGate} % (timer) / ${a.tolWatch} % (stopwatch); δg ≤ ${a.maxRel} %; ${a.heights} × ${a.trials} drops; ${a.air === 'none' ? 'no air' : 'mixed air'}`;
+  }
   $('made-key').textContent = key; $('made-link').textContent = link; $('open-link').href = link;
-  $('copy-link-msg').textContent = `Code “${a.code}”: value within ${a.tolGate} % (electronic timer) or ${a.tolWatch} % (stopwatch); uncertainty at most ${a.maxRel} % of g; ${a.heights} heights × ${a.trials} drops; ${a.air === 'none' ? 'no air' : 'mixed air'}.`;
+  $('copy-link-msg').textContent = `${labForLink(link).name}, code “${a.code}”: ${settings}.`;
   $('made').hidden = false;
   // ready to grade later: fill part 2 as well
   $('g-link').value = link; $('g-key').value = key;
-  const settings = `within ${a.tolGate} % (timer) / ${a.tolWatch} % (stopwatch); δg ≤ ${a.maxRel} %; ${a.heights} × ${a.trials} drops; ${a.air === 'none' ? 'no air' : 'mixed air'}`;
   const saved = saveAssignments(mergeAssignments(saved_, [{ code: a.code, lab: labForLink(link).id, link, key, settings, created: new Date().toISOString() }]));
   $('copy-link-msg').textContent += saved ? ' Saved in “Your saved assignments” below.' : ' This browser could not save it: write the grading key down.';
   renderSaved(); $('g-saved').value = `${labForLink(link).id}|${a.code}`;
@@ -88,18 +98,18 @@ $('saved-load').addEventListener('change', async e => {
 renderSaved();
 
 /* ---------- 2. grade ---------- */
-let lastRows = [], lastCode = '';
+let lastRows = [], lastCode = '', lastLab = 'freefall';
 const msg = (text, good) => { const m = $('g-msg'); m.hidden = false; m.textContent = text; m.className = `feedback ${good ? 'lb-good' : 'lb-bad'}`; };
 $('grade-form').addEventListener('submit', e => {
   e.preventDefault();
-  let a = null;
-  try { a = parseAssignment(new URL($('g-link').value.trim(), location.href).search); } catch { /* not a link */ }
+  let a = null, lab = 'freefall';
+  try { const u = new URL($('g-link').value.trim(), location.href); lab = labForLink(u.href).id; a = lab === 'projectile' ? parseProjectileAssignment(u.search) : parseAssignment(u.search); } catch { /* not a link */ }
   $('grades').hidden = true; $('g-csv').disabled = true; lastRows = [];
   if (!a) return msg('That is not an assignment link: paste the student link you posted in Canvas (it contains “?a=”).');
   if (a.keyCheck && keyCheck($('g-key').value) !== a.keyCheck) return msg('The grading key does not match this assignment link. Use the key shown when the link was made.');
-  const rows = gradeBatch($('g-codes').value, a);
+  const rows = lab === 'projectile' ? gradeProjectileBatch($('g-codes').value, a) : gradeBatch($('g-codes').value, a);
   if (!rows.length) return msg('No completion codes found. Codes start with “LB-” (or “LB1-” for older codes).');
-  lastRows = rows; lastCode = a.code;
+  lastRows = rows; lastCode = a.code; lastLab = lab;
   const graded = rows.filter(r => r.result && !r.replaced), bad = rows.filter(r => r.error).length;
   const mean = graded.length ? graded.reduce((s, r) => s + r.result.score, 0) / graded.length : 0;
   msg(`${graded.length} ${graded.length === 1 ? 'student' : 'students'} graded for “${a.code}”${graded.length ? `, average ${mean.toFixed(1)} / 4` : ''}.${bad ? ` ${bad} ${bad === 1 ? 'code was' : 'codes were'} refused (see the table).` : ''}${a.keyCheck ? '' : ' (This link has no grading key, so anyone with it could grade.)'}`, !bad);
@@ -125,9 +135,9 @@ function renderGrades(rows) {
     for (const c of r.result.checks) cell(tr, c.pass ? '✓' : '✗', c.pass ? 'lb-pass' : 'lb-fail', c.detail);
     cell(tr, `${r.sub.g} ± ${r.sub.dg}`);
     cell(tr, r.result.G.toFixed(2));
-    cell(tr, [r.replaced ? 'replaced by a later code' : '', `${r.sub.ball === 'pingpong' ? 'ping-pong' : 'steel'}, ${r.sub.timer === 'gate' ? 'electronic timer' : 'stopwatch'}`, ...r.flags].filter(Boolean).join('; '));
+    cell(tr, [r.replaced ? 'replaced by a later code' : '', r.sub.launches ? notesFor2(r.sub) : `${r.sub.ball === 'pingpong' ? 'ping-pong' : 'steel'}, ${r.sub.timer === 'gate' ? 'electronic timer' : 'stopwatch'}`, ...r.flags].filter(Boolean).join('; '));
     return tr;
   }));
   $('grades').hidden = false;
 }
-$('g-csv').addEventListener('click', () => { if (lastRows.length) downloadCsv(gradesCsv(lastRows), `lab1-grades-${lastCode}.csv`); });
+$('g-csv').addEventListener('click', () => { if (lastRows.length) downloadCsv(lastLab === 'projectile' ? gradesCsv2(lastRows) : gradesCsv(lastRows), `${lastLab === 'projectile' ? 'lab2' : 'lab1'}-grades-${lastCode}.csv`); });

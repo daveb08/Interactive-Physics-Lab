@@ -128,13 +128,15 @@ test('demo mode is offered only in Free Exploration',async({page})=>{
 
 test.describe('Solve it graphs',()=>{
  wide(test);
- test('the Run-it graph column widens and the graphs grow taller',async({page})=>{
+ test('the Run-it graph column widens, and nothing gives the answers away before a run',async({page})=>{
   await open(page,'/modules/newtons-laws/solve.html');
-  const size=()=>page.locator('#g-v').evaluate(e=>{const b=e.getBoundingClientRect();return {w:b.width,h:b.height};});
-  const before=await size();
+  await expect(page.locator('#r-a')).toHaveText('—');
+  await expect(page.locator('#g-v')).toBeHidden();
+  await expect(page.locator('.graphs .graph-help')).toContainText('Graphs appear when you check and run');
+  const width=()=>page.locator('.graphs').evaluate(e=>e.getBoundingClientRect().width);
+  const before=await width();
   await page.getByRole('button',{name:'Wider graphs',exact:true}).click();
   await page.getByRole('button',{name:'Wider graphs',exact:true}).click();
-  await expect.poll(async()=>(await size()).h).toBeGreaterThan(before.h+20);
-  expect((await size()).w).toBeGreaterThan(before.w+100);
+  expect(await width()).toBeGreaterThan(before+100);
  });
 });

@@ -21,6 +21,8 @@ const state = {
   bank: [], solution: [], attempts: 0, check: null,
 };
 let trueRun = null, ghostRun = null, trueFull = [], model = null;
+// The acceleration readout and the graphs (whose axes would reveal the answers) stay hidden until the first run.
+let ran = false, graphHelp = null;
 
 const cart = new CartView($('cart-scene'));
 const NS = 'http://www.w3.org/2000/svg';
@@ -377,7 +379,7 @@ function resetSim() {
   const p = problem();
   trueRun = createRun(p.setup, { duration: p.runTime });
   trueFull = grid(trueRun);
-  ghostRun = null; model = null;
+  ghostRun = null; model = null; ran = false;
   for (const k of ['x', 'v', 'a']) graphs[k].setRange(trueFull, p.runTime);
   $('run-status').textContent = 'Waiting for a check';
   render();
@@ -395,6 +397,7 @@ function startRun() {
   const ghostFull = ghostRun ? grid(ghostRun).filter(s => Math.abs(s.x) < 3 * span) : [];
   for (const k of ['x', 'v', 'a']) graphs[k].setRange([...trueFull, ...ghostFull], p.runTime);
   $('compare').hidden = true;
+  ran = true;
   $('run-status').textContent = 'Running';
   clock.start();
 }
@@ -423,7 +426,10 @@ function render() {
     if (lbl) { lbl.textContent = off ? `your model ${off > 0 ? '→' : '←'} ${gx.toFixed(1)} m` : 'your model'; lbl.setAttribute('text-anchor', off > 0 ? 'end' : off < 0 ? 'start' : 'middle'); }
   }
   else ghost.style.display = 'none';
-  $('r-t').textContent = s.t.toFixed(2); $('r-x').textContent = fmt(s.x); $('r-v').textContent = fmt(s.v); $('r-a').textContent = fmt(trueRun.a);
+  $('r-t').textContent = s.t.toFixed(2); $('r-x').textContent = fmt(s.x); $('r-v').textContent = fmt(s.v); $('r-a').textContent = ran ? fmt(trueRun.a) : '—';
+  const help = document.querySelector('.graphs .graph-help');
+  if (help) { graphHelp ??= help.textContent; help.textContent = ran ? graphHelp : 'Graphs appear when you check and run your solution.'; }
+  for (const k of ['x', 'v', 'a']) graphs[k].svg.hidden = !ran;
   const checked = !!state.check;
   for (const k of ['x', 'v', 'a']) graphs[k].render({
     samples: trueRun.samples,

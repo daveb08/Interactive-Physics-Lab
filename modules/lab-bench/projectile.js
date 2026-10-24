@@ -10,7 +10,7 @@ import { planetFor, normaliseId, PRACTICE_CODE, rng, hash32 } from '../../js/cor
 import { AIR } from '../../js/core/freefall-drag.js';
 import { XYPlot } from '../../js/components/xy-plot.js';
 import { downloadCsv } from '../../js/components/csv-export.js';
-import { points, shown, vyPoints, handStatus, fitGraph, summary, progress as progressOf, scaleOf, calibrated, HAND_VY, MIN_DEFAULT, MODELS } from './projectile-model.js';
+import { points, shown, velPoints, handStatus, fitGraph, summary, progress as progressOf, scaleOf, calibrated, HAND_VY, MIN_DEFAULT, MODELS } from './projectile-model.js';
 import { parseProjectileAssignment, encodeProjectile, questionFor2, CORRECT2, idealG } from './grading-projectile.js';
 import { assignmentPlanet } from './grading.js';
 
@@ -253,36 +253,50 @@ function renderVideo() {
 
 /* ---------- 3. data table and hand-worked vy ---------- */
 function renderData() {
-  const l = launch(), pts = l ? points(l) : [], vys = vyPoints(pts), hs = l ? handStatus(l) : { marks: [], done: false };
+  const l = launch(), pts = l ? points(l) : [], vs = velPoints(pts), hs = l ? handStatus(l) : { marks: [], done: false };
   $('data-count').textContent = `${pts.length} ${pts.length === 1 ? 'point' : 'points'}`;
+  // Two marks in the same place usually mean frames before launch: a ball sitting in the launcher bends the fit.
+  const still = vs.filter(v => Math.abs(v.dx) < 0.002 && Math.abs(v.dy) < 0.002).map(v => `${v.from.n}→${v.to.n}`);
   $('data-help').textContent = !l ? 'Fire a launch, calibrate the video, then mark the ball: each mark adds a row.'
     : !calibrated(l) ? 'Set the scale and the origin to turn your marks into metres.'
-    : pts.length < HAND_VY + 1 ? `Mark the ball on at least ${HAND_VY + 1} frames to work out v_y.`
-    : hs.done ? `v_y for every pair of neighbouring rows, at the middle time (row shows the interval to the next row).` : `v_y between a row and the next one goes in the first row. Work out the first ${HAND_VY} yourself.`;
-  $('data-rows').replaceChildren(...pts.map((p, i) => {
+    : pts.length < HAND_VY + 1 ? `Mark the ball on at least ${HAND_VY + 1} frames to work out the velocities.`
+    : still.length ? `The ball did not move between frames ${still.join(', ')}: it had probably not left the launcher yet. Remove those marks (step to the frame, then “Remove this frame’s mark”) so only the flight is fitted.`
+    : hs.done ? 'Positions above; velocities for every interval below.' : `Now work out the first ${HAND_VY} velocities in the velocity table.`;
+  $('data-help').classList.toggle('lb-bad-text', !!(l && still.length));
+  $('data-rows').replaceChildren(...pts.map(p => {
     const s = shown(p), tr = document.createElement('tr');
     for (const v of [p.n, s.t.toFixed(4), minus(s.x.toFixed(3)), minus(s.y.toFixed(3))]) { const td = document.createElement('td'); td.textContent = v; tr.append(td); }
-    const td = document.createElement('td');
-    if (i < vys.length && i < HAND_VY) {
-      const inp = Object.assign(document.createElement('input'), { type: 'number', step: 'any', inputMode: 'decimal', className: 'pj-hand-in', value: l.hand?.[i] ?? '' });
-      inp.setAttribute('aria-label', `v_y between frames ${vys[i].from.t.toFixed(4)} s and ${vys[i].to.t.toFixed(4)} s, in m/s`);
-      inp.addEventListener('change', () => { l.hand = [...(l.hand || [])]; l.hand[i] = inp.value === '' ? '' : +inp.value; save(); $('hand-msg').textContent = ''; renderGraphs(); renderNotebook(); });
-      td.append(inp);
-      if (hs.done) { td.append(' ✓'); }
-    } else if (i < vys.length && hs.done) td.textContent = minus(vys[i].vy.toFixed(3));
-    else td.textContent = i < vys.length ? '…' : '';
-    tr.append(td); return tr;
+    return tr;
   }));
-  $('hand-box').hidden = !l || vys.length < HAND_VY;
+  const cell = (i, key, arrKey, value) => {
+    const td = document.createElement('td');
+    if (i < HAND_VY) {
+      const inp = Object.assign(document.createElement('input'), { type: 'number', step: 'any', inputMode: 'decimal', className: 'pj-hand-in', value: l[arrKey]?.[i] ?? '' });
+      inp.setAttribute('aria-label', `${key === 'vx' ? 'v_x' : 'v_y'} for frames ${vs[i].from.n} to ${vs[i].to.n}, in m/s`);
+      inp.addEventListener('change', () => { l[arrKey] = [...(l[arrKey] || [])]; l[arrKey][i] = inp.value === '' ? '' : +inp.value; save(); $('hand-msg').textContent = ''; renderGraphs(); renderNotebook(); renderControls(); });
+      td.append(inp);
+      if (hs.done) td.append(' ✓');
+    } else td.textContent = hs.done ? minus(value.toFixed(3)) : '…';
+    return td;
+  };
+  $('vel-rows').replaceChildren(...vs.map((v, i) => {
+    const tr = document.createElement('tr');
+    for (const t of [`${v.from.n} → ${v.to.n}`, v.t.toFixed(4), v.dt.toFixed(4), minus(v.dx.toFixed(3)), minus(v.dy.toFixed(3))]) { const td = document.createElement('td'); td.textContent = t; tr.append(td); }
+    tr.append(cell(i, 'vx', 'handX', v.vx), cell(i, 'vy', 'hand', v.vy));
+    return tr;
+  }));
+  $('vel-wrap').hidden = !l || vs.length < 1;
+  $('vel-empty').hidden = !!l && vs.length >= 1;
+  $('hand-box').hidden = !l || vs.length < HAND_VY;
   $('check-hand').disabled = !l;
 }
 $('check-hand').addEventListener('click', () => {
   const l = launch(); if (!l) return;
   const hs = handStatus(l), wrong = hs.marks.filter(m => !m.ok);
-  if (!wrong.length) { $('hand-msg').textContent = `✓ All ${HAND_VY} are right. The rest of the column has been filled in the same way, and the v_y–t graph is ready.`; $('hand-msg').className = 'help lb-good-text'; }
+  if (!wrong.length) { $('hand-msg').textContent = `✓ All ${2 * HAND_VY} are right. The rest of both columns has been filled in the same way, and the v_x–t and v_y–t graphs are ready.`; $('hand-msg').className = 'help lb-good-text'; }
   else {
-    const m = wrong[0], i = hs.marks.indexOf(m);
-    $('hand-msg').textContent = `Not yet: row ${i + 1}${Number.isFinite(+m.entered) && m.entered !== '' ? ` (${m.entered})` : ' is empty'}. Use the y and t of row ${i + 1} and row ${i + 2}: v_y = (y₂ − y₁) / (t₂ − t₁) = (${minus(m.to.y.toFixed(3))} − ${minus(m.from.y.toFixed(3))}) / (${m.to.t.toFixed(4)} − ${m.from.t.toFixed(4)}).`;
+    const m = wrong[0], i = hs.marks.indexOf(m), x = !m.okX, entered = x ? m.enteredX : m.enteredY, c = x ? 'x' : 'y';
+    $('hand-msg').textContent = `Not yet: v_${c} for frames ${m.from.n} → ${m.to.n}${entered !== '' && entered != null && Number.isFinite(+entered) ? ` (${entered})` : ' is empty'}. Use the two positions: v_${c} = Δ${c} / Δt = (${c}₂ − ${c}₁) / (t₂ − t₁) = (${minus(m.to[c].toFixed(3))} − ${minus(m.from[c].toFixed(3))}) / (${m.to.t.toFixed(4)} − ${m.from.t.toFixed(4)}).${wrong.length > 1 ? ` (${wrong.length} intervals still need fixing.)` : ''}`;
     $('hand-msg').className = 'help lb-bad-text';
   }
   renderAll();
@@ -295,28 +309,30 @@ $('csv').addEventListener('click', () => {
 
 /* ---------- 4. graphs and fits ---------- */
 const plots = {
+  vx: new XYPlot($('g-vx'), { title: 'vx against t', xLabel: 't (s)', yLabel: 'vx (m/s)' }),
   x: new XYPlot($('g-x'), { title: 'x against t', xLabel: 't (s)', yLabel: 'x (m)' }),
   y: new XYPlot($('g-y'), { title: 'y against t', xLabel: 't (s)', yLabel: 'y (m)' }),
   vy: new XYPlot($('g-vy'), { title: 'vy against t', xLabel: 't (s)', yLabel: 'vy (m/s)' }),
 };
-const UNITS = { x: ['m', 'm/s', 'm/s²'], y: ['m', 'm/s', 'm/s²'], vy: ['m/s', 'm/s²', 'm/s³'] };
+const UNITS = { x: ['m', 'm/s', 'm/s²'], y: ['m', 'm/s', 'm/s²'], vx: ['m/s', 'm/s²', 'm/s³'], vy: ['m/s', 'm/s²', 'm/s³'] };
 const span = (vals, pad = 0.1) => { const lo = Math.min(...vals), hi = Math.max(...vals), d = (hi - lo) || 1; return [lo - d * pad, hi + d * pad]; };
 function renderGraphs() {
   const l = launch(), pts = l ? points(l) : [], hs = l ? handStatus(l) : { done: false };
-  const data = { x: pts.map(p => [p.t, p.x]), y: pts.map(p => [p.t, p.y]), vy: hs.done ? vyPoints(pts).map(v => [v.t, v.vy]) : [] };
-  for (const key of ['x', 'y', 'vy']) {
+  const vel = hs.done ? velPoints(pts) : [];
+  const data = { x: pts.map(p => [p.t, p.x]), y: pts.map(p => [p.t, p.y]), vx: vel.map(v => [v.t, v.vx]), vy: vel.map(v => [v.t, v.vy]) };
+  for (const key of ['x', 'y', 'vx', 'vy']) {
     const d = data[key], fit = l ? fitGraph(l, key) : null;
     const xs = d.length ? span(d.map(p => p[0]), 0.05) : [0, 1], ys = d.length ? span([...d.map(p => p[1]), 0]) : [0, 1];
     const series = [];
     if (fit) { const line = []; for (let i = 0; i <= 60; i++) { const t = xs[0] + (xs[1] - xs[0]) * i / 60; line.push([t, fit.A + fit.B * t + (fit.C ?? 0) * t * t]); } series.push({ points: line, color: '#1f6b5e', width: 2.2, legend: MODELS[fit.model].toLowerCase() }); }
-    plots[key].render({ x: xs, y: ys, series, markers: d.map(([a, b]) => ({ x: a, y: b, color: '#c27b22', r: 3.6 })), note: d.length ? '' : key === 'vy' && pts.length ? 'check your v_y values first' : 'no points yet' });
+    plots[key].render({ x: xs, y: ys, series, markers: d.map(([a, b]) => ({ x: a, y: b, color: '#c27b22', r: 3.6 })), note: d.length ? '' : (key === 'vy' || key === 'vx') && pts.length ? 'check your v_x and v_y values first' : 'no points yet' });
     $(`g-${key}`).setAttribute('aria-label', `${plots[key].title}: ${d.length} points.${fit ? ` ${MODELS[fit.model]} fitted.` : ''}`);
     const sel = document.querySelector(`.pj-model[data-key="${key}"]`), btn = document.querySelector(`.pj-fit[data-key="${key}"]`);
     if (l && document.activeElement !== sel) sel.value = l.models?.[key] || sel.value;
     btn.disabled = !l || !d.length;
     const u = UNITS[key], out = $(`c-${key}`);
     if (!fit) { out.textContent = l?.models?.[key] && d.length ? `Not enough points for a ${MODELS[l.models[key]].toLowerCase()} yet.` : ''; continue; }
-    const name = { x: 'x', y: 'y', vy: 'v_y' }[key];
+    const name = { x: 'x', y: 'y', vx: 'v_x', vy: 'v_y' }[key];
     out.innerHTML = `<b>${name} = A + B t${fit.model === 'parabola' ? ' + C t²' : ''}</b> (${fit.n} points)<br>A = ${pm(fit.A, fit.ASE)} ${u[0]}<br>B = ${pm(fit.B, fit.BSE)} ${u[1]}${fit.model === 'parabola' ? `<br>C = ${pm(fit.C, fit.CSE)} ${u[2]}` : ''}`;
   }
 }
@@ -335,7 +351,7 @@ function renderNotebook() {
   $('launch-rows').replaceChildren(...pr.sums.map((s, i) => {
     const l = state.launches[i], tr = document.createElement('tr');
     if (i === state.cur) tr.className = 'pj-current';
-    const fits = ['x', 'y', 'vy'].map(k => `${k === 'vy' ? 'v_y' : k}: ${l.models?.[k] ? MODELS[l.models[k]].toLowerCase() : '–'}`).join(' · ');
+    const fits = ['x', 'y', 'vx', 'vy'].map(k => `${{ vx: 'v_x', vy: 'v_y' }[k] || k}: ${l.models?.[k] ? MODELS[l.models[k]].toLowerCase() : '–'}`).join(' · ');
     for (const v of [s.id, `${s.angle}°`, s.spring, s.fps, s.n, s.calibrated ? '✓' : '–', fits]) { const td = document.createElement('td'); td.textContent = v; tr.append(td); }
     const tdg = document.createElement('td'), inp = Object.assign(document.createElement('input'), { type: 'number', step: 'any', inputMode: 'decimal', className: 'pj-my-g', value: l.myG ?? '' });
     inp.setAttribute('aria-label', `Your g from launch ${l.id}, m/s²`);

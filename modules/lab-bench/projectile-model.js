@@ -6,7 +6,7 @@
  *     cal: { a: {u, v}, b: {u, v} } | null,      // the two ends of the metre stick, clicked by the student
  *     origin: {u, v} | null,                      // the origin, clicked by the student (x right, y up)
  *     clicks: { [frame]: {u, v} },                // the ball's centre, clicked on each frame the student chose
- *     hand: [vy1, vy2, vy3],                      // the first three vy values, worked out by hand
+ *     hand: [vy1, vy2, vy3], handX: [vx1, vx2, vx3], // the first three vy and vx values, worked out by hand
  *     models: { x, y, vy } ('line'|'parabola'),   // the model the student chose for each graph
  *     note }
  * Nothing here knows the true g: every number comes from the student's clicks.
@@ -16,7 +16,7 @@ import { linearFit, quadraticFit } from '../../js/core/fit.js';
 export const HAND_VY = 3;
 export const MIN_DEFAULT = Object.freeze({ launches: 2, points: 10 });
 export const MODELS = Object.freeze({ line: 'Straight line', parabola: 'Parabola' });
-export const CORRECT_MODELS = Object.freeze({ x: 'line', y: 'parabola', vy: 'line' });
+export const CORRECT_MODELS = Object.freeze({ x: 'line', y: 'parabola', vx: 'line', vy: 'line' });
 
 /** Metres per pixel from the two clicked ends of a 1.000 m stick. */
 export function scaleOf(cal, length = 1) {
@@ -36,20 +36,25 @@ export function points(l) {
 /** Rounded as shown in the data table (the student works from these). */
 export const shown = p => ({ ...p, t: +p.t.toFixed(4), x: +p.x.toFixed(3), y: +p.y.toFixed(3) });
 
-/** vy between consecutive tracked points, at the middle of each interval: (y₂ − y₁) / (t₂ − t₁). */
-export function vyPoints(pts) {
+/** Velocities between consecutive tracked points, at the middle of each interval: vx = (x₂ − x₁)/Δt, vy = (y₂ − y₁)/Δt. */
+export function velPoints(pts) {
   const out = [];
   for (let i = 0; i + 1 < pts.length; i++) {
-    const a = shown(pts[i]), b = shown(pts[i + 1]), dt = b.t - a.t;
-    if (dt > 0) out.push({ i, t: (a.t + b.t) / 2, vy: (b.y - a.y) / dt, dy: b.y - a.y, dt, from: a, to: b });
+    // Positions as shown (to the millimetre); times exact (n / fps), so every Δt of one frame is the same.
+    const a = shown(pts[i]), b = shown(pts[i + 1]), dt = pts[i + 1].t - pts[i].t;
+    if (dt > 0) out.push({ i, t: (pts[i].t + pts[i + 1].t) / 2, vx: (b.x - a.x) / dt, vy: (b.y - a.y) / dt, dx: +(b.x - a.x).toFixed(3), dy: +(b.y - a.y).toFixed(3), dt, from: a, to: b });
   }
   return out;
 }
-/** Is a hand-worked vy right? Within 2 % or 0.02 m/s of the value from the table (rounding differs). */
+export const vyPoints = velPoints;
+/** Is a hand-worked velocity right? Within 2 % or 0.02 m/s of the value from the table (rounding differs). */
 export const handOk = (entered, exact) => Number.isFinite(entered) && Math.abs(entered - exact) <= Math.max(0.02, 0.02 * Math.abs(exact));
+/** The first three vx and vy, worked out by hand. Both columns must be right before either velocity graph appears. */
 export function handStatus(l) {
-  const vs = vyPoints(points(l)).slice(0, HAND_VY);
-  const marks = vs.map((v, i) => ({ ...v, entered: l.hand?.[i], ok: handOk(+l.hand?.[i], v.vy) }));
+  const vs = velPoints(points(l)).slice(0, HAND_VY);
+  const ok = (arr, i, v) => arr?.[i] !== '' && arr?.[i] != null && handOk(+arr[i], v);
+  const marks = vs.map((v, i) => ({ ...v, enteredY: l.hand?.[i], enteredX: l.handX?.[i], okY: ok(l.hand, i, v.vy), okX: ok(l.handX, i, v.vx) }))
+    .map(m => ({ ...m, ok: m.okY && m.okX }));
   return { marks, done: marks.length === HAND_VY && marks.every(m => m.ok) };
 }
 
@@ -57,7 +62,7 @@ export function handStatus(l) {
 export function fitGraph(l, key) {
   const model = l.models?.[key];
   if (!model) return null;
-  const pts = key === 'vy' ? (handStatus(l).done ? vyPoints(points(l)).map(v => ({ x: v.t, y: v.vy })) : [])
+  const pts = key === 'vy' || key === 'vx' ? (handStatus(l).done ? velPoints(points(l)).map(v => ({ x: v.t, y: v[key] })) : [])
     : points(l).map(p => ({ x: p.t, y: key === 'x' ? p.x : p.y }));
   if (pts.length < (model === 'parabola' ? 4 : 3)) return null;
   try {
@@ -68,10 +73,10 @@ export function fitGraph(l, key) {
 
 /** One launch's status, as the notebook and the grading code describe it. */
 export function summary(l) {
-  const pts = points(l), fits = { x: fitGraph(l, 'x'), y: fitGraph(l, 'y'), vy: fitGraph(l, 'vy') };
+  const pts = points(l), fits = { x: fitGraph(l, 'x'), y: fitGraph(l, 'y'), vx: fitGraph(l, 'vx'), vy: fitGraph(l, 'vy') };
   const modelsOk = Object.entries(CORRECT_MODELS).every(([k, m]) => l.models?.[k] === m);
   return { id: l.id, angle: l.angle, spring: l.spring, fps: l.fps, stick: l.stick, n: pts.length, calibrated: calibrated(l), hand: handStatus(l).done, fits, modelsOk,
-    analysed: !!(fits.x && fits.y && fits.vy) };
+    analysed: !!(fits.x && fits.y && fits.vx && fits.vy) };
 }
 
 /**

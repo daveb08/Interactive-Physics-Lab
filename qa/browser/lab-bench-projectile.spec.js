@@ -35,20 +35,21 @@ async function track(page){
   if((await page.locator('#frame-label').innerText())===label)break;   // last frame
  }
 }
-/** Work out the first three vy values from the table, as a student would. */
+/** Work out the first three vx and vy values from the velocity table (Δx, Δy, Δt), as a student would. */
 async function handVy(page){
- const rows=page.locator('#data-rows tr');
+ const rows=page.locator('#vel-rows tr');
+ const num=s=>Number(s.replace('−','-'));
  for(let i=0;i<3;i++){
-  const a=await rows.nth(i).locator('td').allInnerTexts(),b=await rows.nth(i+1).locator('td').allInnerTexts();
-  const num=s=>Number(s.replace('−','-'));
-  const vy=(num(b[3])-num(a[3]))/(num(b[1])-num(a[1]));
-  await rows.nth(i).locator('input').fill(vy.toFixed(3));await rows.nth(i).locator('input').press('Tab');
+  const c=await rows.nth(i).locator('td').allInnerTexts();   // interval, t_mid, Δt, Δx, Δy, vx, vy
+  const dt=num(c[2]);
+  await rows.nth(i).locator('input').nth(0).fill((num(c[3])/dt).toFixed(3));await rows.nth(i).locator('input').nth(0).press('Tab');
+  await rows.nth(i).locator('input').nth(1).fill((num(c[4])/dt).toFixed(3));await rows.nth(i).locator('input').nth(1).press('Tab');
  }
  await page.getByRole('button',{name:/Check my v/}).click();
- await expect(page.locator('#hand-msg')).toContainText('All 3 are right');
+ await expect(page.locator('#hand-msg')).toContainText('All 6 are right');
 }
 async function fitAll(page){
- for(const [key,model] of [['x','line'],['y','parabola'],['vy','line']]){
+ for(const [key,model] of [['x','line'],['y','parabola'],['vx','line'],['vy','line']]){
   await page.locator(`.pj-model[data-key="${key}"]`).selectOption(model);await page.locator(`.pj-fit[data-key="${key}"]`).click();
   await expect(page.locator(`#c-${key}`)).toContainText('A =');
  }
@@ -67,8 +68,8 @@ test('Lab 2 practice: fire, calibrate, mark, work out vy, fit, and get Earth’s
  await fire(page,45,3);await calibrate(page);await track(page);
  expect(Number((await page.locator('#data-count').innerText()).split(' ')[0])).toBeGreaterThanOrEqual(10);
  // the page never states g, and vy needs the hand-worked values first
- await expect(page.locator('#g-vy')).toContainText('check your v_y values first');
- await page.locator('#data-rows tr').first().locator('input').fill('99');await page.getByRole('button',{name:/Check my v/}).click();
+ await expect(page.locator('#g-vy')).toContainText('check your v_x and v_y values first');
+ await page.locator('#vel-rows tr').first().locator('input').first().fill('99');await page.getByRole('button',{name:/Check my v/}).click();
  await expect(page.locator('#hand-msg')).toContainText('Not yet');
  await handVy(page);
  // a fit needs a model choice

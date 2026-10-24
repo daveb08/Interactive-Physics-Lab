@@ -10,7 +10,7 @@
   <section class="panel lb-brief" aria-labelledby="brief-title">
     <h2 id="brief-title">Your assignment</h2>
     <div>
-      <p>Determine g, and report it with an uncertainty. Make <strong id="need-launches">2</strong> or more launches with <strong>different angles or spring settings</strong>, track at least <strong id="need-points">10</strong> frames of each, and fit x–t, y–t and v<sub>y</sub>–t.</p>
+      <p>Determine g, and report it with an uncertainty. Make <strong id="need-launches">2</strong> or more launches with <strong>different angles or spring settings</strong>, track at least <strong id="need-points">10</strong> frames of each, and fit x–t, y–t, v<sub>x</sub>–t and v<sub>y</sub>–t.</p>
       <p id="graded-banner" class="lb-graded" role="note" hidden></p>
       <div class="e1-group lb-mode"><span class="lb-label" id="mode-label">Where are you?</span>
         <div class="lb-seg" role="group" aria-labelledby="mode-label"><button type="button" data-mode="earth" aria-pressed="true">Earth (practice)</button><button type="button" data-mode="planet" aria-pressed="false">Mystery planet</button></div></div>
@@ -25,7 +25,7 @@
       <li data-item="fire">Set up the launcher and camera, then fire and film a launch</li>
       <li data-item="cal">Calibrate the video: the metre stick’s two ends, then the origin</li>
       <li data-item="track">Mark the ball on each frame</li>
-      <li data-item="vy">Work out the first three v<sub>y</sub> values by hand</li>
+      <li data-item="vy">Work out the first three v<sub>x</sub> and v<sub>y</sub> values by hand</li>
       <li data-item="fit">Choose a model for each graph and fit it</li>
     </ol>
   </section>
@@ -76,26 +76,35 @@
     <section class="panel pj-data" aria-labelledby="data-title">
       <div class="panel-heading"><h3 id="data-title">3 · Data</h3><span id="data-count" class="status">0 points</span></div>
       <p id="data-help" class="help lb-pad">Calibrate the video, then mark the ball: each mark adds a row.</p>
-      <div class="lb-table-wrap pj-table-wrap"><table class="lb-table" id="data-table"><caption class="sr-only">Tracked points</caption>
-        <thead><tr><th scope="col">frame</th><th scope="col">t (s)</th><th scope="col">x (m)</th><th scope="col">y (m)</th><th scope="col">v<sub>y</sub> (m/s)</th></tr></thead><tbody id="data-rows"></tbody></table></div>
-      <div id="hand-box" class="pj-hand" hidden>
-        <p><b>Work out the first three v<sub>y</sub> values yourself.</b> Each one is v<sub>y</sub> = (y₂ − y₁) / (t₂ − t₁) between two neighbouring rows, placed at the middle time. Type them in the table, then check.</p>
-        <button type="button" id="check-hand">Check my v<sub>y</sub> values</button>
-        <p id="hand-msg" class="help" role="status"></p>
-      </div>
+      <div class="lb-table-wrap pj-table-wrap"><table class="lb-table" id="data-table"><caption>Positions</caption>
+        <thead><tr><th scope="col">frame</th><th scope="col">t (s)</th><th scope="col">x (m)</th><th scope="col">y (m)</th></tr></thead><tbody id="data-rows"></tbody></table></div>
       <div class="transport lb-left lb-pad"><button type="button" id="csv">⬇ Data (.csv)</button></div>
     </section>
   </div>
 
+  <section class="panel pj-vel" aria-labelledby="vel-title">
+    <div class="panel-heading"><h3 id="vel-title">4 · Velocities</h3><span>04</span></div>
+    <p id="vel-empty" class="help lb-pad">Mark the ball on at least 4 frames: each pair of neighbouring positions gives one velocity.</p>
+    <div id="hand-box" class="pj-hand" hidden>
+        <p><b>Work out the first three v<sub>x</sub> and v<sub>y</sub> values yourself.</b> Each velocity belongs to an interval between two neighbouring positions: v<sub>x</sub> = Δx / Δt and v<sub>y</sub> = Δy / Δt, plotted at the middle time t<sub>mid</sub>. Type them in the velocity table, then check. As the columns fill in, compare them: what does each velocity do?</p>
+        <button type="button" id="check-hand">Check my v<sub>x</sub> and v<sub>y</sub> values</button>
+        <p id="hand-msg" class="help" role="status"></p>
+      </div>
+    <div class="lb-table-wrap pj-table-wrap pj-vel-wrap" id="vel-wrap" hidden><table class="lb-table" id="vel-table"><caption>One row per interval between neighbouring positions; each velocity is plotted at the middle time</caption>
+        <thead><tr><th scope="col">interval</th><th scope="col">t<sub>mid</sub> (s)</th><th scope="col">Δt (s)</th><th scope="col">Δx (m)</th><th scope="col">Δy (m)</th><th scope="col">v<sub>x</sub> (m/s)</th><th scope="col">v<sub>y</sub> (m/s)</th></tr></thead><tbody id="vel-rows"></tbody></table></div>
+      
+      </section>
+
   <section class="panel pj-graphs" aria-labelledby="graphs-title">
-    <div class="panel-heading"><h3 id="graphs-title">4 · Graphs and fits</h3><span>04</span></div>
+    <div class="panel-heading"><h3 id="graphs-title">5 · Graphs and fits</h3><span>05</span></div>
     <p class="help lb-pad">For each graph, choose the model the data should follow and fit it. The fit gives the coefficients with their uncertainties; working out g from them is up to you.</p>
     <div class="pj-graph-grid">
       <div class="pj-graph" data-key="x"><svg id="g-x"></svg><div class="pj-fit-row"><label>Model <select class="vf-select pj-model" data-key="x"><option value="">Choose…</option><option value="line">Straight line: A + B t</option><option value="parabola">Parabola: A + B t + C t²</option></select></label><button type="button" class="pj-fit" data-key="x">Fit</button></div><p class="pj-coef" id="c-x" role="status"></p></div>
       <div class="pj-graph" data-key="y"><svg id="g-y"></svg><div class="pj-fit-row"><label>Model <select class="vf-select pj-model" data-key="y"><option value="">Choose…</option><option value="line">Straight line: A + B t</option><option value="parabola">Parabola: A + B t + C t²</option></select></label><button type="button" class="pj-fit" data-key="y">Fit</button></div><p class="pj-coef" id="c-y" role="status"></p></div>
+      <div class="pj-graph" data-key="vx"><svg id="g-vx"></svg><div class="pj-fit-row"><label>Model <select class="vf-select pj-model" data-key="vx"><option value="">Choose…</option><option value="line">Straight line: A + B t</option><option value="parabola">Parabola: A + B t + C t²</option></select></label><button type="button" class="pj-fit" data-key="vx">Fit</button></div><p class="pj-coef" id="c-vx" role="status"></p></div>
       <div class="pj-graph" data-key="vy"><svg id="g-vy"></svg><div class="pj-fit-row"><label>Model <select class="vf-select pj-model" data-key="vy"><option value="">Choose…</option><option value="line">Straight line: A + B t</option><option value="parabola">Parabola: A + B t + C t²</option></select></label><button type="button" class="pj-fit" data-key="vy">Fit</button></div><p class="pj-coef" id="c-vy" role="status"></p></div>
     </div>
-    <details class="lb-explain lb-pad"><summary>How do the coefficients relate to g?</summary><div><p>Without air, a projectile’s horizontal velocity is constant and its vertical acceleration is −g. Ask yourself which graph should be a straight line, which a parabola, and which coefficient carries the acceleration. If a graph is a parabola y = A + B t + C t², what is d²y/dt²? If a graph of v<sub>y</sub> against t is a straight line, what does its slope mean?</p><p>The ± on each coefficient comes from how far your points scatter about the fit. If you work out g from a coefficient by multiplying it by a number, multiply its ± by the same number.</p></div></details>
+    <details class="lb-explain lb-pad"><summary>How do the coefficients relate to g?</summary><div><p>Without air, a projectile’s horizontal velocity is constant and its vertical acceleration is −g. Ask yourself which graphs should be straight lines, which a parabola, and which coefficient carries the acceleration. What should the slope of the v<sub>x</sub>–t line be, and what does that say about the horizontal force? If a graph is a parabola y = A + B t + C t², what is d²y/dt²? If a graph of v<sub>y</sub> against t is a straight line, what does its slope mean?</p><p>The ± on each coefficient comes from how far your points scatter about the fit. If you work out g from a coefficient by multiplying it by a number, multiply its ± by the same number.</p></div></details>
   </section>
 
   <section class="panel lb-notebook" aria-labelledby="nb-title">
@@ -106,7 +115,7 @@
   </section>
 
   <section class="panel" aria-labelledby="result-title">
-    <div class="panel-heading"><h3 id="result-title">Your result</h3><span>05</span></div>
+    <div class="panel-heading"><h3 id="result-title">Your result</h3><span>06</span></div>
     <div class="lb-result">
       <p class="help">Report the value and uncertainty you believe, from your launches, to sensible significant figures.</p>
       <div class="lb-result-row"><label>g = <input id="r-g" type="number" step="0.01" inputmode="decimal"></label><span>±</span><label><span class="sr-only">uncertainty</span><input id="r-dg" type="number" step="0.01" min="0" inputmode="decimal"></label><span>m/s²</span></div>

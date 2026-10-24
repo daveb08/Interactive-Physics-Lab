@@ -236,9 +236,12 @@ The page never states g. Files: `projectile.html/.js/.css`, `projectile-model.js
 - **Calibrate.** The student clicks the metre stick's two ends (scale) and the origin (x right, y up). A later launch
   with the same stick place keeps the calibration (camera and stick not moved), and says so.
 - **Track.** One click per frame, auto-advancing; frames before launch and after landing are for the student to skip.
-- **vy by hand.** The first 3 values, (y₂ − y₁)/(t₂ − t₁) from the table as shown; checked within 2 % or 0.02 m/s,
-  with the working shown when wrong. Then the page fills the rest of the column and the vy–t graph appears.
-- **Fit.** For x–t, y–t and vy–t the student chooses line or parabola and presses Fit; coefficients with ± are shown.
+- **Velocities by hand.** A separate velocity table has one row per interval between neighbouring positions
+  (frames, t_mid, Δt, Δx, Δy, vx, vy), so it is clear a velocity belongs to an interval, plotted at its middle time.
+  The student works out the first 3 vx and 3 vy (Δx/Δt, Δy/Δt); checked within 2 % or 0.02 m/s, with the working
+  shown when wrong. Then the page fills the rest and the vx–t and vy–t graphs appear. Marks that do not move (frames
+  before launch) are flagged so the student removes them.
+- **Fit.** For x–t, y–t, vx–t and vy–t the student chooses line or parabola and presses Fit; coefficients with ± are shown.
   g comes from −2C (parabola) or −slope (vy line), worked out by the student. Optional "your g" per launch.
 - **Parallax trap** (assignment option `px=1`, off by default): the stick can stand on the front edge of the bench,
   0.45 m nearer the camera, and starts there. Its scale makes lengths, and g, 2.55/3 ≈ 0.85 of the truth.
@@ -246,7 +249,7 @@ The page never states g. Files: `projectile.html/.js/.css`, `projectile-model.js
   launches × points per launch).
 - **Rubric (4 checks):** value within tolerance of the true g; the ideal (noise-free clicks on the student's launches)
   within 2 δg and δg/g ≤ max; method: enough launches with enough points and the right models (x line, y parabola,
-  vy line), from at least two settings; explanation: first answer right (parallax question with the trap, otherwise
+  vx line, vy line), from at least two settings; explanation: first answer right (parallax question with the trap, otherwise
   "why does vy scatter more").
 - **Completion code:** the short format with lab number 2: flags (answer, stick place), g, δg, per launch (angle, spring,
   fps, points, models right, analysed), ID, checksum. The instructor page makes and grades Lab 1 and Lab 2 links.

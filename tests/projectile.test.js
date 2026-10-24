@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { flight, frames, project, pxPerM, parallaxFactor, inView, STICK_PLACES, MUZZLE, SPRING, CAMERA } from '../js/core/projectile.js';
 import { quadraticFit } from '../js/core/fit.js';
-import { scaleOf, points, vyPoints, handStatus, fitGraph, summary, progress, handOk } from '../modules/lab-bench/projectile-model.js';
+import { scaleOf, points, vyPoints, velPoints, handStatus, fitGraph, summary, progress, handOk } from '../modules/lab-bench/projectile-model.js';
 import { parseProjectileAssignment, projectileQuery, encodeProjectile, decodeProjectile, gradeProjectile, gradeProjectileBatch, idealG, questionFor2 } from '../modules/lab-bench/grading-projectile.js';
 import { encodeSubmission } from '../modules/lab-bench/grading.js';
 import { assignmentPlanet } from '../modules/lab-bench/grading.js';
@@ -54,13 +54,16 @@ test('analysis from clicks: calibration, points in metres, hand vy check, fits w
   close(1 / scaleOf(l.cal), pxPerM(), 1e-9, 'scale');
   const pts = points(l);
   close(pts[0].x, 0, 1e-9, 'origin at the muzzle');
-  const vs = vyPoints(pts);
+  const vs = velPoints(pts);
   l.hand = vs.slice(0, 3).map(v => +v.vy.toFixed(3));
+  assert.equal(handStatus(l).done, false, 'vx still to do');
+  l.handX = vs.slice(0, 3).map(v => +v.vx.toFixed(3));
   assert.equal(handStatus(l).done, true);
   assert.equal(handOk(1.0, 1.05), false); assert.equal(handOk(1.01, 1.0), true);
   assert.equal(fitGraph(l, 'y'), null, 'no model chosen, no fit');
-  l.models = { x: 'line', y: 'parabola', vy: 'line' };
-  const fy = fitGraph(l, 'y'), fvy = fitGraph(l, 'vy'), fx = fitGraph(l, 'x');
+  l.models = { x: 'line', y: 'parabola', vx: 'line', vy: 'line' };
+  const fy = fitGraph(l, 'y'), fvy = fitGraph(l, 'vy'), fx = fitGraph(l, 'x'), fvx = fitGraph(l, 'vx');
+  close(fvx.B, 0, 0.1, 'vx is constant: no horizontal acceleration'); close(fvx.A, fx.B, 0.02, 'vx line level = x–t slope');
   close(-2 * fy.C, 9.81, 0.03, 'g from the parabola (table rounding only)');
   close(-fvy.B, 9.81, 0.15, 'g from the vy line');
   close(fx.B, SPRING[3] * Math.SQRT1_2, 0.05, 'vx');
@@ -68,12 +71,12 @@ test('analysis from clicks: calibration, points in metres, hand vy check, fits w
 });
 
 test('the parallax trap: a scale from the front-edge stick makes g low by the same factor', () => {
-  const l = { ...perfectLaunch({ g: 9.81, rho: 0 }, { angle: 45, spring: 4, fps: 30, stick: 'front' }), models: { x: 'line', y: 'parabola', vy: 'line' } };
+  const l = { ...perfectLaunch({ g: 9.81, rho: 0 }, { angle: 45, spring: 4, fps: 30, stick: 'front' }), models: { x: 'line', y: 'parabola', vx: 'line', vy: 'line' } };
   close(-2 * fitGraph(l, 'y').C / 9.81, parallaxFactor('front'), 0.005, 'g ratio');
 });
 
 test('progress: enough analysed launches, with two different settings', () => {
-  const mk = (angle, spring) => { const l = perfectLaunch({ g: 9.81, rho: 0 }, { angle, spring, fps: 30 }); l.hand = vyPoints(points(l)).slice(0, 3).map(v => v.vy); l.models = { x: 'line', y: 'parabola', vy: 'line' }; return l; };
+  const mk = (angle, spring) => { const l = perfectLaunch({ g: 9.81, rho: 0 }, { angle, spring, fps: 30 }); const vs = velPoints(points(l)).slice(0, 3); l.hand = vs.map(v => v.vy); l.handX = vs.map(v => v.vx); l.models = { x: 'line', y: 'parabola', vx: 'line', vy: 'line' }; return l; };
   assert.equal(progress([mk(45, 4), mk(45, 4)]).done, false, 'same setting twice');
   assert.equal(progress([mk(45, 4), mk(60, 4)]).done, true);
 });

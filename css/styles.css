@@ -70,3 +70,5 @@
 .demo-toggle input{accent-color:var(--teal);width:18px;height:18px;margin:1px 0 0;flex:none}
 .predict-target{display:inline-flex;margin-bottom:12px}
 .predict-target button{font-size:calc(13.5px * var(--ts, 1))}
+/* Solve it: the Run-it graph column can be resized too (no controls column on that page) */
+@media(min-width:1201px){.workspace.solve-workspace.resizable-graphs{grid-template-columns:minmax(320px,1fr) var(--graph-col,360px)}}

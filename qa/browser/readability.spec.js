@@ -116,3 +116,27 @@ test('acceleration graph labels never overlap',async({page})=>{
   for(let i=1;i<boxes.length;i++)expect(boxes[i][0],`${id} tick ${i}`).toBeGreaterThanOrEqual(boxes[i-1][1]-0.5);
  }
 });
+
+test('demo mode is offered only in Free Exploration',async({page})=>{
+ await open(page,SECOND);
+ await expect(page.getByLabel(/Demo mode/)).toBeVisible();
+ await page.getByRole('button',{name:'Guided Experiments',exact:true}).click();
+ await expect(page.getByLabel(/Demo mode/)).toBeHidden();
+ await page.getByRole('button',{name:'Free Exploration',exact:true}).click();
+ await expect(page.getByLabel(/Demo mode/)).toBeVisible();
+});
+
+test.describe('Solve it graphs',()=>{
+ wide(test);
+ test('the Run-it graph column widens, and nothing gives the answers away before a run',async({page})=>{
+  await open(page,'/modules/newtons-laws/solve.html');
+  await expect(page.locator('#r-a')).toHaveText('—');
+  await expect(page.locator('#g-v')).toBeHidden();
+  await expect(page.locator('.graphs .graph-help')).toContainText('Graphs appear when you check and run');
+  const width=()=>page.locator('.graphs').evaluate(e=>e.getBoundingClientRect().width);
+  const before=await width();
+  await page.getByRole('button',{name:'Wider graphs',exact:true}).click();
+  await page.getByRole('button',{name:'Wider graphs',exact:true}).click();
+  expect(await width()).toBeGreaterThan(before+100);
+ });
+});

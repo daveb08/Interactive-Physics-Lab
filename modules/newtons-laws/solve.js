@@ -429,7 +429,7 @@ function render() {
   $('r-t').textContent = s.t.toFixed(2); $('r-x').textContent = fmt(s.x); $('r-v').textContent = fmt(s.v); $('r-a').textContent = ran ? fmt(trueRun.a) : '—';
   const help = document.querySelector('.graphs .graph-help');
   if (help) { graphHelp ??= help.textContent; help.textContent = ran ? graphHelp : 'Graphs appear when you check and run your solution.'; }
-  for (const k of ['x', 'v', 'a']) graphs[k].svg.hidden = !ran;
+  for (const k of ['x', 'v', 'a']) graphs[k].svg.toggleAttribute('hidden', !ran);   // SVG elements have no .hidden property
   const checked = !!state.check;
   for (const k of ['x', 'v', 'a']) graphs[k].render({
     samples: trueRun.samples,

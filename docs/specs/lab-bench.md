@@ -222,6 +222,37 @@ reading the source. This is the accepted trade-off.
   to match.
 - **Not done** (from the original plan): a planet-range option (fixed at 3–20 m/s²).
 
+## Lab 2 — g from a projectile (as built, 2026-10-24)
+
+Principle (Dave): students do as many steps as possible themselves, as with real video analysis (Tracker, Logger Pro).
+The page never states g. Files: `projectile.html/.js/.css`, `projectile-model.js` (analysis), `grading-projectile.js`,
+`js/core/projectile.js` (flight and camera), `quadraticFit` in `js/core/fit.js`.
+
+- **Set up and fire.** Launcher angle 15–75° (5° steps), spring setting 1–6 (2–7 m/s, not shown), camera frame rate
+  10/20/30/60 fps. A 40 mm, 263 g steel ball; quadratic air drag included (under 0.1 % on g on Earth). A shot that
+  leaves the picture is refused. The video starts one frame before launch, at a random phase.
+- **Camera.** Pinhole 3.0 m in front of the flight plane, square-on, 4.0 m × 2.8 m of the plane in an 800 × 560 frame
+  (200 px/m). The ball is 8 px across: a magnifier follows the pointer; arrow keys move a cross-hair, Enter marks.
+- **Calibrate.** The student clicks the metre stick's two ends (scale) and the origin (x right, y up). A later launch
+  with the same stick place keeps the calibration (camera and stick not moved), and says so.
+- **Track.** One click per frame, auto-advancing; frames before launch and after landing are for the student to skip.
+- **vy by hand.** The first 3 values, (y₂ − y₁)/(t₂ − t₁) from the table as shown; checked within 2 % or 0.02 m/s,
+  with the working shown when wrong. Then the page fills the rest of the column and the vy–t graph appears.
+- **Fit.** For x–t, y–t and vy–t the student chooses line or parabola and presses Fit; coefficients with ± are shown.
+  g comes from −2C (parabola) or −slope (vy line), worked out by the student. Optional "your g" per launch.
+- **Parallax trap** (assignment option `px=1`, off by default): the stick can stand on the front edge of the bench,
+  0.45 m nearer the camera, and starts there. Its scale makes lengths, and g, 2.55/3 ≈ 0.85 of the truth.
+- **Assignment link:** `projectile.html?a=…&t=5&u=10&n=2x10&px=0|1&air=any&k=…` (value tolerance %, max δg/g %,
+  launches × points per launch).
+- **Rubric (4 checks):** value within tolerance of the true g; the ideal (noise-free clicks on the student's launches)
+  within 2 δg and δg/g ≤ max; method: enough launches with enough points and the right models (x line, y parabola,
+  vy line), from at least two settings; explanation: first answer right (parallax question with the trap, otherwise
+  "why does vy scatter more").
+- **Completion code:** the short format with lab number 2: flags (answer, stick place), g, δg, per launch (angle, spring,
+  fps, points, models right, analysed), ID, checksum. The instructor page makes and grades Lab 1 and Lab 2 links.
+- **Not yet:** touch-friendly aiming (marking an 8 px ball on a phone is fiddly; a tablet or computer is better); Lab 3
+  (landing-point prediction, including the rolling-ball ramp).
+
 ## Tests
 
 - **Physics:** free fall exact; the drag solution matches its terminal velocity and agrees with RK4 integration;

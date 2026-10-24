@@ -15,7 +15,7 @@ import { idealFitG } from './notebook-model.js';
 export const DEFAULTS = Object.freeze({ tolGate: 3, tolWatch: 15, maxRel: 15, heights: 3, trials: 5, air: 'any' });
 const SECRET = 'ipl-lab-bench-1·g';
 
-const clampNum = (v, lo, hi, d) => (Number.isFinite(+v) && v !== '' && v !== null ? Math.min(hi, Math.max(lo, +v)) : d);
+export const clampNum = (v, lo, hi, d) => (Number.isFinite(+v) && v !== '' && v !== null ? Math.min(hi, Math.max(lo, +v)) : d);
 export const normaliseCode = c => String(c ?? '').trim().toLowerCase().replace(/[^a-z0-9\-_.]/g, '').slice(0, 40);
 
 /** The assignment in a lab link, or null for practice (no code, or the practice code). */
@@ -69,21 +69,22 @@ export const CORRECT = Object.freeze({ watch: 'a', drag: 'a', height: 'a' });
  *        (mm varint, drops)… [id length] id (UTF-8) [checksum ×3]. The checksum covers the assignment code too,
  * so a code cannot be moved to another assignment. Older "LB1-" codes (text, longer) still decode and grade.
  */
-const OLD_PREFIX = 'LB1-', PREFIX = 'LB-', FORMAT = 2, LAB_FREEFALL = 1;
+const OLD_PREFIX = 'LB1-';
+export const PREFIX = 'LB-', FORMAT = 2, LAB_FREEFALL = 1, LAB_PROJECTILE = 2;
 const unb64 = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)));
-const bytesToB64 = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-const b64ToBytes = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+export const bytesToB64 = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+export const b64ToBytes = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
 const check = payload => hash32(`${SECRET}|${payload}`).toString(36).padStart(7, '0');
-const fingerprint = code => hash32(`ipl-assignment|${normaliseCode(code)}`) & 0xffff;
-const binCheck = (code, bytes) => hash32(`${SECRET}|${normaliseCode(code)}|${Array.from(bytes).join(',')}`) & 0xffffff;
+export const fingerprint = code => hash32(`ipl-assignment|${normaliseCode(code)}`) & 0xffff;
+export const binCheck = (code, bytes) => hash32(`${SECRET}|${normaliseCode(code)}|${Array.from(bytes).join(',')}`) & 0xffffff;
 const ANSWERS = ['', 'a', 'b', 'c', 'd'], BALL_IDS = ['steel', 'pingpong'];
 
-function pushVarint(out, n) {
+export function pushVarint(out, n) {
   n = Math.max(0, Math.round(n));
   while (n >= 0x80) { out.push((n & 0x7f) | 0x80); n = Math.floor(n / 128); }
   out.push(n);
 }
-function reader(bytes) {
+export function reader(bytes) {
   let i = 0;
   const byte = () => { if (i >= bytes.length) throw new RangeError('short'); return bytes[i++]; };
   return {
@@ -135,7 +136,7 @@ export function decodeSubmission(text, expectCode) {
     try { bytes = b64ToBytes(raw.slice(PREFIX.length)); } catch { return { ok: false, error: 'the code is damaged (incomplete copy?)' }; }
     try {
       const r = reader(bytes), head = r.byte();
-      if (head >> 4 !== FORMAT || (head & 15) !== LAB_FREEFALL) return { ok: false, error: 'not a Lab 1 completion code' };
+      if (head >> 4 !== FORMAT || (head & 15) !== LAB_FREEFALL) return { ok: false, error: (head & 15) === LAB_PROJECTILE ? 'a Lab 2 code: grade it with the Lab 2 assignment link' : 'not a Lab 1 completion code' };
       const fp = (r.byte() << 8) | r.byte(), flags = r.byte();
       const g = r.varint() / 1000, dg = r.varint() / 1000, nh = r.byte(), heights = [];
       for (let k = 0; k < nh; k++) heights.push([r.varint(), r.byte()]);
@@ -157,7 +158,7 @@ export function decodeSubmission(text, expectCode) {
 }
 
 /* ---------- the rubric ---------- */
-const pct = v => `${(Math.round(v * 10) / 10).toString()} %`;
+export const pct = v => `${(Math.round(v * 10) / 10).toString()} %`;
 /** Grade one decoded submission against the assignment. Four checks, one point each. */
 export function grade(sub, a) {
   const planet = assignmentPlanet(sub.id, a), G = planet.g, ball = BALLS[sub.ball];

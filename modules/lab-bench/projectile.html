@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Lab Bench, Lab 2: find g from a projectile. Set up a launcher and a camera, calibrate the video, track the ball frame by frame, and fit the motion yourself."><title>Lab 2 · g from a projectile · Lab Bench · Interactive Physics Lab</title><link rel="stylesheet" href="../../css/styles.css"><link rel="stylesheet" href="lab-bench.css"><link rel="stylesheet" href="projectile.css"><script type="module" src="projectile.js"></script><script src="../../js/text-size.js"></script></head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header"><a class="brand" href="../../index.html"><span class="brand-icon" aria-hidden="true">↗</span> Interactive Physics Lab</a><a class="back-link" href="index.html">← Lab Bench</a></header>
+<main id="main" class="lab lb pj">
+  <div class="lab-heading"><div><p class="eyebrow">MODULE 07 · LAB 2 / LAB BENCH</p><h1>g from a projectile</h1><p>Fire a ball, film it, and find g from the video the way you would with real video-analysis software: you set up the launcher and the camera, calibrate the picture, mark the ball frame by frame, and choose the fits.</p></div><span class="lab-tag" id="mode-tag"><span aria-hidden="true">●</span> Practice · Earth</span></div>
+
+  <section class="panel lb-brief" aria-labelledby="brief-title">
+    <h2 id="brief-title">Your assignment</h2>
+    <div>
+      <p>Determine g, and report it with an uncertainty. Make <strong id="need-launches">2</strong> or more launches with <strong>different angles or spring settings</strong>, track at least <strong id="need-points">10</strong> frames of each, and fit x–t, y–t and v<sub>y</sub>–t.</p>
+      <p id="graded-banner" class="lb-graded" role="note" hidden></p>
+      <div class="e1-group lb-mode"><span class="lb-label" id="mode-label">Where are you?</span>
+        <div class="lb-seg" role="group" aria-labelledby="mode-label"><button type="button" data-mode="earth" aria-pressed="true">Earth (practice)</button><button type="button" data-mode="planet" aria-pressed="false">Mystery planet</button></div></div>
+      <form id="planet-form" class="lb-planet" hidden>
+        <label for="student-id">Your student ID</label>
+        <div class="lb-planet-row"><input id="student-id" autocomplete="off" maxlength="40" placeholder="e.g. 00123456"><button type="submit" class="primary">Go to my planet</button></div>
+        <p class="help">Your ID chooses your planet: its gravity is hidden, and it is the same every time you use this ID, on any computer. Nothing is sent anywhere.</p>
+      </form>
+      <p id="planet-status" class="lb-planet-status" role="status" hidden></p>
+    </div>
+    <ol class="lb-checklist" id="checklist" aria-label="Steps">
+      <li data-item="fire">Set up the launcher and camera, then fire and film a launch</li>
+      <li data-item="cal">Calibrate the video: the metre stick’s two ends, then the origin</li>
+      <li data-item="track">Mark the ball on each frame</li>
+      <li data-item="vy">Work out the first three v<sub>y</sub> values by hand</li>
+      <li data-item="fit">Choose a model for each graph and fit it</li>
+    </ol>
+  </section>
+
+  <div class="pj-workspace">
+    <aside class="panel pj-setup" aria-labelledby="setup-title">
+      <div class="panel-heading"><h3 id="setup-title">1 · Set up and fire</h3><span>01</span></div>
+      <fieldset id="setup-fields" class="pj-fields">
+        <legend class="sr-only">Launcher and camera</legend>
+        <div class="control"><label for="angle">Launcher angle <output id="angle-out">45°</output></label><input id="angle" type="range" min="15" max="75" step="5" value="45"><div class="range-ends"><span>15°</span><span>75°</span></div></div>
+        <div class="control"><label for="spring">Spring setting <output id="spring-out">3</output></label><input id="spring" type="range" min="1" max="6" step="1" value="3"><div class="range-ends"><span>1 (soft)</span><span>6 (hard)</span></div></div>
+        <label class="pj-select">Camera frame rate <select id="fps" class="vf-select"><option value="10">10 frames per second</option><option value="20">20 frames per second</option><option value="30" selected>30 frames per second</option><option value="60">60 frames per second</option></select></label>
+        <p class="help">More frames give more points to fit, and more clicking.</p>
+        <fieldset id="stick-fields" class="pj-stick" hidden><legend>Metre stick</legend>
+          <label><input type="radio" name="stick" value="front" checked> On the front edge of the bench</label>
+          <label><input type="radio" name="stick" value="plane"> In the flight plane, beside the launcher</label>
+          <p class="help">The camera sees the stick and the ball; you will use the stick to set the scale.</p>
+        </fieldset>
+        <p id="stick-fixed" class="help">The metre stick stands upright in the flight plane, beside the launcher.</p>
+      </fieldset>
+      <div class="transport lb-left pj-fire-row"><button type="button" id="fire" class="primary">▶ Fire and film</button></div>
+      <p id="fire-msg" class="help" role="status">The camera films the whole flight. Aim so the ball stays in the picture.</p>
+    </aside>
+
+    <section class="panel pj-video" aria-labelledby="video-title">
+      <div class="panel-heading"><h3 id="video-title">2 · Video analysis <span id="video-which" class="lb-nb-where"></span></h3><span class="status" id="tool-status" role="status">No video yet</span></div>
+      <div class="pj-tools" role="group" aria-label="Analysis tool">
+        <button type="button" data-tool="scale" aria-pressed="false">① Set scale</button>
+        <button type="button" data-tool="origin" aria-pressed="false">② Set origin</button>
+        <button type="button" data-tool="track" aria-pressed="false">③ Mark the ball</button>
+      </div>
+      <p id="tool-help" class="pj-tool-help" role="status">Fire a launch to get a video.</p>
+      <div class="pj-frame-wrap">
+        <svg id="frame" class="pj-frame" viewBox="0 0 800 560" tabindex="0" role="application" aria-roledescription="video frame" aria-label="Video frame. Use the arrow keys to move the cross-hair and Enter to mark."></svg>
+        <svg id="loupe" class="pj-loupe" viewBox="0 0 60 60" aria-hidden="true"></svg>
+      </div>
+      <div class="pj-frame-nav">
+        <button type="button" id="first-frame" aria-label="First frame">⏮</button>
+        <button type="button" id="prev-frame">◀ Previous</button>
+        <span id="frame-label" class="pj-frame-label" aria-live="polite">Frame – of –</span>
+        <button type="button" id="next-frame">Next ▶</button>
+        <label class="lb-check"><input type="checkbox" id="auto-next" checked> Next frame after each mark</label>
+        <button type="button" id="unmark" disabled>Remove this frame’s mark</button>
+      </div>
+      <p class="help">Arrow keys move the cross-hair one pixel (Shift: ten); <kbd>Enter</kbd> marks; <kbd>,</kbd> and <kbd>.</kbd> step frames. The circle shows a magnified view under the pointer.</p>
+    </section>
+
+    <section class="panel pj-data" aria-labelledby="data-title">
+      <div class="panel-heading"><h3 id="data-title">3 · Data</h3><span id="data-count" class="status">0 points</span></div>
+      <p id="data-help" class="help lb-pad">Calibrate the video, then mark the ball: each mark adds a row.</p>
+      <div class="lb-table-wrap pj-table-wrap"><table class="lb-table" id="data-table"><caption class="sr-only">Tracked points</caption>
+        <thead><tr><th scope="col">frame</th><th scope="col">t (s)</th><th scope="col">x (m)</th><th scope="col">y (m)</th><th scope="col">v<sub>y</sub> (m/s)</th></tr></thead><tbody id="data-rows"></tbody></table></div>
+      <div id="hand-box" class="pj-hand" hidden>
+        <p><b>Work out the first three v<sub>y</sub> values yourself.</b> Each one is v<sub>y</sub> = (y₂ − y₁) / (t₂ − t₁) between two neighbouring rows, placed at the middle time. Type them in the table, then check.</p>
+        <button type="button" id="check-hand">Check my v<sub>y</sub> values</button>
+        <p id="hand-msg" class="help" role="status"></p>
+      </div>
+      <div class="transport lb-left lb-pad"><button type="button" id="csv">⬇ Data (.csv)</button></div>
+    </section>
+  </div>
+
+  <section class="panel pj-graphs" aria-labelledby="graphs-title">
+    <div class="panel-heading"><h3 id="graphs-title">4 · Graphs and fits</h3><span>04</span></div>
+    <p class="help lb-pad">For each graph, choose the model the data should follow and fit it. The fit gives the coefficients with their uncertainties; working out g from them is up to you.</p>
+    <div class="pj-graph-grid">
+      <div class="pj-graph" data-key="x"><svg id="g-x"></svg><div class="pj-fit-row"><label>Model <select class="vf-select pj-model" data-key="x"><option value="">Choose…</option><option value="line">Straight line: A + B t</option><option value="parabola">Parabola: A + B t + C t²</option></select></label><button type="button" class="pj-fit" data-key="x">Fit</button></div><p class="pj-coef" id="c-x" role="status"></p></div>
+      <div class="pj-graph" data-key="y"><svg id="g-y"></svg><div class="pj-fit-row"><label>Model <select class="vf-select pj-model" data-key="y"><option value="">Choose…</option><option value="line">Straight line: A + B t</option><option value="parabola">Parabola: A + B t + C t²</option></select></label><button type="button" class="pj-fit" data-key="y">Fit</button></div><p class="pj-coef" id="c-y" role="status"></p></div>
+      <div class="pj-graph" data-key="vy"><svg id="g-vy"></svg><div class="pj-fit-row"><label>Model <select class="vf-select pj-model" data-key="vy"><option value="">Choose…</option><option value="line">Straight line: A + B t</option><option value="parabola">Parabola: A + B t + C t²</option></select></label><button type="button" class="pj-fit" data-key="vy">Fit</button></div><p class="pj-coef" id="c-vy" role="status"></p></div>
+    </div>
+    <details class="lb-explain lb-pad"><summary>How do the coefficients relate to g?</summary><div><p>Without air, a projectile’s horizontal velocity is constant and its vertical acceleration is −g. Ask yourself which graph should be a straight line, which a parabola, and which coefficient carries the acceleration. If a graph is a parabola y = A + B t + C t², what is d²y/dt²? If a graph of v<sub>y</sub> against t is a straight line, what does its slope mean?</p><p>The ± on each coefficient comes from how far your points scatter about the fit. If you work out g from a coefficient by multiplying it by a number, multiply its ± by the same number.</p></div></details>
+  </section>
+
+  <section class="panel lb-notebook" aria-labelledby="nb-title">
+    <div class="panel-heading"><h3 id="nb-title">Lab notebook <span id="nb-where" class="lb-nb-where"></span></h3><span id="progress" class="status" role="status">0 of 2 launches analysed</span></div>
+    <div class="lb-table-wrap"><table class="lb-table pj-launches"><caption>Launches. Choose one to analyse it in the video panel.</caption>
+      <thead><tr><th scope="col">#</th><th scope="col">Angle</th><th scope="col">Spring</th><th scope="col">fps</th><th scope="col">Points</th><th scope="col">Calibrated</th><th scope="col">Fits</th><th scope="col">Your g from it (optional)</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+      <tbody id="launch-rows"></tbody></table><p id="no-launches" class="help lb-pad">No launches yet.</p></div>
+  </section>
+
+  <section class="panel" aria-labelledby="result-title">
+    <div class="panel-heading"><h3 id="result-title">Your result</h3><span>05</span></div>
+    <div class="lb-result">
+      <p class="help">Report the value and uncertainty you believe, from your launches, to sensible significant figures.</p>
+      <div class="lb-result-row"><label>g = <input id="r-g" type="number" step="0.01" inputmode="decimal"></label><span>±</span><label><span class="sr-only">uncertainty</span><input id="r-dg" type="number" step="0.01" min="0" inputmode="decimal"></label><span>m/s²</span></div>
+      <div class="transport lb-left"><button type="button" id="check" class="primary">Compare with Earth’s g</button><button type="button" id="reveal" hidden>Reveal my planet’s g</button></div>
+      <p id="result-msg" class="feedback" role="status" hidden></p>
+      <div id="completion" class="lb-completion" hidden>
+        <p><b>Your completion code.</b> Copy it and paste it into the Canvas assignment.</p>
+        <div class="lb-code-row"><code id="completion-code" tabindex="0"></code><button type="button" id="copy-code" class="primary">Copy code</button></div>
+        <p class="help" id="copy-msg" role="status">You can submit again after more work: paste the newest code. Your instructor grades the last code you paste.</p>
+      </div>
+      <form id="explain-q" class="lb-question" hidden><fieldset><legend id="q-text"></legend><div id="q-choices" class="lb-choices"></div></fieldset><p id="q-first" class="lb-first-note" hidden></p><button type="submit">Check my answer</button><p id="q-feedback" class="lb-q-feedback" role="status"></p></form>
+    </div>
+  </section>
+  <p class="lab-footnote" id="footnote"></p>
+</main><footer>Interactive Physics Lab<span>Lab Bench · Lab 2</span></footer>
+</body></html>

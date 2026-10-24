@@ -194,3 +194,11 @@ kbd{font:calc(12px * var(--ts, 1)) Consolas,monospace;border:1px solid #c7d0cb;b
   .lb-saved-actions{white-space:normal}
 }
 .lb-saved-wrap{max-height:none}
+/* Instructor page: choosing the lab, and each lab's settings */
+.lb-lab-pick{border:1px solid var(--line);border-radius:7px;padding:10px 14px;display:flex;flex-wrap:wrap;gap:8px 22px}
+.lb-lab-pick legend{font-weight:650;padding:0 4px}
+.lb-lab-pick label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.lb-lab-pick input{accent-color:var(--teal);width:18px;height:18px}
+.lb-inst-sub{display:grid;grid-template-columns:inherit;gap:inherit;grid-column:1/-1}
+.lb-check-row{flex-direction:row!important;align-items:flex-start;gap:10px!important;font-weight:400}
+.lb-check-row input{width:18px;height:18px;margin-top:3px;accent-color:var(--teal);flex:none}

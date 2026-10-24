@@ -5,18 +5,28 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header"><a class="brand" href="../../index.html"><span class="brand-icon" aria-hidden="true">↗</span> Interactive Physics Lab</a><a class="back-link" href="index.html">← Lab Bench</a></header>
 <main id="main" class="lab lb lb-inst">
-  <div class="lab-heading"><div><p class="eyebrow">MODULE 07 · LAB BENCH / FOR INSTRUCTORS</p><h1>Assign and grade Lab 1</h1><p>Make a link for a graded assignment, post it in Canvas, then paste the completion codes students submit to get a score table for the gradebook. Nothing is stored or sent anywhere: every planet is recomputed from each student’s ID and the assignment code.</p></div></div>
+  <div class="lab-heading"><div><p class="eyebrow">MODULE 07 · LAB BENCH / FOR INSTRUCTORS</p><h1>Assign and grade labs</h1><p>Make a link for a graded assignment, post it in Canvas, then paste the completion codes students submit to get a score table for the gradebook. Nothing is sent anywhere: every planet is recomputed from each student’s ID and the assignment code, and your links and grading keys are saved in this browser.</p></div></div>
 
   <section class="panel lb-inst-panel" aria-labelledby="make-title">
     <div class="panel-heading"><h2 id="make-title">1 · Make an assignment link</h2><span>01</span></div>
     <form id="make-form" class="lb-inst-form">
+      <fieldset class="lb-wide lb-lab-pick"><legend>Which lab?</legend><label><input type="radio" name="m-lab" value="freefall" checked> Lab 1 · g from a falling ball</label><label><input type="radio" name="m-lab" value="projectile"> Lab 2 · g from a projectile</label></fieldset>
       <label class="lb-wide">Assignment code <input id="m-code" required maxlength="40" placeholder="e.g. PHY2201-F26-Lab1" autocomplete="off"><span class="help">Letters, numbers and dashes. A new code gives every student a new planet, so use one code per assignment.</span></label>
+      <div class="lb-wide lb-inst-sub" id="lab1-fields">
       <label>Value tolerance, electronic timer (%) <input id="m-tg" type="number" min="0.5" max="50" step="0.5" value="3"></label>
       <label>Value tolerance, hand stopwatch (%) <input id="m-tw" type="number" min="0.5" max="50" step="0.5" value="15"></label>
       <label>Largest allowed uncertainty (% of g) <input id="m-u" type="number" min="1" max="100" step="1" value="15"></label>
       <label>Heights needed <input id="m-h" type="number" min="2" max="8" step="1" value="3"></label>
       <label>Drops at each height <input id="m-n" type="number" min="2" max="20" step="1" value="5"></label>
       <label>Air on the planets <select id="m-air" class="vf-select"><option value="any">Mixed: none, thin or Earth-like (one third each)</option><option value="none">None: no air on any planet</option></select></label>
+      </div>
+      <div class="lb-wide lb-inst-sub" id="lab2-fields" hidden>
+      <label>Value tolerance (%) <input id="m2-t" type="number" min="0.5" max="50" step="0.5" value="5"></label>
+      <label>Largest allowed uncertainty (% of g) <input id="m2-u" type="number" min="1" max="100" step="1" value="10"></label>
+      <label>Launches needed (different settings) <input id="m2-l" type="number" min="1" max="6" step="1" value="2"></label>
+      <label>Points tracked per launch <input id="m2-p" type="number" min="5" max="60" step="1" value="10"></label>
+      <label class="lb-wide lb-check-row"><input type="checkbox" id="m2-px"> <span><b>Parallax trap.</b> Students choose where the metre stick stands, and it starts on the front edge of the bench, nearer the camera than the ball. A scale taken there makes every length, and g, about 15 % too small, unless they move the stick into the flight plane.</span></label>
+      </div>
       <div class="lb-wide"><button type="submit" class="primary">Make the link</button></div>
     </form>
     <div id="made" class="lb-made" hidden>
@@ -51,12 +61,10 @@
     <div class="lb-table-wrap lb-grades-wrap"><table class="lb-table lb-grades" id="grades" hidden><caption>Scores (one point per check). Hover or focus a mark for the detail.</caption>
       <thead><tr><th scope="col">#</th><th scope="col">Student ID</th><th scope="col">Score</th><th scope="col">Value</th><th scope="col">Uncertainty</th><th scope="col">Method</th><th scope="col">Explanation</th><th scope="col">Reported g</th><th scope="col">True g</th><th scope="col">Notes</th></tr></thead><tbody id="grade-rows"></tbody></table></div>
     <details class="lb-explain lb-pad"><summary>How the four checks work</summary><div>
-      <p><b>Value</b>: the reported g is within the tolerance of the student’s true g; the tolerance depends on the timer the result came from.</p>
-      <p><b>Uncertainty</b>: what a perfect experiment would measure (the true g, lowered by air drag on that planet for that ball and those heights) lies within 2 × the reported uncertainty, and the uncertainty is no more than the allowed percentage of g.</p>
-      <p><b>Method</b>: the required number of heights each have the required number of drops, with one ball and one timer.</p>
-      <p><b>Explanation</b>: the student’s first answer to the “Explain your result” question, which is chosen from their own data, is correct.</p>
-      <p>A code is refused if it was edited (checksum), damaged in copying, or made for a different assignment. If a student pastes more than one code, the last one counts. Identical data under two IDs is flagged. The checksum stops casual editing, not a determined student who reads the page source.</p>
-    </div></details>
+      <p><b>Lab 1 · falling ball.</b> <b>Value</b>: the reported g is within the tolerance of the student’s true g; the tolerance depends on the timer the result came from. <b>Uncertainty</b>: what a perfect experiment would measure (the true g, lowered by air drag on that planet for that ball and those heights) lies within 2 × the reported uncertainty, and the uncertainty is no more than the allowed percentage of g. <b>Method</b>: the required number of heights each have the required number of drops, with one ball and one timer. <b>Explanation</b>: the first answer to the question chosen from the student’s data is correct.</p>
+      <p><b>Lab 2 · projectile.</b> <b>Value</b>: the reported g is within the tolerance of the true g. A metre stick left on the front edge of the bench (parallax trap) makes g about 15 % low, so this check fails. <b>Uncertainty</b>: what perfect clicks would measure with the student’s launches lies within 2 × the reported uncertainty, and the uncertainty is no more than the allowed percentage. <b>Method</b>: the required number of launches, each with enough tracked points and all three graphs fitted with the right models (x–t line, y–t parabola, v<sub>y</sub>–t line), from at least two different settings. <b>Explanation</b>: the first answer is correct (about parallax when the trap is on, otherwise about why v<sub>y</sub> scatters more).</p>
+      <p>A code is refused if it was edited (checksum), damaged in copying, made for a different assignment, or made for the other lab. If a student pastes more than one code, the last one counts. Identical data under two IDs is flagged. The checksum stops casual editing, not a determined student who reads the page source.</p>
+    </details>
   </section>
   <p class="lab-footnote">Grades are computed in this browser. Nothing is stored or sent.</p>
 </main><footer>Interactive Physics Lab<span>Lab Bench · Instructors</span></footer>

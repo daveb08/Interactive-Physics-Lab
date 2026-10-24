@@ -29,6 +29,10 @@ export class FbdLearningState{
 export class FbdActivity{
  constructor(pause){
   this.state=new FbdLearningState();this.pause=pause;this.$=id=>document.getElementById(id);
+  // The cart is chosen with the radio button above each diagram (or by clicking the diagram itself).
+  const pick=cart=>{const input=this.$('fbd-cart');if(input.value===cart)return;input.value=cart;for(const r of document.querySelectorAll('[name="fbd-cart-pick"]'))r.checked=r.value===cart;input.dispatchEvent(new Event('change'));};
+  for(const r of document.querySelectorAll('[name="fbd-cart-pick"]'))r.addEventListener('change',()=>{if(r.checked)pick(r.value);});
+  for(const cart of ['A','B'])this.$('fbd-'+cart.toLowerCase()).addEventListener('click',()=>pick(cart));
   this.$('fbd-cart').addEventListener('change',()=>{for(const input of this.$('force-choices').querySelectorAll('input'))input.checked=this.state.drafts[this.cart].includes(input.value);this.showFeedback();this.render(this.run);});
   this.$('force-choices').addEventListener('change',()=>{const choices=[...this.$('force-choices').querySelectorAll('input:checked')].map(input=>input.value);this.state.retry(this.cart);this.state.drafts[this.cart]=choices;this.showFeedback();this.render(this.run);});
   this.$('build-form').addEventListener('submit',e=>{e.preventDefault();this.pause();this.state.submit(this.run,this.cart,new FormData(e.currentTarget).getAll('force'));this.showFeedback();this.render(this.run);});
@@ -45,7 +49,7 @@ export class FbdActivity{
   const answer=this.state.answers[this.cart];
   this.$('fbd-retry').hidden=!answer&&!this.state.revealed[this.cart];
   this.$('fbd-reveal').hidden=!answer||this.state.revealed[this.cart];
-  this.$('fbd-target-note').textContent='Your proposal for Cart '+this.cart;
+  this.$('fbd-target-note').textContent='Your proposal for Cart '+this.cart+'. To build the other cart’s diagram, choose it above its diagram.';
   this.$('pair-followup').hidden=!this.state.revealed.A||!this.state.revealed.B;
   this.$('fbd-model-note').hidden=!Object.values(this.state.revealed).some(Boolean);
   for(const cart of ['A','B'])this.$('fbd-'+cart.toLowerCase()).classList.toggle('selected-cart',cart===this.cart);

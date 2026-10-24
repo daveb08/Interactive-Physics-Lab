@@ -102,7 +102,7 @@ test('third law force diagram rejects other-cart reaction and accepts correct fo
  for(const name of ['Weight (mg)','Normal force (N)','Spring interaction force'])await page.getByLabel(name,{exact:true}).check();
  await page.getByRole('button',{name:'Check diagram',exact:true}).click();
  await expect(page.locator('#fbd-feedback')).toContainText(/correct|match/i);
- await page.locator('#fbd-cart').selectOption('B');await expect(page.locator('#fbd-target-note')).toContainText('B');
+ await page.getByRole('radio',{name:/Build Cart B’s diagram/}).check();await expect(page.locator('#fbd-target-note')).toContainText('B');
  for(const name of ['Weight (mg)','Normal force (N)','Spring interaction force'])await page.getByLabel(name,{exact:true}).check();
  await page.getByRole('button',{name:'Check diagram',exact:true}).click();
  await page.getByText('Compare both diagrams: identify the Third Law pair',{exact:true}).click();
